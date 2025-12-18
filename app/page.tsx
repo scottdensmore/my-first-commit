@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useState, useTransition } from 'react';
-import { getFirstCommit, FirstCommitData } from './actions';
+import { getCommits, CommitData } from './actions';
 import FirstCommitDisplay from '@/components/FirstCommitDisplay';
 import { FaGithub } from "react-icons/fa";
 
 export default function Home() {
   const [username, setUsername] = useState('');
-  const [result, setResult] = useState<FirstCommitData | null>(null);
+  const [result, setResult] = useState<CommitData | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -15,7 +15,7 @@ export default function Home() {
     if (!username.trim()) return;
 
     startTransition(async () => {
-       const data = await getFirstCommit(username.trim());
+       const data = await getCommits(username.trim());
        setResult(data);
     });
   };
@@ -23,18 +23,26 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] font-sans">
       {/* Header */}
-      <header className="py-4 px-6 border-b border-[var(--github-border)] bg-[var(--github-gray-light)] flex items-center justify-between">
+      <header className="sticky top-0 z-50 py-3 px-6 border-b border-[var(--github-border)] bg-[var(--github-gray-light)] flex items-center justify-between backdrop-blur-sm bg-white/80">
          <div className="flex items-center gap-2 font-bold text-xl text-[var(--github-gray-dark)]">
             <FaGithub className="text-3xl" />
             <span>MyFirstCommit</span>
          </div>
+         {result?.found && (
+            <button 
+                onClick={() => { setResult(null); setUsername(''); }}
+                className="px-3 py-1.5 text-xs font-semibold text-[var(--github-gray-dark)] bg-white border border-[var(--github-border)] rounded-md hover:bg-gray-50 transition-colors shadow-sm"
+            >
+                Search another user
+            </button>
+         )}
       </header>
 
       {/* Main */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 w-full max-w-4xl mx-auto">
+      <main className="flex-1 flex flex-col items-center p-4 w-full max-w-4xl mx-auto">
         
         {(!result?.found) && (
-            <div className={`text-center mb-8 transition-all duration-500 ${isPending ? 'opacity-50' : 'opacity-100'}`}>
+            <div className={`text-center mb-8 mt-20 transition-all duration-500 ${isPending ? 'opacity-50' : 'opacity-100'}`}>
                 <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[var(--github-gray-dark)] mb-4">
                     Discover your origin.
                 </h1>
@@ -81,17 +89,36 @@ export default function Home() {
         )}
 
         {/* Result State */}
-        {result?.found && result.commit && (
-            <div className="w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <FirstCommitDisplay data={result.commit} />
+        {result?.found && result.commits.length > 0 && (
+            <div className="w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 pt-8">
                 
-                <div className="text-center mt-12">
-                    <button 
-                        onClick={() => { setResult(null); setUsername(''); }}
-                        className="px-4 py-2 text-sm font-semibold text-[var(--github-gray-dark)] bg-[var(--github-gray-light)] border border-[var(--github-border)] rounded-md hover:bg-gray-100 transition-colors shadow-sm"
-                    >
-                        Search another user
-                    </button>
+                <div className="w-full max-w-2xl relative">
+                    {/* The "Graph" Line */}
+                    <div className="absolute left-8 top-10 bottom-0 w-0.5 bg-[var(--github-border)] -z-10 hidden sm:block"></div>
+                    
+                    <div className="flex flex-col gap-0">
+                        {/* First Commit */}
+                        <div className="flex gap-4 mb-8">
+                            <div className="hidden sm:flex flex-col items-center mt-12">
+                                <div className="w-4 h-4 rounded-sm bg-[var(--github-green)] border border-[var(--github-green-hover)] shadow-sm"></div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <FirstCommitDisplay data={result.commits[0]} isMain={true} />
+                            </div>
+                        </div>
+
+                        {/* Subsequent Commits */}
+                        {result.commits.slice(1).map((commit, idx) => (
+                            <div key={commit.sha} className="flex gap-4 mb-4">
+                                <div className="hidden sm:flex flex-col items-center mt-8">
+                                    <div className="w-4 h-4 rounded-sm bg-[var(--github-green)] opacity-70 border border-[var(--github-green-hover)] shadow-sm"></div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <FirstCommitDisplay data={commit} isMain={false} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         )}

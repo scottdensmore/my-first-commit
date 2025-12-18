@@ -1,17 +1,18 @@
 import React from 'react';
-import { FirstCommitData } from '../app/actions';
+import { CommitInfo } from '../app/actions';
 import { formatDistanceToNow, format } from 'date-fns';
 import { GoGitCommit, GoRepo } from "react-icons/go";
 
 interface Props {
-  data: NonNullable<FirstCommitData['commit']>;
+  data: CommitInfo;
+  isMain?: boolean;
 }
 
-export default function FirstCommitDisplay({ data }: Props) {
+export default function FirstCommitDisplay({ data, isMain = true }: Props) {
   const dateObj = new Date(data.date);
   
   return (
-    <div className="w-full max-w-2xl mx-auto mt-8 border border-[var(--github-border)] rounded-md overflow-hidden font-sans text-sm shadow-sm">
+    <div className={`w-full max-w-2xl mx-auto border border-[var(--github-border)] rounded-md overflow-hidden font-sans text-sm shadow-sm bg-white`}>
       {/* Repository Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--github-border)] bg-[var(--github-gray-light)] text-[var(--github-gray-text)]">
         <div className="flex items-center gap-1.5">
