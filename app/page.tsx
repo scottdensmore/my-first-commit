@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useTransition } from 'react';
+import React, { useEffect, useRef, useState, useTransition } from 'react';
 import { getCommits, CommitData } from './actions';
 import FirstCommitDisplay from '@/components/FirstCommitDisplay';
 import { FaGithub } from "react-icons/fa";
@@ -9,6 +9,13 @@ export default function Home() {
   const [username, setUsername] = useState('');
   const [result, setResult] = useState<CommitData | null>(null);
   const [isPending, startTransition] = useTransition();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!result?.found) {
+      searchInputRef.current?.focus();
+    }
+  }, [result?.found]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +33,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 py-3 px-6 border-b border-[var(--github-border)] bg-[var(--github-gray-light)] flex items-center justify-between backdrop-blur-sm bg-white/80">
          <div className="flex items-center gap-2 font-bold text-xl text-[var(--github-gray-dark)]">
             <FaGithub className="text-3xl" />
-            <span>MyFirstCommit</span>
+            <span>My First Commit</span>
          </div>
          {result?.found && (
             <button 
@@ -59,11 +66,21 @@ export default function Home() {
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--github-gray-text)]">
                     <span className="font-mono text-sm">@</span>
                 </div>
+                <label htmlFor="commit-search" className="sr-only">
+                    GitHub username
+                </label>
                 <input
-                    type="text"
+                    ref={searchInputRef}
+                    id="commit-search"
+                    name="commit-search"
+                    type="search"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="username"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     className="block w-full pl-7 pr-3 py-3 border border-[var(--github-border)] rounded-md leading-5 bg-white text-[var(--github-gray-dark)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:border-transparent sm:text-sm shadow-sm"
                     autoFocus
                 />
@@ -108,7 +125,7 @@ export default function Home() {
                         </div>
 
                         {/* Subsequent Commits */}
-                        {result.commits.slice(1).map((commit, idx) => (
+                        {result.commits.slice(1).map((commit) => (
                             <div key={commit.sha} className="flex gap-4 mb-4">
                                 <div className="hidden sm:flex flex-col items-center mt-8">
                                     <div className="w-4 h-4 rounded-sm bg-[var(--github-green)] opacity-70 border border-[var(--github-green-hover)] shadow-sm"></div>
@@ -127,7 +144,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="py-6 border-t border-[var(--github-border)] text-center text-xs text-[var(--github-gray-text)] bg-[var(--github-gray-light)]">
-        <p>&copy; {new Date().getFullYear()} MyFirstCommit Clone. Not affiliated with GitHub.</p>
+        <p>&copy; {new Date().getFullYear()} Not affiliated with GitHub.</p>
       </footer>
     </div>
   );

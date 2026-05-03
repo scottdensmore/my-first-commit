@@ -68,11 +68,14 @@ export async function getCommits(username: string): Promise<CommitData> {
       commits: commits
     };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching commits:", error);
     let errorMessage = "Failed to fetch commits.";
-    if (error.status === 403) errorMessage = "GitHub API Rate limit exceeded. Try again later.";
-    if (error.status === 422) errorMessage = "Validation failed. User might not exist.";
+    const status = typeof error === "object" && error !== null && "status" in error
+      ? error.status
+      : undefined;
+    if (status === 403) errorMessage = "GitHub API Rate limit exceeded. Try again later.";
+    if (status === 422) errorMessage = "Validation failed. User might not exist.";
     
     return { found: false, error: errorMessage, commits: [] };
   }

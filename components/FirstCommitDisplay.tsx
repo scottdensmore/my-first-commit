@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { CommitInfo } from '../app/actions';
 import { formatDistanceToNow, format } from 'date-fns';
 import { GoGitCommit, GoRepo } from "react-icons/go";
@@ -10,9 +11,10 @@ interface Props {
 
 export default function FirstCommitDisplay({ data, isMain = true }: Props) {
   const dateObj = new Date(data.date);
+  const widthClass = isMain ? "max-w-2xl" : "max-w-xl";
   
   return (
-    <div className={`w-full max-w-2xl mx-auto border border-[var(--github-border)] rounded-md overflow-hidden font-sans text-sm shadow-sm bg-white`}>
+    <div className={`w-full ${widthClass} mx-auto border border-[var(--github-border)] rounded-md overflow-hidden font-sans text-sm shadow-sm bg-white`}>
       {/* Repository Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--github-border)] bg-[var(--github-gray-light)] text-[var(--github-gray-text)]">
         <div className="flex items-center gap-1.5">
@@ -38,9 +40,12 @@ export default function FirstCommitDisplay({ data, isMain = true }: Props) {
         <div className="flex items-start gap-4">
             <div className="flex-shrink-0 pt-1">
                  {/* Avatar */}
-                 <img 
+                 <Image
                     src={data.author.avatar_url} 
                     alt={data.author.login} 
+                    width={40}
+                    height={40}
+                    unoptimized
                     className="w-10 h-10 rounded-full border border-[var(--github-border)]"
                  />
             </div>
