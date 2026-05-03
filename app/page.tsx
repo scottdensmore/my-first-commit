@@ -75,7 +75,7 @@ export default function Home() {
                     name="commit-search"
                     type="search"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onInput={(e) => setUsername(e.currentTarget.value)}
                     placeholder="username"
                     autoComplete="off"
                     autoCorrect="off"
