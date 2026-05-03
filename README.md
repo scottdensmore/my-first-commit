@@ -1,4 +1,4 @@
-# MyFirstCommit
+# My First Commit
 
 A GitHub-themed web application that discovers your origin story on GitHub. Enter any username to see their first public commit and the nine that followed, beautifully connected in an activity-graph style timeline.
 
@@ -13,7 +13,7 @@ A GitHub-themed web application that discovers your origin story on GitHub. Ente
 
 ### Prerequisites
 
-- Node.js (Latest LTS recommended)
+- Node.js 22, or any version matching `>=20.9.0`
 - npm
 
 ### Installation
@@ -21,7 +21,7 @@ A GitHub-themed web application that discovers your origin story on GitHub. Ente
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd myfirstcommit
+   cd my-first-commit
    ```
 
 2. Install dependencies:
@@ -51,6 +51,47 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser to explore.
+
+### Validation
+
+Run the same checks used by CI:
+
+```bash
+npm audit
+npm test
+npm run lint
+npm run build
+```
+
+For active test-driven development:
+
+```bash
+npm run test:watch
+```
+
+## Production Notes
+
+- Set `GITHUB_TOKEN` in the production environment to avoid GitHub's low unauthenticated search rate limit.
+- The token is only used server-side by the GitHub API client and is not exposed to the browser.
+- Usernames entered into the search field are sent to GitHub to retrieve public commit data; the app does not store searches.
+- CI runs on every push and pull request to `main`.
+
+## Deployment
+
+This is a standard Next.js app and can be deployed to Vercel or any host that supports Next.js with Node.js 22.
+
+Required production command:
+
+```bash
+npm run build
+```
+
+Recommended environment variable:
+
+```env
+GITHUB_TOKEN=your_github_pat_here
+NEXT_PUBLIC_SITE_URL=https://your-production-domain.example
+```
 
 ## Tech Stack
 

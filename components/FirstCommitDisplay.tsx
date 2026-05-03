@@ -45,7 +45,6 @@ export default function FirstCommitDisplay({ data, isMain = true }: Props) {
                     alt={data.author.login} 
                     width={40}
                     height={40}
-                    unoptimized
                     className="w-10 h-10 rounded-full border border-[var(--github-border)]"
                  />
             </div>
