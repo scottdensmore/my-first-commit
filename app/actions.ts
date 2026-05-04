@@ -42,7 +42,9 @@ function getGitHubErrorDetails(error: unknown): GitHubErrorDetails {
   }
 
   const status = "status" in error ? error.status : undefined;
-  const message = error instanceof Error ? error.message : undefined;
+  const message = "message" in error && typeof error.message === "string"
+    ? error.message
+    : undefined;
   const headers = "response" in error
     && typeof error.response === "object"
     && error.response !== null
@@ -58,6 +60,14 @@ function getGitHubErrorDetails(error: unknown): GitHubErrorDetails {
     rateLimitReset: headers?.["x-ratelimit-reset"],
     status,
   };
+}
+
+function isGitHubRateLimitError(errorDetails: GitHubErrorDetails) {
+  if (errorDetails.status === 429) return true;
+  if (errorDetails.rateLimitRemaining === "0") return true;
+
+  return errorDetails.status === 403
+    && /rate limit|too many requests/i.test(errorDetails.message ?? "");
 }
 
 export async function getCommits(username: string): Promise<CommitData> {
@@ -104,10 +114,11 @@ export async function getCommits(username: string): Promise<CommitData> {
     const errorDetails = getGitHubErrorDetails(error);
     const { status } = errorDetails;
 
-    if (status === 403) {
+    if (isGitHubRateLimitError(errorDetails)) {
       console.warn("github_commit_search_rate_limited", {
         username,
         status,
+        message: errorDetails.message,
         rateLimitRemaining: errorDetails.rateLimitRemaining,
         rateLimitReset: errorDetails.rateLimitReset,
       });
@@ -117,7 +128,7 @@ export async function getCommits(username: string): Promise<CommitData> {
         username,
         status,
         message: errorDetails.message,
-      });
+      }, error);
     }
 
     if (status === 422) errorMessage = "Validation failed. User might not exist.";
