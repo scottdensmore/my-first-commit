@@ -63,6 +63,18 @@ npm run lint
 npm run build
 ```
 
+To run the browser smoke test against the deployed app:
+
+```bash
+npm run test:e2e:deployed
+```
+
+Or point the smoke test at any deployed URL:
+
+```bash
+PLAYWRIGHT_BASE_URL=https://your-deployment.example npm run test:e2e
+```
+
 For active test-driven development:
 
 ```bash
@@ -90,7 +102,7 @@ Recommended environment variable:
 
 ```env
 GITHUB_TOKEN=your_github_pat_here
-NEXT_PUBLIC_SITE_URL=https://your-production-domain.example
+NEXT_PUBLIC_SITE_URL=https://my-first-commit-eta.vercel.app
 ```
 
 ## Tech Stack

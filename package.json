@@ -12,7 +12,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:deployed": "PLAYWRIGHT_BASE_URL=https://my-first-commit-eta.vercel.app playwright test"
   },
   "dependencies": {
     "clsx": "^2.1.1",
