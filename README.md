@@ -90,6 +90,7 @@ npm run test:watch
 - Usernames entered into the search field are sent to GitHub to retrieve public commit data; the app does not store searches.
 - CI runs on every push and pull request to `main`.
 - Production deployment smoke tests run after a successful Vercel deployment using the `PRODUCTION_BASE_URL` repository variable, and can also be started manually from GitHub Actions.
+- See the [production runbook](docs/production.md) for deployment checks, observability, and troubleshooting.
 
 ## Deployment
 
