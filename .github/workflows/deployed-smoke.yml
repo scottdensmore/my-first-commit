@@ -22,7 +22,7 @@ jobs:
       )
     runs-on: ubuntu-latest
     env:
-      PLAYWRIGHT_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.base_url || github.event.deployment_status.environment_url }}
+      PLAYWRIGHT_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.base_url || vars.PRODUCTION_BASE_URL || github.event.deployment_status.environment_url }}
 
     steps:
       - name: Check out repository
@@ -44,6 +44,7 @@ jobs:
         run: |
           if [ -z "$PLAYWRIGHT_BASE_URL" ]; then
             echo "PLAYWRIGHT_BASE_URL is required."
+            echo "Set PRODUCTION_BASE_URL as a repository variable or provide base_url for manual runs."
             exit 1
           fi
 
