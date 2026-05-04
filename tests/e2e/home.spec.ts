@@ -28,3 +28,26 @@ test("home page search field is keyboard-ready and not treated as a credential f
 
   await expect(page.getByText(/Not affiliated with GitHub/)).toBeVisible();
 });
+
+test("home page advertises branded app and social preview images", async ({ page, request }) => {
+  await page.goto("/");
+
+  const iconHref = await page.locator('link[rel="icon"][type="image/png"]').getAttribute("href");
+  const ogImage = await page.locator('meta[property="og:image"]').getAttribute("content");
+  const twitterImage = await page.locator('meta[name="twitter:image"]').getAttribute("content");
+
+  expect(iconHref).toBeTruthy();
+  expect(ogImage).toContain("/opengraph-image");
+  expect(twitterImage).toContain("/twitter-image");
+
+  const iconResponse = await request.get(iconHref!);
+  const ogResponse = await request.get(ogImage!);
+  const twitterResponse = await request.get(twitterImage!);
+
+  expect(iconResponse.ok()).toBe(true);
+  expect(ogResponse.ok()).toBe(true);
+  expect(twitterResponse.ok()).toBe(true);
+  expect(iconResponse.headers()["content-type"]).toContain("image/png");
+  expect(ogResponse.headers()["content-type"]).toContain("image/png");
+  expect(twitterResponse.headers()["content-type"]).toContain("image/png");
+});

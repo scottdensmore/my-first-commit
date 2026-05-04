@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     siteName: "My First Commit",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "My First Commit",
     description: "Find the first public GitHub commit for any user.",
   },
