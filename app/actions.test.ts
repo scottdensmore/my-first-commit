@@ -47,6 +47,7 @@ describe("getCommits", () => {
   beforeEach(() => {
     searchCommits.mockReset();
     vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -151,33 +152,101 @@ describe("getCommits", () => {
     });
   });
 
-  it("returns a rate limit message for GitHub 403 errors", async () => {
-    searchCommits.mockRejectedValue({ status: 403 });
+  it("returns a helpful rate limit message and logs a structured warning for GitHub rate-limit 403 errors", async () => {
+    searchCommits.mockRejectedValue({
+      status: 403,
+      message: "API rate limit exceeded for user.",
+      response: {
+        headers: {
+          "x-ratelimit-remaining": "0",
+          "x-ratelimit-reset": "1710000000",
+        },
+      },
+    });
 
     await expect(getCommits("octo")).resolves.toEqual({
       found: false,
-      error: "GitHub API Rate limit exceeded. Try again later.",
+      error: "GitHub rate limit reached. Please try again in a few minutes.",
       commits: [],
+    });
+    expect(console.warn).toHaveBeenCalledWith("github_commit_search_rate_limited", {
+      username: "octo",
+      status: 403,
+      message: "API rate limit exceeded for user.",
+      rateLimitRemaining: "0",
+      rateLimitReset: "1710000000",
     });
   });
 
-  it("returns a validation message for GitHub 422 errors", async () => {
-    searchCommits.mockRejectedValue({ status: 422 });
+  it("returns a helpful rate limit message and logs a structured warning for GitHub 429 errors", async () => {
+    searchCommits.mockRejectedValue({
+      status: 429,
+      message: "Too many requests",
+    });
 
     await expect(getCommits("octo")).resolves.toEqual({
       found: false,
-      error: "Validation failed. User might not exist.",
+      error: "GitHub rate limit reached. Please try again in a few minutes.",
       commits: [],
+    });
+    expect(console.warn).toHaveBeenCalledWith("github_commit_search_rate_limited", {
+      username: "octo",
+      status: 429,
+      message: "Too many requests",
+      rateLimitRemaining: undefined,
+      rateLimitReset: undefined,
     });
   });
 
-  it("returns a generic message for unknown GitHub errors", async () => {
-    searchCommits.mockRejectedValue(new Error("GitHub is unavailable"));
+  it("does not classify non-rate-limit GitHub 403 errors as rate limits", async () => {
+    const error = {
+      status: 403,
+      message: "Resource not accessible by integration",
+    };
+    searchCommits.mockRejectedValue(error);
 
     await expect(getCommits("octo")).resolves.toEqual({
       found: false,
       error: "Failed to fetch commits.",
       commits: [],
     });
+    expect(console.warn).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith("github_commit_search_failed", {
+      username: "octo",
+      status: 403,
+      message: "Resource not accessible by integration",
+    }, error);
+  });
+
+  it("returns a validation message for GitHub 422 errors", async () => {
+    const error = { status: 422 };
+    searchCommits.mockRejectedValue(error);
+
+    await expect(getCommits("octo")).resolves.toEqual({
+      found: false,
+      error: "Validation failed. User might not exist.",
+      commits: [],
+    });
+    expect(console.error).toHaveBeenCalledWith("github_commit_search_failed", {
+      username: "octo",
+      status: 422,
+      message: undefined,
+    }, error);
+  });
+
+  it("returns a generic message for unknown GitHub errors", async () => {
+    const error = new Error("GitHub is unavailable");
+    searchCommits.mockRejectedValue(error);
+
+    await expect(getCommits("octo")).resolves.toEqual({
+      found: false,
+      error: "Failed to fetch commits.",
+      commits: [],
+    });
+    expect(console.error).toHaveBeenCalledWith("github_commit_search_failed", {
+      username: "octo",
+      status: undefined,
+      message: "GitHub is unavailable",
+    }, error);
   });
 });

@@ -6,6 +6,13 @@ const octokit = new Octokit({
     auth: process.env.GITHUB_TOKEN 
 });
 
+type GitHubErrorDetails = {
+  message?: string;
+  rateLimitRemaining?: string;
+  rateLimitReset?: string;
+  status?: unknown;
+};
+
 export interface CommitInfo {
     message: string;
     date: string;
@@ -27,6 +34,40 @@ export interface CommitData {
   found: boolean;
   error?: string;
   commits: CommitInfo[];
+}
+
+function getGitHubErrorDetails(error: unknown): GitHubErrorDetails {
+  if (typeof error !== "object" || error === null) {
+    return {};
+  }
+
+  const status = "status" in error ? error.status : undefined;
+  const message = "message" in error && typeof error.message === "string"
+    ? error.message
+    : undefined;
+  const headers = "response" in error
+    && typeof error.response === "object"
+    && error.response !== null
+    && "headers" in error.response
+    && typeof error.response.headers === "object"
+    && error.response.headers !== null
+      ? error.response.headers as Record<string, string | undefined>
+      : undefined;
+
+  return {
+    message,
+    rateLimitRemaining: headers?.["x-ratelimit-remaining"],
+    rateLimitReset: headers?.["x-ratelimit-reset"],
+    status,
+  };
+}
+
+function isGitHubRateLimitError(errorDetails: GitHubErrorDetails) {
+  if (errorDetails.status === 429) return true;
+  if (errorDetails.rateLimitRemaining === "0") return true;
+
+  return errorDetails.status === 403
+    && /rate limit|too many requests/i.test(errorDetails.message ?? "");
 }
 
 export async function getCommits(username: string): Promise<CommitData> {
@@ -69,12 +110,27 @@ export async function getCommits(username: string): Promise<CommitData> {
     };
 
   } catch (error: unknown) {
-    console.error("Error fetching commits:", error);
     let errorMessage = "Failed to fetch commits.";
-    const status = typeof error === "object" && error !== null && "status" in error
-      ? error.status
-      : undefined;
-    if (status === 403) errorMessage = "GitHub API Rate limit exceeded. Try again later.";
+    const errorDetails = getGitHubErrorDetails(error);
+    const { status } = errorDetails;
+
+    if (isGitHubRateLimitError(errorDetails)) {
+      console.warn("github_commit_search_rate_limited", {
+        username,
+        status,
+        message: errorDetails.message,
+        rateLimitRemaining: errorDetails.rateLimitRemaining,
+        rateLimitReset: errorDetails.rateLimitReset,
+      });
+      errorMessage = "GitHub rate limit reached. Please try again in a few minutes.";
+    } else {
+      console.error("github_commit_search_failed", {
+        username,
+        status,
+        message: errorDetails.message,
+      }, error);
+    }
+
     if (status === 422) errorMessage = "Validation failed. User might not exist.";
     
     return { found: false, error: errorMessage, commits: [] };
