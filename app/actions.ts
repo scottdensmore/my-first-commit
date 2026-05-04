@@ -1,6 +1,7 @@
 'use server'
 
 import { Octokit } from "octokit";
+import { logger } from "./logger";
 
 const octokit = new Octokit({
     auth: process.env.GITHUB_TOKEN 
@@ -115,19 +116,23 @@ export async function getCommits(username: string): Promise<CommitData> {
     const { status } = errorDetails;
 
     if (isGitHubRateLimitError(errorDetails)) {
-      console.warn("github_commit_search_rate_limited", {
-        username,
-        status,
-        message: errorDetails.message,
-        rateLimitRemaining: errorDetails.rateLimitRemaining,
-        rateLimitReset: errorDetails.rateLimitReset,
+      logger.warn({
+        event: "github_commit_search_rate_limited",
+        fields: {
+          status: typeof status === "number" ? status : undefined,
+          message: errorDetails.message,
+          rateLimitRemaining: errorDetails.rateLimitRemaining,
+          rateLimitReset: errorDetails.rateLimitReset,
+        },
       });
       errorMessage = "GitHub rate limit reached. Please try again in a few minutes.";
     } else {
-      console.error("github_commit_search_failed", {
-        username,
-        status,
-        message: errorDetails.message,
+      logger.error({
+        event: "github_commit_search_failed",
+        fields: {
+          status: typeof status === "number" ? status : undefined,
+          message: errorDetails.message,
+        },
       }, error);
     }
 
