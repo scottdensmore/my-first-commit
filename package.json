@@ -16,6 +16,7 @@
     "test:e2e:deployed": "PLAYWRIGHT_BASE_URL=https://my-first-commit-eta.vercel.app playwright test"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "next": "16.2.4",
