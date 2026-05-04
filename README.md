@@ -75,7 +75,7 @@ Or point the smoke test at any deployed URL:
 PLAYWRIGHT_BASE_URL=https://your-deployment.example npm run test:e2e
 ```
 
-Production deployments also trigger the deployed smoke test automatically through the `Deployed Smoke` GitHub Actions workflow. Manual runs of that workflow require a deployed URL.
+Production deployments also trigger the deployed smoke test automatically through the `Deployed Smoke` GitHub Actions workflow. Set the `PRODUCTION_BASE_URL` GitHub Actions repository variable to the public production URL. Manual runs of that workflow require a deployed URL.
 
 For active test-driven development:
 
@@ -89,7 +89,7 @@ npm run test:watch
 - The token is only used server-side by the GitHub API client and is not exposed to the browser.
 - Usernames entered into the search field are sent to GitHub to retrieve public commit data; the app does not store searches.
 - CI runs on every push and pull request to `main`.
-- Production deployment smoke tests run after a successful Vercel deployment and can also be started manually from GitHub Actions.
+- Production deployment smoke tests run after a successful Vercel deployment using the `PRODUCTION_BASE_URL` repository variable, and can also be started manually from GitHub Actions.
 
 ## Deployment
 
