@@ -169,8 +169,8 @@ describe("getCommits", () => {
       error: "GitHub rate limit reached. Please try again in a few minutes.",
       commits: [],
     });
-    expect(console.warn).toHaveBeenCalledWith("github_commit_search_rate_limited", {
-      username: "octo",
+    expect(console.warn).toHaveBeenCalledWith({
+      event: "github_commit_search_rate_limited",
       status: 403,
       message: "API rate limit exceeded for user.",
       rateLimitRemaining: "0",
@@ -189,8 +189,8 @@ describe("getCommits", () => {
       error: "GitHub rate limit reached. Please try again in a few minutes.",
       commits: [],
     });
-    expect(console.warn).toHaveBeenCalledWith("github_commit_search_rate_limited", {
-      username: "octo",
+    expect(console.warn).toHaveBeenCalledWith({
+      event: "github_commit_search_rate_limited",
       status: 429,
       message: "Too many requests",
       rateLimitRemaining: undefined,
@@ -211,8 +211,8 @@ describe("getCommits", () => {
       commits: [],
     });
     expect(console.warn).not.toHaveBeenCalled();
-    expect(console.error).toHaveBeenCalledWith("github_commit_search_failed", {
-      username: "octo",
+    expect(console.error).toHaveBeenCalledWith({
+      event: "github_commit_search_failed",
       status: 403,
       message: "Resource not accessible by integration",
     }, error);
@@ -227,8 +227,8 @@ describe("getCommits", () => {
       error: "Validation failed. User might not exist.",
       commits: [],
     });
-    expect(console.error).toHaveBeenCalledWith("github_commit_search_failed", {
-      username: "octo",
+    expect(console.error).toHaveBeenCalledWith({
+      event: "github_commit_search_failed",
       status: 422,
       message: undefined,
     }, error);
@@ -243,8 +243,8 @@ describe("getCommits", () => {
       error: "Failed to fetch commits.",
       commits: [],
     });
-    expect(console.error).toHaveBeenCalledWith("github_commit_search_failed", {
-      username: "octo",
+    expect(console.error).toHaveBeenCalledWith({
+      event: "github_commit_search_failed",
       status: undefined,
       message: "GitHub is unavailable",
     }, error);
