@@ -13,7 +13,7 @@ A GitHub-themed web application that discovers your origin story on GitHub. Ente
 
 ### Prerequisites
 
-- Node.js 22, or any version matching `>=20.9.0`
+- Node.js 22
 - npm
 
 ### Installation
@@ -75,6 +75,8 @@ Or point the smoke test at any deployed URL:
 PLAYWRIGHT_BASE_URL=https://your-deployment.example npm run test:e2e
 ```
 
+Production deployments also trigger the deployed smoke test automatically through the `Deployed Smoke` GitHub Actions workflow. Manual runs of that workflow require a deployed URL.
+
 For active test-driven development:
 
 ```bash
@@ -87,6 +89,7 @@ npm run test:watch
 - The token is only used server-side by the GitHub API client and is not exposed to the browser.
 - Usernames entered into the search field are sent to GitHub to retrieve public commit data; the app does not store searches.
 - CI runs on every push and pull request to `main`.
+- Production deployment smoke tests run after a successful Vercel deployment and can also be started manually from GitHub Actions.
 
 ## Deployment
 

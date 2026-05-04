@@ -1,0 +1,59 @@
+name: Deployed Smoke
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Fully qualified deployed app URL to smoke test.
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Playwright deployed smoke
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.deployment_status.state == 'success' &&
+        github.event.deployment.environment == 'Production'
+      )
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.base_url || github.event.deployment_status.environment_url }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate smoke target
+        run: |
+          if [ -z "$PLAYWRIGHT_BASE_URL" ]; then
+            echo "PLAYWRIGHT_BASE_URL is required."
+            exit 1
+          fi
+
+          case "$PLAYWRIGHT_BASE_URL" in
+            http://*|https://*) ;;
+            *)
+              echo "PLAYWRIGHT_BASE_URL must be an absolute http(s) URL."
+              exit 1
+              ;;
+          esac
+
+      - name: Run deployed browser smoke tests
+        run: npm run test:e2e
