@@ -8,6 +8,7 @@ import { FaGithub } from "react-icons/fa";
 export default function Home() {
   const [username, setUsername] = useState('');
   const [result, setResult] = useState<CommitData | null>(null);
+  const [lastSearchedUsername, setLastSearchedUsername] = useState('');
   const [isPending, startTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -17,15 +18,31 @@ export default function Home() {
     }
   }, [result?.found]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username.trim()) return;
+  const searchCommits = (searchUsername: string) => {
+    const trimmedUsername = searchUsername.trim();
+    if (!trimmedUsername) return;
 
+    setLastSearchedUsername(trimmedUsername);
     startTransition(async () => {
-       const data = await getCommits(username.trim());
+       const data = await getCommits(trimmedUsername);
        setResult(data);
     });
   };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    searchCommits(username);
+  };
+
+  const resetSearch = () => {
+    setResult(null);
+    requestAnimationFrame(() => searchInputRef.current?.focus());
+  };
+
+  const errorMessage = result && !result.found ? result.error ?? "User not found or no public commits." : "";
+  const isRateLimited = result?.errorKind === "rate_limit";
+  const isEmptyResult = result?.errorKind === "empty";
+  const resultStateRole = isEmptyResult ? "status" : "alert";
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] font-sans">
@@ -37,7 +54,7 @@ export default function Home() {
          </div>
          {result?.found && (
             <button 
-                onClick={() => { setResult(null); setUsername(''); }}
+                onClick={() => { setResult(null); setUsername(''); setLastSearchedUsername(''); }}
                 className="px-3 py-1.5 text-xs font-semibold text-[var(--github-gray-dark)] bg-white border border-[var(--github-border)] rounded-md hover:bg-gray-50 transition-colors shadow-sm"
             >
                 Search another user
@@ -95,12 +112,43 @@ export default function Home() {
         </form>
         )}
 
-        {/* Error State */}
+        {isPending && (
+            <div role="status" aria-live="polite" className="mt-5 w-full max-w-md rounded-md border border-[var(--github-border)] bg-[var(--github-gray-light)] px-4 py-3 text-sm text-[var(--github-gray-text)]">
+                Searching GitHub for {lastSearchedUsername}...
+            </div>
+        )}
+
+        {/* Empty and Error States */}
         {result && !result.found && (
-            <div className="mt-8 p-4 rounded-md bg-red-50 border border-red-200 text-red-700 w-full max-w-md text-center animate-pulse">
-                {result.error || "User not found or no public commits."}
-                <div className="mt-2 text-sm">
-                    <button onClick={() => setResult(null)} className="underline hover:no-underline">Try again</button>
+            <div role={resultStateRole} aria-live={isEmptyResult ? "polite" : undefined} className={`mt-8 w-full max-w-md rounded-md border p-5 text-left shadow-sm ${isEmptyResult ? 'border-[var(--github-border)] bg-[var(--github-gray-light)] text-[var(--github-gray-dark)]' : 'border-red-200 bg-red-50 text-red-800'}`}>
+                <h2 className="text-base font-semibold text-[var(--github-gray-dark)]">
+                    {isRateLimited ? "GitHub is asking us to slow down." : isEmptyResult ? "No public commits found." : "We could not complete that search."}
+                </h2>
+                <p className="mt-2 text-sm text-[var(--github-gray-text)]">
+                    {isRateLimited
+                        ? "Wait a few minutes, then try again. GitHub temporarily limited commit search requests."
+                        : isEmptyResult
+                            ? "Try another username or check back later; GitHub commit search indexing can lag."
+                            : errorMessage}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                    {isRateLimited && (
+                        <button
+                            type="button"
+                            onClick={() => searchCommits(lastSearchedUsername)}
+                            disabled={isPending || !lastSearchedUsername}
+                            className="inline-flex items-center justify-center rounded-md bg-[var(--github-green)] px-3 py-2 text-sm font-semibold text-white hover:bg-[var(--github-green-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--github-green)] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Try again
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={resetSearch}
+                        className="inline-flex items-center justify-center rounded-md border border-[var(--github-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--github-gray-dark)] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2"
+                    >
+                        Edit username
+                    </button>
                 </div>
             </div>
         )}

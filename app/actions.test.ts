@@ -58,6 +58,7 @@ describe("getCommits", () => {
     await expect(getCommits("")).resolves.toEqual({
       found: false,
       error: "Username is required",
+      errorKind: "validation",
       commits: [],
     });
     expect(searchCommits).not.toHaveBeenCalled();
@@ -148,6 +149,7 @@ describe("getCommits", () => {
     await expect(getCommits("octo")).resolves.toEqual({
       found: false,
       error: "No public commits found for this user (or indexing is delayed).",
+      errorKind: "empty",
       commits: [],
     });
   });
@@ -167,6 +169,7 @@ describe("getCommits", () => {
     await expect(getCommits("octo")).resolves.toEqual({
       found: false,
       error: "GitHub rate limit reached. Please try again in a few minutes.",
+      errorKind: "rate_limit",
       commits: [],
     });
     expect(console.warn).toHaveBeenCalledWith({
@@ -187,6 +190,7 @@ describe("getCommits", () => {
     await expect(getCommits("octo")).resolves.toEqual({
       found: false,
       error: "GitHub rate limit reached. Please try again in a few minutes.",
+      errorKind: "rate_limit",
       commits: [],
     });
     expect(console.warn).toHaveBeenCalledWith({
@@ -208,6 +212,7 @@ describe("getCommits", () => {
     await expect(getCommits("octo")).resolves.toEqual({
       found: false,
       error: "Failed to fetch commits.",
+      errorKind: "unknown",
       commits: [],
     });
     expect(console.warn).not.toHaveBeenCalled();
@@ -225,6 +230,7 @@ describe("getCommits", () => {
     await expect(getCommits("octo")).resolves.toEqual({
       found: false,
       error: "Validation failed. User might not exist.",
+      errorKind: "validation",
       commits: [],
     });
     expect(console.error).toHaveBeenCalledWith({
@@ -241,6 +247,7 @@ describe("getCommits", () => {
     await expect(getCommits("octo")).resolves.toEqual({
       found: false,
       error: "Failed to fetch commits.",
+      errorKind: "unknown",
       commits: [],
     });
     expect(console.error).toHaveBeenCalledWith({
