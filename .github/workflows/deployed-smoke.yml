@@ -61,7 +61,7 @@ jobs:
         run: npm run test:e2e
 
       - name: Create or update smoke failure issue
-        if: failure()
+        if: failure() && github.event_name == 'deployment_status'
         env:
           GH_TOKEN: ${{ github.token }}
           SMOKE_TARGET: ${{ env.PLAYWRIGHT_BASE_URL }}
@@ -79,7 +79,7 @@ jobs:
           BODY
           )"
 
-          issue_number="$(gh issue list --state open --search "${issue_title} in:title" --json number --jq '.[0].number')"
+          issue_number="$(gh issue list --state open --search "${issue_title} in:title" --json number --jq '.[0].number // empty')"
 
           if [ -n "$issue_number" ]; then
             gh issue comment "$issue_number" --body "$issue_body"
