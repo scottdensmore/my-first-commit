@@ -40,8 +40,9 @@ export default function Home() {
   };
 
   const errorMessage = result && !result.found ? result.error ?? "User not found or no public commits." : "";
-  const isRateLimited = /rate limit/i.test(errorMessage);
-  const isEmptyResult = /No public commits found/i.test(errorMessage);
+  const isRateLimited = result?.errorKind === "rate_limit";
+  const isEmptyResult = result?.errorKind === "empty";
+  const resultStateRole = isEmptyResult ? "status" : "alert";
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] font-sans">
@@ -119,7 +120,7 @@ export default function Home() {
 
         {/* Empty and Error States */}
         {result && !result.found && (
-            <div role="alert" className={`mt-8 w-full max-w-md rounded-md border p-5 text-left shadow-sm ${isEmptyResult ? 'border-[var(--github-border)] bg-[var(--github-gray-light)] text-[var(--github-gray-dark)]' : 'border-red-200 bg-red-50 text-red-800'}`}>
+            <div role={resultStateRole} aria-live={isEmptyResult ? "polite" : undefined} className={`mt-8 w-full max-w-md rounded-md border p-5 text-left shadow-sm ${isEmptyResult ? 'border-[var(--github-border)] bg-[var(--github-gray-light)] text-[var(--github-gray-dark)]' : 'border-red-200 bg-red-50 text-red-800'}`}>
                 <h2 className="text-base font-semibold text-[var(--github-gray-dark)]">
                     {isRateLimited ? "GitHub is asking us to slow down." : isEmptyResult ? "No public commits found." : "We could not complete that search."}
                 </h2>
@@ -134,8 +135,8 @@ export default function Home() {
                     {isRateLimited && (
                         <button
                             type="button"
-                            onClick={() => searchCommits(username)}
-                            disabled={isPending}
+                            onClick={() => searchCommits(lastSearchedUsername)}
+                            disabled={isPending || !lastSearchedUsername}
                             className="inline-flex items-center justify-center rounded-md bg-[var(--github-green)] px-3 py-2 text-sm font-semibold text-white hover:bg-[var(--github-green-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--github-green)] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Try again

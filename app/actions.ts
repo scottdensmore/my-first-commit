@@ -34,6 +34,7 @@ export interface CommitInfo {
 export interface CommitData {
   found: boolean;
   error?: string;
+  errorKind?: "empty" | "rate_limit" | "validation" | "unknown";
   commits: CommitInfo[];
 }
 
@@ -72,7 +73,7 @@ function isGitHubRateLimitError(errorDetails: GitHubErrorDetails) {
 }
 
 export async function getCommits(username: string): Promise<CommitData> {
-  if (!username) return { found: false, error: "Username is required", commits: [] };
+  if (!username) return { found: false, error: "Username is required", errorKind: "validation", commits: [] };
 
   try {
     const response = await octokit.rest.search.commits({
@@ -85,7 +86,12 @@ export async function getCommits(username: string): Promise<CommitData> {
     const items = response.data.items;
 
     if (!items || items.length === 0) {
-      return { found: false, error: "No public commits found for this user (or indexing is delayed).", commits: [] };
+      return {
+        found: false,
+        error: "No public commits found for this user (or indexing is delayed).",
+        errorKind: "empty",
+        commits: [],
+      };
     }
 
     const commits = items.map(item => ({
@@ -126,6 +132,7 @@ export async function getCommits(username: string): Promise<CommitData> {
         },
       });
       errorMessage = "GitHub rate limit reached. Please try again in a few minutes.";
+      return { found: false, error: errorMessage, errorKind: "rate_limit", commits: [] };
     } else {
       logger.error({
         event: "github_commit_search_failed",
@@ -136,8 +143,11 @@ export async function getCommits(username: string): Promise<CommitData> {
       }, error);
     }
 
-    if (status === 422) errorMessage = "Validation failed. User might not exist.";
+    if (status === 422) {
+      errorMessage = "Validation failed. User might not exist.";
+      return { found: false, error: errorMessage, errorKind: "validation", commits: [] };
+    }
     
-    return { found: false, error: errorMessage, commits: [] };
+    return { found: false, error: errorMessage, errorKind: "unknown", commits: [] };
   }
 }
