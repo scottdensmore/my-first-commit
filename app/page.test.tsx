@@ -65,6 +65,43 @@ describe("Home", () => {
     expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
   });
 
+  it("shows a username format hint before the user types", () => {
+    render(<Home />);
+
+    expect(screen.getByText(/github usernames can use letters, numbers, or single hyphens/i)).toBeInTheDocument();
+  });
+
+  it("blocks searches for usernames with invalid characters", async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo_cat");
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/only letters, numbers, and hyphens/i);
+    expect(screen.getByRole("button", { name: /^search$/i })).toBeDisabled();
+    expect(mockGetCommits).not.toHaveBeenCalled();
+  });
+
+  it("blocks searches for usernames with leading or trailing hyphens", async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "-octo");
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/cannot start or end with a hyphen/i);
+    expect(screen.getByRole("button", { name: /^search$/i })).toBeDisabled();
+  });
+
+  it("blocks searches for usernames longer than GitHub allows", async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "a".repeat(40));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/39 characters or fewer/i);
+    expect(screen.getByRole("button", { name: /^search$/i })).toBeDisabled();
+  });
+
   it("announces the search while a request is pending", async () => {
     let resolveSearch: (value: typeof commitResult) => void = () => undefined;
     mockGetCommits.mockReturnValue(new Promise((resolve) => {

@@ -5,6 +5,18 @@ import { getCommits, CommitData } from './actions';
 import FirstCommitDisplay from '@/components/FirstCommitDisplay';
 import { FaGithub } from "react-icons/fa";
 
+function getUsernameValidationMessage(value: string) {
+  const username = value.trim();
+
+  if (!username) return "";
+  if (username.length > 39) return "GitHub usernames must be 39 characters or fewer.";
+  if (!/^[a-zA-Z0-9-]+$/.test(username)) return "Use only letters, numbers, and hyphens.";
+  if (username.startsWith("-") || username.endsWith("-")) return "GitHub usernames cannot start or end with a hyphen.";
+  if (username.includes("--")) return "GitHub usernames cannot include consecutive hyphens.";
+
+  return "";
+}
+
 export default function Home() {
   const [username, setUsername] = useState('');
   const [result, setResult] = useState<CommitData | null>(null);
@@ -43,6 +55,8 @@ export default function Home() {
   const isRateLimited = result?.errorKind === "rate_limit";
   const isEmptyResult = result?.errorKind === "empty";
   const resultStateRole = isEmptyResult ? "status" : "alert";
+  const usernameValidationMessage = getUsernameValidationMessage(username);
+  const canSearch = Boolean(username.trim()) && !usernameValidationMessage && !isPending;
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] font-sans">
@@ -94,17 +108,29 @@ export default function Home() {
                     value={username}
                     onInput={(e) => setUsername(e.currentTarget.value)}
                     placeholder="username"
+                    aria-describedby="username-hint username-validation"
+                    aria-invalid={Boolean(usernameValidationMessage)}
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="none"
                     spellCheck={false}
-                    className="block w-full pl-7 pr-3 py-3 border border-[var(--github-border)] rounded-md leading-5 bg-white text-[var(--github-gray-dark)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:border-transparent sm:text-sm shadow-sm"
+                    className={`block w-full pl-7 pr-3 py-3 border rounded-md leading-5 bg-white text-[var(--github-gray-dark)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent sm:text-sm shadow-sm ${usernameValidationMessage ? 'border-red-300 focus:ring-red-500' : 'border-[var(--github-border)] focus:ring-[var(--github-blue)]'}`}
                     autoFocus
                 />
+                <p id="username-hint" className="mt-2 text-xs text-[var(--github-gray-text)]">
+                    GitHub usernames can use letters, numbers, or single hyphens.
+                </p>
+                <div id="username-validation" aria-live="polite">
+                    {usernameValidationMessage && (
+                        <p role="alert" className="mt-2 text-xs font-medium text-red-700">
+                            {usernameValidationMessage}
+                        </p>
+                    )}
+                </div>
             </div>
             <button
                 type="submit"
-                disabled={isPending || !username.trim()}
+                disabled={!canSearch}
                 className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-[var(--github-green)] hover:bg-[var(--github-green-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--github-green)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
                 {isPending ? 'Searching...' : 'Search'}
