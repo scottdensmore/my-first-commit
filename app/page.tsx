@@ -33,6 +33,7 @@ export default function Home() {
   const searchCommits = (searchUsername: string) => {
     const trimmedUsername = searchUsername.trim();
     if (!trimmedUsername) return;
+    if (getUsernameValidationMessage(trimmedUsername)) return;
 
     setLastSearchedUsername(trimmedUsername);
     startTransition(async () => {
@@ -120,13 +121,11 @@ export default function Home() {
                 <p id="username-hint" className="mt-2 text-xs text-[var(--github-gray-text)]">
                     GitHub usernames can use letters, numbers, or single hyphens.
                 </p>
-                <div id="username-validation" aria-live="polite">
-                    {usernameValidationMessage && (
-                        <p role="alert" className="mt-2 text-xs font-medium text-red-700">
-                            {usernameValidationMessage}
-                        </p>
-                    )}
-                </div>
+                {usernameValidationMessage && (
+                    <p id="username-validation" role="status" aria-live="polite" className="mt-2 text-xs font-medium text-red-700">
+                        {usernameValidationMessage}
+                    </p>
+                )}
             </div>
             <button
                 type="submit"
@@ -138,7 +137,7 @@ export default function Home() {
         </form>
         )}
 
-        {isPending && (
+        {isPending && !result && (
             <div role="status" aria-live="polite" className="mt-5 w-full max-w-md rounded-md border border-[var(--github-border)] bg-[var(--github-gray-light)] px-4 py-3 text-sm text-[var(--github-gray-text)]">
                 Searching GitHub for {lastSearchedUsername}...
             </div>

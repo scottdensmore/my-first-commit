@@ -77,8 +77,17 @@ describe("Home", () => {
 
     await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo_cat");
 
-    expect(screen.getByRole("alert")).toHaveTextContent(/only letters, numbers, and hyphens/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/only letters, numbers, and hyphens/i);
     expect(screen.getByRole("button", { name: /^search$/i })).toBeDisabled();
+    expect(mockGetCommits).not.toHaveBeenCalled();
+  });
+
+  it("does not submit invalid usernames from the keyboard", async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo_cat{Enter}");
+
     expect(mockGetCommits).not.toHaveBeenCalled();
   });
 
@@ -88,7 +97,7 @@ describe("Home", () => {
 
     await user.type(screen.getByRole("searchbox", { name: /github username/i }), "-octo");
 
-    expect(screen.getByRole("alert")).toHaveTextContent(/cannot start or end with a hyphen/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/cannot start or end with a hyphen/i);
     expect(screen.getByRole("button", { name: /^search$/i })).toBeDisabled();
   });
 
@@ -98,7 +107,17 @@ describe("Home", () => {
 
     await user.type(screen.getByRole("searchbox", { name: /github username/i }), "a".repeat(40));
 
-    expect(screen.getByRole("alert")).toHaveTextContent(/39 characters or fewer/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/39 characters or fewer/i);
+    expect(screen.getByRole("button", { name: /^search$/i })).toBeDisabled();
+  });
+
+  it("blocks searches for usernames with consecutive hyphens", async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo--cat");
+
+    expect(screen.getByRole("status")).toHaveTextContent(/cannot include consecutive hyphens/i);
     expect(screen.getByRole("button", { name: /^search$/i })).toBeDisabled();
   });
 
