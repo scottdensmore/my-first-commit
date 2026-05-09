@@ -35,6 +35,7 @@ const commitResult = {
 describe("Home", () => {
   beforeEach(() => {
     mockGetCommits.mockReset();
+    window.history.replaceState(null, "", "/");
   });
 
   it("focuses the GitHub search field and marks it as a non-credential search box", () => {
@@ -62,7 +63,42 @@ describe("Home", () => {
     await waitFor(() => {
       expect(mockGetCommits).toHaveBeenCalledWith("octo");
     });
+    expect(window.location.search).toBe("?user=octo");
     expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
+  });
+
+  it("auto-searches a valid username from the URL", async () => {
+    mockGetCommits.mockResolvedValue(commitResult);
+    window.history.replaceState(null, "", "/?user=octo");
+
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(mockGetCommits).toHaveBeenCalledWith("octo");
+    });
+    expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
+  });
+
+  it("does not auto-search an invalid username from the URL", () => {
+    window.history.replaceState(null, "", "/?user=octo_cat");
+
+    render(<Home />);
+
+    expect(mockGetCommits).not.toHaveBeenCalled();
+    expect(screen.getByRole("searchbox", { name: /github username/i })).toHaveValue("octo_cat");
+    expect(screen.getByRole("status")).toHaveTextContent(/only letters, numbers, and hyphens/i);
+  });
+
+  it("clears the shared URL when searching another user", async () => {
+    mockGetCommits.mockResolvedValue(commitResult);
+    window.history.replaceState(null, "", "/?user=octo");
+    render(<Home />);
+    await screen.findByRole("button", { name: /search another user/i });
+
+    await userEvent.click(screen.getByRole("button", { name: /search another user/i }));
+
+    expect(window.location.search).toBe("");
+    expect(screen.getByRole("searchbox", { name: /github username/i })).toHaveValue("");
   });
 
   it("shows a username format hint before the user types", () => {

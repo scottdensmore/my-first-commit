@@ -17,8 +17,27 @@ function getUsernameValidationMessage(value: string) {
   return "";
 }
 
+function updateSharedSearchUrl(username: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("user", username);
+  window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function clearSharedSearchUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("user");
+  const search = url.searchParams.toString();
+  window.history.replaceState(null, "", `${url.pathname}${search ? `?${search}` : ""}${url.hash}`);
+}
+
+function getInitialSharedUsername() {
+  if (typeof window === "undefined") return "";
+
+  return new URLSearchParams(window.location.search).get("user") ?? "";
+}
+
 export default function Home() {
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(getInitialSharedUsername);
   const [result, setResult] = useState<CommitData | null>(null);
   const [lastSearchedUsername, setLastSearchedUsername] = useState('');
   const [isPending, startTransition] = useTransition();
@@ -30,10 +49,11 @@ export default function Home() {
     }
   }, [result?.found]);
 
-  const searchCommits = (searchUsername: string) => {
+  const searchCommits = (searchUsername: string, options: { updateUrl?: boolean } = {}) => {
     const trimmedUsername = searchUsername.trim();
     if (!trimmedUsername) return;
     if (getUsernameValidationMessage(trimmedUsername)) return;
+    if (options.updateUrl) updateSharedSearchUrl(trimmedUsername);
 
     setLastSearchedUsername(trimmedUsername);
     startTransition(async () => {
@@ -44,13 +64,25 @@ export default function Home() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    searchCommits(username);
+    searchCommits(username, { updateUrl: true });
   };
 
   const resetSearch = () => {
     setResult(null);
+    clearSharedSearchUrl();
     requestAnimationFrame(() => searchInputRef.current?.focus());
   };
+
+  useEffect(() => {
+    const sharedUsername = new URLSearchParams(window.location.search).get("user");
+    if (!sharedUsername) return;
+
+    const autoSearch = window.setTimeout(() => {
+      searchCommits(sharedUsername);
+    }, 0);
+
+    return () => window.clearTimeout(autoSearch);
+  }, []);
 
   const errorMessage = result && !result.found ? result.error ?? "User not found or no public commits." : "";
   const isRateLimited = result?.errorKind === "rate_limit";
@@ -69,7 +101,7 @@ export default function Home() {
          </div>
          {result?.found && (
             <button 
-                onClick={() => { setResult(null); setUsername(''); setLastSearchedUsername(''); }}
+                onClick={() => { setResult(null); setUsername(''); setLastSearchedUsername(''); clearSharedSearchUrl(); }}
                 className="px-3 py-1.5 text-xs font-semibold text-[var(--github-gray-dark)] bg-white border border-[var(--github-border)] rounded-md hover:bg-gray-50 transition-colors shadow-sm"
             >
                 Search another user
