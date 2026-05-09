@@ -83,6 +83,15 @@ You can also start `Deployed Smoke` manually from GitHub Actions. Provide the pu
 
 ## Observability
 
+This app intentionally uses Vercel-only observability. Do not add Sentry, GlitchTip, or another paid error-monitoring service unless the app grows beyond personal use.
+
+Use these signals together:
+
+- Vercel Analytics for traffic and page-level usage.
+- Vercel Logs for runtime errors and server-side GitHub API failures.
+- GitHub Actions for CI and deployed smoke status.
+- GitHub issues for production smoke incidents.
+
 ### Vercel Analytics
 
 Use Vercel Analytics to answer:
@@ -92,6 +101,18 @@ Use Vercel Analytics to answer:
 - Did usage change after a deploy?
 
 If analytics look empty after a production deploy, confirm the app includes `@vercel/analytics` and that the latest production deploy completed.
+
+### Vercel Logs
+
+Use Vercel Logs when the app is slow, returns an error, or search behavior looks wrong.
+
+In Vercel:
+
+1. Open the `my-first-commit` project.
+2. Go to `Logs`.
+3. Filter to the production deployment.
+4. Search for `github_commit_search_rate_limited` or `github_commit_search_failed`.
+5. Check whether failures line up with a recent deploy, missing environment variable, GitHub rate limit, or invalid search input.
 
 ### Structured Logs
 
