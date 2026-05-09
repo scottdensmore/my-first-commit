@@ -65,6 +65,59 @@ describe("Home", () => {
     expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
   });
 
+  it("announces the search while a request is pending", async () => {
+    let resolveSearch: (value: typeof commitResult) => void = () => undefined;
+    mockGetCommits.mockReturnValue(new Promise((resolve) => {
+      resolveSearch = resolve;
+    }));
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+
+    expect(screen.getByRole("status")).toHaveTextContent(/searching github for octo/i);
+    expect(screen.getByRole("button", { name: /searching/i })).toBeDisabled();
+
+    resolveSearch(commitResult);
+
+    expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
+  });
+
+  it("renders a helpful empty state when no public commits are found", async () => {
+    mockGetCommits.mockResolvedValue({
+      found: false,
+      error: "No public commits found for this user (or indexing is delayed).",
+      commits: [],
+    });
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "new-user");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+
+    expect(await screen.findByRole("heading", { name: /no public commits found/i })).toBeInTheDocument();
+    expect(screen.getByText(/try another username or check back later/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /edit username/i })).toBeInTheDocument();
+  });
+
+  it("renders a recovery-focused error state for rate limits", async () => {
+    mockGetCommits.mockResolvedValue({
+      found: false,
+      error: "GitHub rate limit reached. Please try again in a few minutes.",
+      commits: [],
+    });
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+
+    expect(await screen.findByRole("heading", { name: /github is asking us to slow down/i })).toBeInTheDocument();
+    expect(screen.getByText(/wait a few minutes/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
+  });
+
   it("clears the result and refocuses the search field when searching again", async () => {
     mockGetCommits.mockResolvedValue(commitResult);
     const user = userEvent.setup();
