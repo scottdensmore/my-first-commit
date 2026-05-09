@@ -36,6 +36,25 @@ PRODUCTION_BASE_URL=https://my-first-commit-eta.vercel.app
 
 The production deploy is healthy when both `CI / validate` and `Deployed Smoke` pass on `main`.
 
+## Production Smoke Alerts
+
+When `Deployed Smoke` fails, GitHub Actions opens or updates a GitHub issue titled:
+
+```text
+Production smoke test failed
+```
+
+Use that issue as the incident record. It includes the smoke target, workflow run, and commit SHA.
+
+When responding to a smoke failure:
+
+1. Open the workflow run linked from the issue.
+2. Confirm the smoke target is the public production URL.
+3. Open production manually and check whether the app renders.
+4. Fix the deployment, configuration, or app regression.
+5. Re-run `Deployed Smoke` or deploy a fix.
+6. Close the issue after production smoke passes again.
+
 ## Manual Validation
 
 Run the core checks locally:
