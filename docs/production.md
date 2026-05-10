@@ -7,7 +7,7 @@ This runbook covers the production checks and levers for My First Commit.
 - Public app: https://my-first-commit-eta.vercel.app
 - GitHub repository: https://github.com/scottdensmore/my-first-commit
 
-Use the public app URL for smoke tests. Vercel's generated deployment URLs can be protected and may return `401`.
+Use the public app URL for production health checks. Vercel's generated deployment URLs can be protected and may return `401`.
 
 ## Required Configuration
 
@@ -32,28 +32,28 @@ PRODUCTION_BASE_URL=https://my-first-commit-eta.vercel.app
 2. GitHub Actions runs `CI / validate`.
 3. Vercel builds and deploys production.
 4. GitHub receives a production `deployment_status` event.
-5. The `Deployed Smoke` workflow runs Playwright against `PRODUCTION_BASE_URL`.
+5. The `Production Health Check` workflow runs Playwright against `PRODUCTION_BASE_URL`.
 
-The production deploy is healthy when both `CI / validate` and `Deployed Smoke` pass on `main`.
+The production deploy is healthy when both `CI / validate` and `Production Health Check` pass on `main`.
 
-## Production Smoke Alerts
+## Production Health Check Alerts
 
-When `Deployed Smoke` fails, GitHub Actions opens or updates a GitHub issue titled:
+When `Production Health Check` fails, GitHub Actions opens or updates a GitHub issue titled:
 
 ```text
-Production smoke test failed
+Production health check failed
 ```
 
-Use that issue as the incident record. It includes the smoke target, workflow run, and commit SHA.
+Use that issue as the incident record. It includes the health check target, workflow run, and commit SHA.
 
-When responding to a smoke failure:
+When responding to a health check failure:
 
 1. Open the workflow run linked from the issue.
-2. Confirm the smoke target is the public production URL.
+2. Confirm the health check target is the public production URL.
 3. Open production manually and check whether the app renders.
 4. Fix the deployment, configuration, or app regression.
-5. Re-run `Deployed Smoke` or deploy a fix.
-6. Close the issue after production smoke passes again.
+5. Re-run `Production Health Check` or deploy a fix.
+6. Close the issue after the production health check passes again.
 
 ## Manual Validation
 
@@ -67,19 +67,19 @@ npm run build
 npm run test:e2e
 ```
 
-Run a smoke test against production:
+Run a health check against production:
 
 ```bash
 npm run test:e2e:deployed
 ```
 
-Run a smoke test against any deployed URL:
+Run a health check against any deployed URL:
 
 ```bash
 PLAYWRIGHT_BASE_URL=https://your-deployment.example npm run test:e2e
 ```
 
-You can also start `Deployed Smoke` manually from GitHub Actions. Provide the public app URL as `base_url`.
+You can also start `Production Health Check` manually from GitHub Actions. Provide the public app URL as `base_url`.
 
 ## Observability
 
@@ -89,8 +89,8 @@ Use these signals together:
 
 - Vercel Analytics for traffic and page-level usage.
 - Vercel Logs for runtime errors and server-side GitHub API failures.
-- GitHub Actions for CI and deployed smoke status.
-- GitHub issues for production smoke incidents.
+- GitHub Actions for CI and production health check status.
+- GitHub issues for production health check incidents.
 
 ### Vercel Analytics
 
@@ -146,7 +146,7 @@ This powers the recent-search shortcuts. Clearing browser site data removes the 
 
 ## Troubleshooting
 
-### Deployed Smoke Fails With `401`
+### Production Health Check Fails With `401`
 
 Check the target URL. Vercel-generated deployment URLs can be protected. Confirm the workflow is using:
 
@@ -154,9 +154,9 @@ Check the target URL. Vercel-generated deployment URLs can be protected. Confirm
 PRODUCTION_BASE_URL=https://my-first-commit-eta.vercel.app
 ```
 
-### Deployed Smoke Cannot Find App Text
+### Production Health Check Cannot Find App Text
 
-Open the smoke target URL and confirm it renders the public app. If it shows a login, protection page, or unrelated Vercel page, fix the target URL.
+Open the health check target URL and confirm it renders the public app. If it shows a login, protection page, or unrelated Vercel page, fix the target URL.
 
 ### GitHub Searches Are Rate Limited
 
