@@ -64,6 +64,16 @@ function saveStoredRecentSearches(searches: string[]) {
   }
 }
 
+function clearStoredRecentSearches() {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.removeItem(RECENT_SEARCHES_STORAGE_KEY);
+  } catch {
+    // Recent searches are optional and should not affect the search flow.
+  }
+}
+
 export default function Home() {
   const [username, setUsername] = useState(getInitialSharedUsername);
   const [result, setResult] = useState<CommitData | null>(null);
@@ -97,6 +107,12 @@ export default function Home() {
       return nextSearches;
     });
   }, []);
+
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+    clearStoredRecentSearches();
+    requestAnimationFrame(() => searchInputRef.current?.focus());
+  };
 
   const searchCommits = useCallback((searchUsername: string, options: { updateUrl?: boolean } = {}) => {
     const trimmedUsername = searchUsername.trim();
@@ -234,9 +250,19 @@ export default function Home() {
 
         {!result?.found && recentSearches.length > 0 && (
             <section aria-labelledby="recent-searches-heading" className="mt-4 w-full max-w-md">
-                <h2 id="recent-searches-heading" className="text-xs font-semibold uppercase tracking-normal text-[var(--github-gray-text)]">
-                    Recent searches
-                </h2>
+                <div className="flex items-center justify-between gap-3">
+                    <h2 id="recent-searches-heading" className="text-xs font-semibold uppercase tracking-normal text-[var(--github-gray-text)]">
+                        Recent searches
+                    </h2>
+                    <button
+                        type="button"
+                        onClick={clearRecentSearches}
+                        aria-label="Clear recent searches"
+                        className="text-xs font-medium text-[var(--github-gray-text)] hover:text-[var(--github-blue)] focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2 rounded-sm"
+                    >
+                        Clear
+                    </button>
+                </div>
                 <div className="mt-2 flex flex-wrap gap-2">
                     {recentSearches.map((recentUsername) => (
                         <button
@@ -300,6 +326,14 @@ export default function Home() {
         {/* Result State */}
         {result?.found && result.commits.length > 0 && (
             <div className="w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 pt-8">
+                <div className="mb-6 w-full max-w-2xl text-left">
+                    <h1 className="text-2xl font-bold text-[var(--github-gray-dark)]">
+                        First public commit found
+                    </h1>
+                    <p className="mt-2 text-sm text-[var(--github-gray-text)]">
+                        GitHub search may miss older commits when indexing is incomplete, delayed, or author metadata changed.
+                    </p>
+                </div>
                 
                 <div className="w-full max-w-2xl relative">
                     {/* The "Graph" Line */}
