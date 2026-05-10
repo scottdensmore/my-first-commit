@@ -1,5 +1,11 @@
 # My First Commit
 
+[![CI](https://github.com/scottdensmore/my-first-commit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/scottdensmore/my-first-commit/actions/workflows/ci.yml)
+[![Production Health Check](https://github.com/scottdensmore/my-first-commit/actions/workflows/deployed-smoke.yml/badge.svg?branch=main)](https://github.com/scottdensmore/my-first-commit/actions/workflows/deployed-smoke.yml)
+[![Vercel](https://img.shields.io/badge/deployed%20on-Vercel-black)](https://my-first-commit-eta.vercel.app)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22.x-339933)](https://nodejs.org/)
+
 A GitHub-themed web application that discovers your origin story on GitHub. Enter any username to see their first public commit and the nine that followed, beautifully connected in an activity-graph style timeline.
 
 ## Features
