@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState, useTransition } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { getCommits, CommitData } from './actions';
 import FirstCommitDisplay from '@/components/FirstCommitDisplay';
 import { FaGithub } from "react-icons/fa";
@@ -49,7 +49,7 @@ export default function Home() {
     }
   }, [result?.found]);
 
-  const searchCommits = (searchUsername: string, options: { updateUrl?: boolean } = {}) => {
+  const searchCommits = useCallback((searchUsername: string, options: { updateUrl?: boolean } = {}) => {
     const trimmedUsername = searchUsername.trim();
     if (!trimmedUsername) return;
     if (getUsernameValidationMessage(trimmedUsername)) return;
@@ -60,7 +60,7 @@ export default function Home() {
        const data = await getCommits(trimmedUsername);
        setResult(data);
     });
-  };
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +82,7 @@ export default function Home() {
     }, 0);
 
     return () => window.clearTimeout(autoSearch);
-  }, []);
+  }, [searchCommits]);
 
   const errorMessage = result && !result.found ? result.error ?? "User not found or no public commits." : "";
   const isRateLimited = result?.errorKind === "rate_limit";
