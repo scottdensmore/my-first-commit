@@ -49,6 +49,30 @@ test("home page keeps the search form compact when helper text is visible", asyn
   expect(Math.abs(buttonBox!.y - inputBox!.y)).toBeLessThanOrEqual(2);
 });
 
+test("home page visual layout stays stable", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+
+  const heading = page.getByRole("heading", { name: "Discover your origin." });
+  const searchForm = page.getByRole("search", { name: "GitHub commit search" });
+  const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+  const screenshot = await page.screenshot({ fullPage: true });
+
+  await expect(heading).toBeVisible();
+  await expect(searchForm).toBeVisible();
+  expect(screenshot.length).toBeGreaterThan(25_000);
+
+  const headingBox = await heading.boundingBox();
+  const formBox = await searchForm.boundingBox();
+  const inputBox = await searchBox.boundingBox();
+
+  expect(headingBox).not.toBeNull();
+  expect(formBox).not.toBeNull();
+  expect(inputBox).not.toBeNull();
+  expect(headingBox!.y).toBeLessThan(formBox!.y);
+  expect(formBox!.width).toBeGreaterThanOrEqual(inputBox!.width);
+});
+
 test("home page blocks invalid usernames without leaving keyboard flow", async ({ page }) => {
   await page.goto("/");
 

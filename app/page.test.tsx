@@ -69,6 +69,8 @@ describe("Home", () => {
       expect(mockGetCommits).toHaveBeenCalledWith("octo");
     });
     expect(window.location.search).toBe("?user=octo");
+    expect(await screen.findByRole("heading", { name: /first public commit found/i })).toBeInTheDocument();
+    expect(screen.getByText(/github search may miss older commits/i)).toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
   });
 
@@ -149,6 +151,19 @@ describe("Home", () => {
       expect(mockGetCommits).toHaveBeenCalledWith("octo");
     });
     expect(window.location.search).toBe("?user=octo");
+  });
+
+  it("lets users clear recent searches stored in the browser", async () => {
+    window.localStorage.setItem("my-first-commit:recent-searches", JSON.stringify(["octo"]));
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await screen.findByRole("button", { name: /search octo again/i });
+
+    await user.click(screen.getByRole("button", { name: /clear recent searches/i }));
+
+    expect(screen.queryByRole("heading", { name: /recent searches/i })).not.toBeInTheDocument();
+    expect(window.localStorage.getItem("my-first-commit:recent-searches")).toBeNull();
   });
 
   it("does not save failed searches as recent local shortcuts", async () => {

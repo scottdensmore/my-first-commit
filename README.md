@@ -52,6 +52,13 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 - Recent searches are stored only in the user's browser under `my-first-commit:recent-searches`.
 - The app does not store searches on a server.
 
+## Limitations
+
+- GitHub commit search can lag behind newly pushed commits.
+- Only public commits indexed by GitHub are searchable; private commits are never included.
+- Older commits can be missed if GitHub's public search index does not return them for the author query.
+- Results depend on the author metadata GitHub exposes for public commits.
+
 ## Documentation
 
 - Use the [development guide](docs/development.md) for local setup, environment variables, testing, and deployment commands.
