@@ -89,6 +89,9 @@ export default function Home() {
   const isEmptyResult = result?.errorKind === "empty";
   const resultStateRole = isEmptyResult ? "status" : "alert";
   const usernameValidationMessage = getUsernameValidationMessage(username);
+  const usernameDescriptionIds = usernameValidationMessage
+    ? "username-hint username-validation"
+    : "username-hint";
   const canSearch = Boolean(username.trim()) && !usernameValidationMessage && !isPending;
 
   return (
@@ -125,7 +128,13 @@ export default function Home() {
 
         {/* Search Form */}
         {!result?.found && (
-        <form onSubmit={handleSearch} className="w-full max-w-md flex flex-col sm:flex-row gap-2">
+        <form
+            onSubmit={handleSearch}
+            role="search"
+            aria-label="GitHub commit search"
+            aria-busy={isPending}
+            className="w-full max-w-md flex flex-col sm:flex-row gap-2"
+        >
             <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--github-gray-text)]">
                     <span className="font-mono text-sm">@</span>
@@ -141,7 +150,7 @@ export default function Home() {
                     value={username}
                     onInput={(e) => setUsername(e.currentTarget.value)}
                     placeholder="username"
-                    aria-describedby="username-hint username-validation"
+                    aria-describedby={usernameDescriptionIds}
                     aria-invalid={Boolean(usernameValidationMessage)}
                     autoComplete="off"
                     autoCorrect="off"

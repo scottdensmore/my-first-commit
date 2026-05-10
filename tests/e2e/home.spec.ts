@@ -29,6 +29,24 @@ test("home page search field is keyboard-ready and not treated as a credential f
   await expect(page.getByText(/Not affiliated with GitHub/)).toBeVisible();
 });
 
+test("home page blocks invalid usernames without leaving keyboard flow", async ({ page }) => {
+  await page.goto("/");
+
+  const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+  const searchButton = page.getByRole("button", { name: "Search" });
+
+  await searchBox.fill("octo_cat");
+
+  await expect(searchBox).toHaveAttribute("aria-invalid", "true");
+  await expect(searchBox).toHaveAttribute("aria-describedby", "username-hint username-validation");
+  await expect(page.getByRole("status")).toContainText("Use only letters, numbers, and hyphens.");
+  await expect(searchButton).toBeDisabled();
+
+  await searchBox.press("Enter");
+  await expect(page).not.toHaveURL(/\?user=/);
+  await expect(searchBox).toBeFocused();
+});
+
 test("home page advertises branded app and social preview images", async ({ page, request }) => {
   await page.goto("/");
 

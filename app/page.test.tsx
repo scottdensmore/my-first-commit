@@ -107,6 +107,28 @@ describe("Home", () => {
     expect(screen.getByText(/github usernames can use letters, numbers, or single hyphens/i)).toBeInTheDocument();
   });
 
+  it("describes the search field with only rendered accessibility text", async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    const input = screen.getByRole("searchbox", { name: /github username/i });
+
+    expect(input).toHaveAttribute("aria-describedby", "username-hint");
+    expect(input).not.toHaveAttribute("aria-invalid", "true");
+
+    await user.type(input, "octo_cat");
+
+    expect(input).toHaveAttribute("aria-describedby", "username-hint username-validation");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("status")).toHaveAttribute("id", "username-validation");
+
+    await user.clear(input);
+
+    expect(input).toHaveAttribute("aria-describedby", "username-hint");
+    expect(input).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("blocks searches for usernames with invalid characters", async () => {
     const user = userEvent.setup();
     render(<Home />);
@@ -174,6 +196,27 @@ describe("Home", () => {
     resolveSearch(commitResult);
 
     expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
+  });
+
+  it("marks the search form as busy while a request is pending", async () => {
+    let resolveSearch: (value: typeof commitResult) => void = () => undefined;
+    mockGetCommits.mockReturnValue(new Promise((resolve) => {
+      resolveSearch = resolve;
+    }));
+    const user = userEvent.setup();
+    render(<Home />);
+
+    const form = screen.getByRole("search", { name: /github commit search/i });
+    expect(form).toHaveAttribute("aria-busy", "false");
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+
+    expect(form).toHaveAttribute("aria-busy", "true");
+
+    resolveSearch(commitResult);
+
+    await screen.findByRole("link", { name: "Initial commit" });
   });
 
   it("renders a helpful empty state when no public commits are found", async () => {
@@ -250,6 +293,27 @@ describe("Home", () => {
     const input = screen.getByRole("searchbox", { name: /github username/i });
     expect(input).toHaveFocus();
     expect(input).toHaveValue("");
+  });
+
+  it("refocuses the search field when editing after an empty result", async () => {
+    mockGetCommits.mockResolvedValue({
+      found: false,
+      error: "No public commits found for this user (or indexing is delayed).",
+      errorKind: "empty",
+      commits: [],
+    });
+    const user = userEvent.setup();
+    render(<Home />);
+
+    const input = screen.getByRole("searchbox", { name: /github username/i });
+    await user.type(input, "new-user");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+    await screen.findByRole("heading", { name: /no public commits found/i });
+
+    await user.click(screen.getByRole("button", { name: /edit username/i }));
+
+    expect(input).toHaveFocus();
+    expect(input).toHaveValue("new-user");
   });
 
   it("uses the spaced app name in the header and omits clone branding from the footer", () => {
