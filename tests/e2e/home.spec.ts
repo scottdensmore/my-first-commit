@@ -56,11 +56,9 @@ test("home page visual layout stays stable", async ({ page }) => {
   const heading = page.getByRole("heading", { name: "Discover your origin." });
   const searchForm = page.getByRole("search", { name: "GitHub commit search" });
   const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
-  const screenshot = await page.screenshot({ fullPage: true });
 
   await expect(heading).toBeVisible();
   await expect(searchForm).toBeVisible();
-  expect(screenshot.length).toBeGreaterThan(25_000);
 
   const headingBox = await heading.boundingBox();
   const formBox = await searchForm.boundingBox();
@@ -71,6 +69,7 @@ test("home page visual layout stays stable", async ({ page }) => {
   expect(inputBox).not.toBeNull();
   expect(headingBox!.y).toBeLessThan(formBox!.y);
   expect(formBox!.width).toBeGreaterThanOrEqual(inputBox!.width);
+  expect(formBox!.height).toBeGreaterThan(inputBox!.height);
 });
 
 test("home page blocks invalid usernames without leaving keyboard flow", async ({ page }) => {
