@@ -131,3 +131,24 @@ test("unknown routes show a branded not-found page", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "This commit path does not exist." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Go home" })).toHaveAttribute("href", "/");
 });
+
+test("health endpoint reports app status without caching", async ({ request }) => {
+  const response = await request.get("/api/health");
+
+  expect(response.status()).toBe(200);
+  expect(response.headers()["cache-control"]).toContain("no-store");
+  expect(response.headers()["cache-control"]).toContain("max-age=0");
+
+  const body = await response.json();
+
+  expect(body).toMatchObject({
+    status: "ok",
+    service: "my-first-commit",
+    checks: {
+      siteUrl: {
+        configured: expect.any(Boolean),
+      },
+    },
+  });
+  expect(Date.parse(body.timestamp)).not.toBeNaN();
+});

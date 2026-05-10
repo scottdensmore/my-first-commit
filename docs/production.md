@@ -9,6 +9,14 @@ This runbook covers the production checks and levers for My First Commit.
 
 Use the public app URL for production health checks. Vercel's generated deployment URLs can be protected and may return `401`.
 
+The app also exposes a lightweight runtime health endpoint:
+
+```text
+https://my-first-commit-eta.vercel.app/api/health
+```
+
+It returns JSON status, deployment metadata, Node runtime version, and whether the public site URL is configured. It does not expose server-side secrets.
+
 ## Required Configuration
 
 Vercel environment variables:
@@ -71,6 +79,12 @@ Run a health check against production:
 
 ```bash
 npm run test:e2e:deployed
+```
+
+Check the runtime health endpoint directly:
+
+```bash
+curl https://my-first-commit-eta.vercel.app/api/health
 ```
 
 Run a health check against any deployed URL:
