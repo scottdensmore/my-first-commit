@@ -188,29 +188,31 @@ export default function Home() {
             className="w-full max-w-md flex flex-col sm:flex-row gap-2"
         >
             <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--github-gray-text)]">
-                    <span className="font-mono text-sm">@</span>
-                </div>
                 <label htmlFor="commit-search" className="sr-only">
                     GitHub username
                 </label>
-                <input
-                    ref={searchInputRef}
-                    id="commit-search"
-                    name="commit-search"
-                    type="search"
-                    value={username}
-                    onInput={(e) => setUsername(e.currentTarget.value)}
-                    placeholder="username"
-                    aria-describedby={usernameDescriptionIds}
-                    aria-invalid={Boolean(usernameValidationMessage)}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    className={`block w-full pl-7 pr-3 py-3 border rounded-md leading-5 bg-white text-[var(--github-gray-dark)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent sm:text-sm shadow-sm ${usernameValidationMessage ? 'border-red-300 focus:ring-red-500' : 'border-[var(--github-border)] focus:ring-[var(--github-blue)]'}`}
-                    autoFocus
-                />
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-[var(--github-gray-text)]">
+                        <span className="font-mono text-sm">@</span>
+                    </div>
+                    <input
+                        ref={searchInputRef}
+                        id="commit-search"
+                        name="commit-search"
+                        type="search"
+                        value={username}
+                        onInput={(e) => setUsername(e.currentTarget.value)}
+                        placeholder="username"
+                        aria-describedby={usernameDescriptionIds}
+                        aria-invalid={Boolean(usernameValidationMessage)}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        className={`block h-12 w-full rounded-md border bg-white py-3 pl-7 pr-3 leading-5 text-[var(--github-gray-dark)] placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:border-transparent sm:text-sm ${usernameValidationMessage ? 'border-red-300 focus:ring-red-500' : 'border-[var(--github-border)] focus:ring-[var(--github-blue)]'}`}
+                        autoFocus
+                    />
+                </div>
                 <p id="username-hint" className="mt-2 text-xs text-[var(--github-gray-text)]">
                     GitHub usernames can use letters, numbers, or single hyphens.
                 </p>
@@ -223,7 +225,7 @@ export default function Home() {
             <button
                 type="submit"
                 disabled={!canSearch}
-                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-[var(--github-green)] hover:bg-[var(--github-green-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--github-green)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="inline-flex h-12 items-center justify-center rounded-md border border-transparent bg-[var(--github-green)] px-6 text-base font-medium text-white shadow-sm transition-colors hover:bg-[var(--github-green-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--github-green)] disabled:cursor-not-allowed disabled:opacity-50 sm:self-start"
             >
                 {isPending ? 'Searching...' : 'Search'}
             </button>
