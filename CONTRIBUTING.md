@@ -5,12 +5,12 @@ Thanks for helping improve My First Commit. Keep changes small, tested, and easy
 ## Workflow
 
 1. Start from the latest `main`.
-2. Create a focused branch using the `scottdensmore/` prefix for local work:
+2. Create a focused branch. When working directly in this repository, use your GitHub handle as a branch prefix:
 
    ```bash
    git checkout main
    git pull
-   git checkout -b scottdensmore/<type>/<short-description>
+   git checkout -b <your-github-handle>/<type>/<short-description>
    ```
 
 3. Make one logical change per pull request.

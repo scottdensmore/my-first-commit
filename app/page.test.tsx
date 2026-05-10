@@ -345,18 +345,21 @@ describe("Home", () => {
       errorKind: "timeout" as const,
       heading: /github took too long to respond/i,
       details: /request timed out/i,
+      canRetry: true,
     },
     {
       errorKind: "unavailable" as const,
       heading: /github search is temporarily unavailable/i,
       details: /temporary service error/i,
+      canRetry: true,
     },
     {
       errorKind: "validation" as const,
       heading: /github could not validate that search/i,
       details: /check the username/i,
+      canRetry: false,
     },
-  ])("renders specific recovery copy for $errorKind errors", async ({ errorKind, heading, details }) => {
+  ])("renders specific recovery copy for $errorKind errors", async ({ errorKind, heading, details, canRetry }) => {
     mockGetCommits.mockResolvedValue({
       found: false,
       error: "Search failed.",
@@ -371,6 +374,28 @@ describe("Home", () => {
 
     expect(await screen.findByRole("heading", { name: heading })).toBeInTheDocument();
     expect(screen.getByText(details)).toBeInTheDocument();
+    if (canRetry) {
+      expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
+    } else {
+      expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
+    }
+  });
+
+  it("shows a retry action for unknown GitHub errors", async () => {
+    mockGetCommits.mockResolvedValue({
+      found: false,
+      error: "GitHub commit search failed. Please try again.",
+      errorKind: "unknown",
+      commits: [],
+    });
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+
+    expect(await screen.findByRole("heading", { name: /we could not complete that search/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
   });
 
   it("retries the username that produced a rate-limit error", async () => {
