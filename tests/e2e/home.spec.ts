@@ -35,6 +35,10 @@ test("home page keeps the search form compact when helper text is visible", asyn
   const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
   const searchButton = page.getByRole("button", { name: "Search" });
 
+  await page.waitForLoadState("networkidle");
+  await expect(searchBox).toBeVisible();
+  await expect(searchButton).toBeVisible();
+
   const inputBox = await searchBox.boundingBox();
   const buttonBox = await searchButton.boundingBox();
 
