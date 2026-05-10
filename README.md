@@ -31,6 +31,7 @@ The app is intentionally small: no accounts, no database, and no server-side sto
 - **Live app:** [my-first-commit-eta.vercel.app](https://my-first-commit-eta.vercel.app)
 - **Development guide:** [docs/development.md](docs/development.md)
 - **Production runbook:** [docs/production.md](docs/production.md)
+- **Contributing guide:** [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## How It Works
 
@@ -63,6 +64,7 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 
 - Use the [development guide](docs/development.md) for local setup, environment variables, testing, and deployment commands.
 - Use the [production runbook](docs/production.md) for production checks, observability, and troubleshooting.
+- Use the [contributing guide](CONTRIBUTING.md) for branch, PR, review, and validation workflow.
 
 ## License
 

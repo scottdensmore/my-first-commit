@@ -74,6 +74,41 @@ function clearStoredRecentSearches() {
   }
 }
 
+function getResultMessage(result: CommitData) {
+  switch (result.errorKind) {
+    case "rate_limit":
+      return {
+        title: "GitHub is asking us to slow down.",
+        description: "GitHub temporarily limited commit search requests. Wait a few minutes, then try this username again.",
+      };
+    case "timeout":
+      return {
+        title: "GitHub took too long to respond.",
+        description: "The request timed out before GitHub finished searching. Try again now, or give GitHub a moment if it keeps happening.",
+      };
+    case "unavailable":
+      return {
+        title: "GitHub search is temporarily unavailable.",
+        description: "GitHub returned a temporary service error. Your search is safe to retry once GitHub recovers.",
+      };
+    case "validation":
+      return {
+        title: "GitHub could not validate that search.",
+        description: "Check the username and try again. GitHub may reject searches for users that do not exist or cannot be searched.",
+      };
+    case "empty":
+      return {
+        title: "No public commits found.",
+        description: "Try another username or check back later; GitHub commit search indexing can lag.",
+      };
+    default:
+      return {
+        title: "We could not complete that search.",
+        description: result.error ?? "GitHub commit search failed. Please try again.",
+      };
+  }
+}
+
 export default function Home() {
   const [username, setUsername] = useState(getInitialSharedUsername);
   const [result, setResult] = useState<CommitData | null>(null);
@@ -152,9 +187,12 @@ export default function Home() {
     return () => window.clearTimeout(autoSearch);
   }, [searchCommits]);
 
-  const errorMessage = result && !result.found ? result.error ?? "User not found or no public commits." : "";
-  const isRateLimited = result?.errorKind === "rate_limit";
   const isEmptyResult = result?.errorKind === "empty";
+  const canRetrySearch = result?.errorKind === "rate_limit"
+    || result?.errorKind === "timeout"
+    || result?.errorKind === "unavailable"
+    || result?.errorKind === "unknown";
+  const resultMessage = result && !result.found ? getResultMessage(result) : null;
   const resultStateRole = isEmptyResult ? "status" : "alert";
   const usernameValidationMessage = getUsernameValidationMessage(username);
   const usernameDescriptionIds = usernameValidationMessage
@@ -292,17 +330,13 @@ export default function Home() {
         {result && !result.found && (
             <div role={resultStateRole} aria-live={isEmptyResult ? "polite" : undefined} className={`mt-8 w-full max-w-md rounded-md border p-5 text-left shadow-sm ${isEmptyResult ? 'border-[var(--github-border)] bg-[var(--github-gray-light)] text-[var(--github-gray-dark)]' : 'border-red-200 bg-red-50 text-red-800'}`}>
                 <h2 className="text-base font-semibold text-[var(--github-gray-dark)]">
-                    {isRateLimited ? "GitHub is asking us to slow down." : isEmptyResult ? "No public commits found." : "We could not complete that search."}
+                    {resultMessage?.title}
                 </h2>
                 <p className="mt-2 text-sm text-[var(--github-gray-text)]">
-                    {isRateLimited
-                        ? "Wait a few minutes, then try again. GitHub temporarily limited commit search requests."
-                        : isEmptyResult
-                            ? "Try another username or check back later; GitHub commit search indexing can lag."
-                            : errorMessage}
+                    {resultMessage?.description}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                    {isRateLimited && (
+                    {canRetrySearch && (
                         <button
                             type="button"
                             onClick={() => searchCommits(lastSearchedUsername)}
@@ -369,7 +403,10 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="py-6 border-t border-[var(--github-border)] text-center text-xs text-[var(--github-gray-text)] bg-[var(--github-gray-light)]">
+      <footer className="border-t border-[var(--github-border)] bg-[var(--github-gray-light)] px-4 py-6 text-center text-xs text-[var(--github-gray-text)]">
+        <p className="mx-auto mb-2 max-w-2xl">
+            Privacy: searches are sent to GitHub to find public commits. Recent searches stay in this browser only and are not stored on this app&apos;s server.
+        </p>
         <p>&copy; {new Date().getFullYear()} Not affiliated with GitHub.</p>
       </footer>
     </div>
