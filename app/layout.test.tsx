@@ -13,7 +13,9 @@ vi.mock("@vercel/analytics/next", () => ({
 
 describe("RootLayout", () => {
   it("defines production-ready metadata for shared links", () => {
-    expect(metadata.metadataBase?.toString()).toBe("http://localhost:3000/");
+    const expectedMetadataBase = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").toString();
+
+    expect(metadata.metadataBase?.toString()).toBe(expectedMetadataBase);
     expect(metadata.title).toEqual({
       default: "My First Commit",
       template: "%s | My First Commit",
