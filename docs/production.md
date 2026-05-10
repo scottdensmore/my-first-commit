@@ -119,7 +119,10 @@ In Vercel:
 GitHub API failures are logged with structured event names:
 
 - `github_commit_search_rate_limited`
+- `github_commit_search_timeout`
+- `github_commit_search_unavailable`
 - `github_commit_search_failed`
+- `github_commit_search_malformed_item`
 
 Useful fields include:
 
@@ -127,8 +130,19 @@ Useful fields include:
 - `message`
 - `rateLimitRemaining`
 - `rateLimitReset`
+- `itemIndex`
 
 Search usernames and tokens should not appear in logs.
+
+## Privacy And Local Storage
+
+The app does not persist searches on a server. Successful searches are stored in the user's browser `localStorage` under:
+
+```text
+my-first-commit:recent-searches
+```
+
+This powers the recent-search shortcuts. Clearing browser site data removes the list.
 
 ## Troubleshooting
 
@@ -153,6 +167,18 @@ Confirm `GITHUB_TOKEN` is set in Vercel production. Unauthenticated GitHub Searc
 ### GitHub Searches Fail With Validation Errors
 
 Check logs for `github_commit_search_failed` with `status: 422`. This usually means the username/query is invalid or GitHub could not validate the search request.
+
+### GitHub Searches Time Out
+
+Check logs for `github_commit_search_timeout`. This means GitHub did not respond before the server action timeout. Retry the search and check GitHub status if it persists.
+
+### GitHub Is Temporarily Unavailable
+
+Check logs for `github_commit_search_unavailable` with a `5xx` status. The app should show a retry-friendly message. Wait for GitHub to recover or retry later.
+
+### GitHub Returns Unexpected Commit Data
+
+Check logs for `github_commit_search_malformed_item`. The app skips malformed records and shows an empty state if no valid commits remain.
 
 ### Production Works But Preview Fails
 

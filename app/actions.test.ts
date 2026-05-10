@@ -73,12 +73,15 @@ describe("getCommits", () => {
 
     await getCommits("octo");
 
-    expect(searchCommits).toHaveBeenCalledWith({
+    expect(searchCommits).toHaveBeenCalledWith(expect.objectContaining({
       q: "author:octo",
       sort: "committer-date",
       order: "asc",
       per_page: 10,
-    });
+      request: {
+        signal: expect.any(AbortSignal),
+      },
+    }));
   });
 
   it("maps GitHub commit search results into display data", async () => {
@@ -202,6 +205,44 @@ describe("getCommits", () => {
     });
   });
 
+  it("returns a friendly timeout message when GitHub does not respond in time", async () => {
+    const error = new Error("The operation was aborted");
+    error.name = "AbortError";
+    searchCommits.mockRejectedValue(error);
+
+    await expect(getCommits("octo")).resolves.toEqual({
+      found: false,
+      error: "GitHub took too long to respond. Please try again.",
+      errorKind: "timeout",
+      commits: [],
+    });
+    expect(console.warn).toHaveBeenCalledWith({
+      event: "github_commit_search_timeout",
+      status: undefined,
+      message: "The operation was aborted",
+    });
+  });
+
+  it("returns a friendly unavailable message for GitHub 5xx errors", async () => {
+    const error = {
+      status: 503,
+      message: "Service Unavailable",
+    };
+    searchCommits.mockRejectedValue(error);
+
+    await expect(getCommits("octo")).resolves.toEqual({
+      found: false,
+      error: "GitHub is temporarily unavailable. Please try again soon.",
+      errorKind: "unavailable",
+      commits: [],
+    });
+    expect(console.error).toHaveBeenCalledWith({
+      event: "github_commit_search_unavailable",
+      status: 503,
+      message: "Service Unavailable",
+    }, error);
+  });
+
   it("does not classify non-rate-limit GitHub 403 errors as rate limits", async () => {
     const error = {
       status: 403,
@@ -221,6 +262,50 @@ describe("getCommits", () => {
       status: 403,
       message: "Resource not accessible by integration",
     }, error);
+  });
+
+  it("ignores malformed GitHub commit items before deciding whether results exist", async () => {
+    searchCommits.mockResolvedValue({
+      data: {
+        items: [
+          {
+            ...commitItem,
+            sha: "",
+          },
+          commitItem,
+        ],
+      },
+    });
+
+    const result = await getCommits("octo");
+
+    expect(result.found).toBe(true);
+    expect(result.commits).toHaveLength(1);
+    expect(result.commits[0].sha).toBe("abcdef123456");
+    expect(console.warn).toHaveBeenCalledWith({
+      event: "github_commit_search_malformed_item",
+      itemIndex: 0,
+    });
+  });
+
+  it("returns an empty state when GitHub only returns malformed commit items", async () => {
+    searchCommits.mockResolvedValue({
+      data: {
+        items: [
+          {
+            ...commitItem,
+            html_url: "",
+          },
+        ],
+      },
+    });
+
+    await expect(getCommits("octo")).resolves.toEqual({
+      found: false,
+      error: "No public commits found for this user (or indexing is delayed).",
+      errorKind: "empty",
+      commits: [],
+    });
   });
 
   it("returns a validation message for GitHub 422 errors", async () => {

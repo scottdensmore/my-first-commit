@@ -47,6 +47,17 @@ test("home page blocks invalid usernames without leaving keyboard flow", async (
   await expect(searchBox).toBeFocused();
 });
 
+test("home page renders recent searches stored in the browser", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("my-first-commit:recent-searches", JSON.stringify(["octocat"]));
+  });
+
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: "Recent searches" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Search octocat again" })).toBeVisible();
+});
+
 test("home page advertises branded app and social preview images", async ({ page, request }) => {
   await page.goto("/");
 

@@ -1,0 +1,34 @@
+name: Maintenance task
+description: Track production, dependency, documentation, or workflow work.
+title: "chore: "
+labels:
+  - maintenance
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: Task
+      description: What needs to be done?
+      placeholder: Update dependencies and verify CI.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How will we know this is done?
+      placeholder: |
+        - CI passes
+        - Deployed smoke passes
+        - Runbook is updated if needed
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: No secrets or environment-specific values are committed.
+          required: true
+        - label: Tests or documentation are updated when behavior changes.
+          required: true

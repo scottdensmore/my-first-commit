@@ -7,6 +7,8 @@ const octokit = new Octokit({
     auth: process.env.GITHUB_TOKEN 
 });
 
+const GITHUB_SEARCH_TIMEOUT_MS = 10_000;
+
 type GitHubErrorDetails = {
   message?: string;
   rateLimitRemaining?: string;
@@ -34,7 +36,7 @@ export interface CommitInfo {
 export interface CommitData {
   found: boolean;
   error?: string;
-  errorKind?: "empty" | "rate_limit" | "validation" | "unknown";
+  errorKind?: "empty" | "rate_limit" | "timeout" | "unavailable" | "validation" | "unknown";
   commits: CommitInfo[];
 }
 
@@ -72,16 +74,112 @@ function isGitHubRateLimitError(errorDetails: GitHubErrorDetails) {
     && /rate limit|too many requests/i.test(errorDetails.message ?? "");
 }
 
+function isTimeoutError(error: unknown, errorDetails: GitHubErrorDetails) {
+  if (typeof error === "object" && error !== null && "name" in error && error.name === "AbortError") {
+    return true;
+  }
+
+  return /aborted|timeout|timed out/i.test(errorDetails.message ?? "");
+}
+
+function isGitHubUnavailableError(errorDetails: GitHubErrorDetails) {
+  return typeof errorDetails.status === "number"
+    && errorDetails.status >= 500
+    && errorDetails.status < 600;
+}
+
+function withTimeoutSignal<T>(callback: (signal: AbortSignal) => Promise<T>) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GITHUB_SEARCH_TIMEOUT_MS);
+
+  return Promise.resolve()
+    .then(() => callback(controller.signal))
+    .finally(() => clearTimeout(timeout));
+}
+
+function mapCommitItem(item: unknown, username: string): CommitInfo | null {
+  if (typeof item !== "object" || item === null) return null;
+
+  const candidate = item as {
+    commit?: {
+      message?: unknown;
+      author?: { date?: unknown } | null;
+      committer?: { date?: unknown } | null;
+    };
+    html_url?: unknown;
+    sha?: unknown;
+    repository?: {
+      name?: unknown;
+      full_name?: unknown;
+      owner?: { login?: unknown } | null;
+    };
+    author?: {
+      login?: unknown;
+      avatar_url?: unknown;
+      html_url?: unknown;
+    } | null;
+  };
+  const message = candidate.commit?.message;
+  const htmlUrl = candidate.html_url;
+  const sha = candidate.sha;
+  const repositoryName = candidate.repository?.name;
+  const repositoryFullName = candidate.repository?.full_name;
+  const repositoryOwner = candidate.repository?.owner?.login;
+
+  if (
+    typeof message !== "string"
+    || typeof htmlUrl !== "string"
+    || !htmlUrl
+    || typeof sha !== "string"
+    || !sha
+    || typeof repositoryName !== "string"
+    || typeof repositoryFullName !== "string"
+    || typeof repositoryOwner !== "string"
+  ) {
+    return null;
+  }
+
+  const authorDate = candidate.commit?.author?.date;
+  const committerDate = candidate.commit?.committer?.date;
+  const authorLogin = candidate.author?.login;
+  const authorAvatarUrl = candidate.author?.avatar_url;
+  const authorHtmlUrl = candidate.author?.html_url;
+
+  return {
+    message,
+    date: typeof authorDate === "string"
+      ? authorDate
+      : typeof committerDate === "string"
+        ? committerDate
+        : "",
+    html_url: htmlUrl,
+    sha,
+    repository: {
+      name: repositoryName,
+      owner: repositoryOwner,
+      full_name: repositoryFullName,
+    },
+    author: {
+      login: typeof authorLogin === "string" ? authorLogin : username,
+      avatar_url: typeof authorAvatarUrl === "string" ? authorAvatarUrl : "https://github.com/ghost.png",
+      html_url: typeof authorHtmlUrl === "string" ? authorHtmlUrl : `https://github.com/${username}`,
+    },
+  };
+}
+
 export async function getCommits(username: string): Promise<CommitData> {
   if (!username) return { found: false, error: "Username is required", errorKind: "validation", commits: [] };
 
   try {
-    const response = await octokit.rest.search.commits({
+    const response = await withTimeoutSignal((signal) => octokit.rest.search.commits({
       q: `author:${username}`,
       sort: 'committer-date',
       order: 'asc',
-      per_page: 10
-    });
+      per_page: 10,
+      request: {
+        signal,
+      },
+    }));
 
     const items = response.data.items;
 
@@ -94,22 +192,27 @@ export async function getCommits(username: string): Promise<CommitData> {
       };
     }
 
-    const commits = items.map(item => ({
-        message: item.commit.message,
-        date: item.commit.author?.date || item.commit.committer?.date || "",
-        html_url: item.html_url,
-        sha: item.sha,
-        repository: {
-          name: item.repository.name,
-          owner: item.repository.owner.login,
-          full_name: item.repository.full_name
+    const commits = items.flatMap((item, itemIndex) => {
+      const commit = mapCommitItem(item, username);
+      if (commit) return [commit];
+
+      logger.warn({
+        event: "github_commit_search_malformed_item",
+        fields: {
+          itemIndex,
         },
-        author: {
-          login: item.author?.login || username,
-          avatar_url: item.author?.avatar_url || "https://github.com/ghost.png",
-          html_url: item.author?.html_url || `https://github.com/${username}`
-        }
-    }));
+      });
+      return [];
+    });
+
+    if (commits.length === 0) {
+      return {
+        found: false,
+        error: "No public commits found for this user (or indexing is delayed).",
+        errorKind: "empty",
+        commits: [],
+      };
+    }
 
     return {
       found: true,
@@ -120,6 +223,18 @@ export async function getCommits(username: string): Promise<CommitData> {
     let errorMessage = "Failed to fetch commits.";
     const errorDetails = getGitHubErrorDetails(error);
     const { status } = errorDetails;
+
+    if (isTimeoutError(error, errorDetails)) {
+      logger.warn({
+        event: "github_commit_search_timeout",
+        fields: {
+          status: typeof status === "number" ? status : undefined,
+          message: errorDetails.message,
+        },
+      });
+      errorMessage = "GitHub took too long to respond. Please try again.";
+      return { found: false, error: errorMessage, errorKind: "timeout", commits: [] };
+    }
 
     if (isGitHubRateLimitError(errorDetails)) {
       logger.warn({
@@ -133,7 +248,21 @@ export async function getCommits(username: string): Promise<CommitData> {
       });
       errorMessage = "GitHub rate limit reached. Please try again in a few minutes.";
       return { found: false, error: errorMessage, errorKind: "rate_limit", commits: [] };
-    } else {
+    }
+
+    if (isGitHubUnavailableError(errorDetails)) {
+      logger.error({
+        event: "github_commit_search_unavailable",
+        fields: {
+          status: typeof status === "number" ? status : undefined,
+          message: errorDetails.message,
+        },
+      }, error);
+      errorMessage = "GitHub is temporarily unavailable. Please try again soon.";
+      return { found: false, error: errorMessage, errorKind: "unavailable", commits: [] };
+    }
+
+    {
       logger.error({
         event: "github_commit_search_failed",
         fields: {

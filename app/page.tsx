@@ -5,6 +5,9 @@ import { getCommits, CommitData } from './actions';
 import FirstCommitDisplay from '@/components/FirstCommitDisplay';
 import { FaGithub } from "react-icons/fa";
 
+const RECENT_SEARCHES_STORAGE_KEY = "my-first-commit:recent-searches";
+const MAX_RECENT_SEARCHES = 5;
+
 function getUsernameValidationMessage(value: string) {
   const username = value.trim();
 
@@ -36,18 +39,64 @@ function getInitialSharedUsername() {
   return new URLSearchParams(window.location.search).get("user") ?? "";
 }
 
+function getStoredRecentSearches() {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const storedSearches = JSON.parse(window.localStorage.getItem(RECENT_SEARCHES_STORAGE_KEY) ?? "[]");
+    if (!Array.isArray(storedSearches)) return [];
+
+    return storedSearches
+      .filter((search): search is string => typeof search === "string" && !getUsernameValidationMessage(search))
+      .slice(0, MAX_RECENT_SEARCHES);
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredRecentSearches(searches: string[]) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(RECENT_SEARCHES_STORAGE_KEY, JSON.stringify(searches));
+  } catch {
+    // Recent searches are a convenience only; searches should still succeed without storage.
+  }
+}
+
 export default function Home() {
   const [username, setUsername] = useState(getInitialSharedUsername);
   const [result, setResult] = useState<CommitData | null>(null);
   const [lastSearchedUsername, setLastSearchedUsername] = useState('');
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const loadRecentSearches = window.setTimeout(() => {
+      setRecentSearches(getStoredRecentSearches());
+    }, 0);
+
+    return () => window.clearTimeout(loadRecentSearches);
+  }, []);
 
   useEffect(() => {
     if (!result?.found) {
       searchInputRef.current?.focus();
     }
   }, [result?.found]);
+
+  const rememberRecentSearch = useCallback((searchedUsername: string) => {
+    setRecentSearches((currentSearches) => {
+      const nextSearches = [
+        searchedUsername,
+        ...currentSearches.filter((search) => search.toLowerCase() !== searchedUsername.toLowerCase()),
+      ].slice(0, MAX_RECENT_SEARCHES);
+
+      saveStoredRecentSearches(nextSearches);
+      return nextSearches;
+    });
+  }, []);
 
   const searchCommits = useCallback((searchUsername: string, options: { updateUrl?: boolean } = {}) => {
     const trimmedUsername = searchUsername.trim();
@@ -59,8 +108,11 @@ export default function Home() {
     startTransition(async () => {
        const data = await getCommits(trimmedUsername);
        setResult(data);
+       if (data.found) {
+        rememberRecentSearch(trimmedUsername);
+       }
     });
-  }, []);
+  }, [rememberRecentSearch]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +228,30 @@ export default function Home() {
                 {isPending ? 'Searching...' : 'Search'}
             </button>
         </form>
+        )}
+
+        {!result?.found && recentSearches.length > 0 && (
+            <section aria-labelledby="recent-searches-heading" className="mt-4 w-full max-w-md">
+                <h2 id="recent-searches-heading" className="text-xs font-semibold uppercase tracking-normal text-[var(--github-gray-text)]">
+                    Recent searches
+                </h2>
+                <div className="mt-2 flex flex-wrap gap-2">
+                    {recentSearches.map((recentUsername) => (
+                        <button
+                            key={recentUsername}
+                            type="button"
+                            onClick={() => {
+                                setUsername(recentUsername);
+                                searchCommits(recentUsername, { updateUrl: true });
+                            }}
+                            className="inline-flex items-center justify-center rounded-md border border-[var(--github-border)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--github-gray-dark)] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2"
+                            aria-label={`Search ${recentUsername} again`}
+                        >
+                            @{recentUsername}
+                        </button>
+                    ))}
+                </div>
+            </section>
         )}
 
         {isPending && !result && (

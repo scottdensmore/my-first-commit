@@ -6,8 +6,11 @@ A GitHub-themed web application that discovers your origin story on GitHub. Ente
 
 - **Origin Discovery:** Uses the GitHub Search API to find the earliest public commits for any user.
 - **Visual Timeline:** Displays a sequence of the first 10 commits, connected by a vertical line with GitHub-style contribution squares.
+- **Recent Searches:** Keeps successful searches as local browser shortcuts for quick reruns.
+- **Shareable Searches:** Updates the URL with the searched username so results can be shared.
 - **GitHub Aesthetic:** Fully themed with GitHub's color palette, typography, and iconography.
 - **Responsive Design:** Optimized for both desktop and mobile viewing.
+- **Production Checks:** Uses CI, deployed smoke tests, Vercel Analytics, and structured server logs.
 
 ## Getting Started
 
@@ -87,9 +90,11 @@ npm run test:watch
 
 - Set `GITHUB_TOKEN` in the production environment to avoid GitHub's low unauthenticated search rate limit.
 - The token is only used server-side by the GitHub API client and is not exposed to the browser.
-- Usernames entered into the search field are sent to GitHub to retrieve public commit data; the app does not store searches.
+- Usernames entered into the search field are sent to GitHub to retrieve public commit data.
+- Successful searches are stored only in the user's browser `localStorage` as recent-search shortcuts. The app does not store searches on a server.
 - CI runs on every push and pull request to `main`.
 - Production deployment smoke tests run after a successful Vercel deployment using the `PRODUCTION_BASE_URL` repository variable, and can also be started manually from GitHub Actions.
+- Vercel Analytics is enabled in the root layout. Use Vercel Analytics for traffic and Vercel Logs for runtime errors.
 - See the [production runbook](docs/production.md) for deployment checks, observability, and troubleshooting.
 
 ## Deployment
@@ -116,6 +121,14 @@ NEXT_PUBLIC_SITE_URL=https://my-first-commit-eta.vercel.app
 - **API Client:** [Octokit](https://github.com/octokit/octokit.js)
 - **Icons:** [React Icons](https://react-icons.github.io/react-icons/)
 - **Date Handling:** [date-fns](https://date-fns.org/)
+- **Monitoring:** [Vercel Analytics](https://vercel.com/analytics), Vercel Logs, and GitHub Actions
+
+## Maintenance Workflow
+
+- Open feature, fix, and maintenance work as pull requests.
+- Keep PRs focused and wait for CI, Vercel preview, and Copilot review.
+- Use the issue templates for bugs, feature ideas, and maintenance tasks.
+- Merge dependency updates one at a time when possible.
 
 ## License
 
