@@ -10,7 +10,7 @@ A GitHub-themed web application that discovers your origin story on GitHub. Ente
 - **Shareable Searches:** Updates the URL with the searched username so results can be shared.
 - **GitHub Aesthetic:** Fully themed with GitHub's color palette, typography, and iconography.
 - **Responsive Design:** Optimized for both desktop and mobile viewing.
-- **Production Checks:** Uses CI, deployed smoke tests, Vercel Analytics, and structured server logs.
+- **Production Checks:** Uses CI, production health checks, Vercel Analytics, and structured server logs.
 
 ## Getting Started
 
@@ -78,7 +78,7 @@ Or point the smoke test at any deployed URL:
 PLAYWRIGHT_BASE_URL=https://your-deployment.example npm run test:e2e
 ```
 
-Production deployments also trigger the deployed smoke test automatically through the `Deployed Smoke` GitHub Actions workflow. Set the `PRODUCTION_BASE_URL` GitHub Actions repository variable to the public production URL. Manual runs of that workflow require a deployed URL.
+Production deployments also trigger the `Production Health Check` GitHub Actions workflow. Set the `PRODUCTION_BASE_URL` GitHub Actions repository variable to the public production URL. Manual runs of that workflow require a deployed URL.
 
 For active test-driven development:
 

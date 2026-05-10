@@ -32,16 +32,16 @@ PRODUCTION_BASE_URL=https://my-first-commit-eta.vercel.app
 2. GitHub Actions runs `CI / validate`.
 3. Vercel builds and deploys production.
 4. GitHub receives a production `deployment_status` event.
-5. The `Deployed Smoke` workflow runs Playwright against `PRODUCTION_BASE_URL`.
+5. The `Production Health Check` workflow runs Playwright against `PRODUCTION_BASE_URL`.
 
-The production deploy is healthy when both `CI / validate` and `Deployed Smoke` pass on `main`.
+The production deploy is healthy when both `CI / validate` and `Production Health Check` pass on `main`.
 
-## Production Smoke Alerts
+## Production Health Check Alerts
 
-When `Deployed Smoke` fails, GitHub Actions opens or updates a GitHub issue titled:
+When `Production Health Check` fails, GitHub Actions opens or updates a GitHub issue titled:
 
 ```text
-Production smoke test failed
+Production health check failed
 ```
 
 Use that issue as the incident record. It includes the smoke target, workflow run, and commit SHA.
@@ -52,8 +52,8 @@ When responding to a smoke failure:
 2. Confirm the smoke target is the public production URL.
 3. Open production manually and check whether the app renders.
 4. Fix the deployment, configuration, or app regression.
-5. Re-run `Deployed Smoke` or deploy a fix.
-6. Close the issue after production smoke passes again.
+5. Re-run `Production Health Check` or deploy a fix.
+6. Close the issue after the production health check passes again.
 
 ## Manual Validation
 
@@ -79,7 +79,7 @@ Run a smoke test against any deployed URL:
 PLAYWRIGHT_BASE_URL=https://your-deployment.example npm run test:e2e
 ```
 
-You can also start `Deployed Smoke` manually from GitHub Actions. Provide the public app URL as `base_url`.
+You can also start `Production Health Check` manually from GitHub Actions. Provide the public app URL as `base_url`.
 
 ## Observability
 
@@ -89,7 +89,7 @@ Use these signals together:
 
 - Vercel Analytics for traffic and page-level usage.
 - Vercel Logs for runtime errors and server-side GitHub API failures.
-- GitHub Actions for CI and deployed smoke status.
+- GitHub Actions for CI and production health check status.
 - GitHub issues for production smoke incidents.
 
 ### Vercel Analytics
@@ -146,7 +146,7 @@ This powers the recent-search shortcuts. Clearing browser site data removes the 
 
 ## Troubleshooting
 
-### Deployed Smoke Fails With `401`
+### Production Health Check Fails With `401`
 
 Check the target URL. Vercel-generated deployment URLs can be protected. Confirm the workflow is using:
 
@@ -154,7 +154,7 @@ Check the target URL. Vercel-generated deployment URLs can be protected. Confirm
 PRODUCTION_BASE_URL=https://my-first-commit-eta.vercel.app
 ```
 
-### Deployed Smoke Cannot Find App Text
+### Production Health Check Cannot Find App Text
 
 Open the smoke target URL and confirm it renders the public app. If it shows a login, protection page, or unrelated Vercel page, fix the target URL.
 

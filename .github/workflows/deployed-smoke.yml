@@ -1,4 +1,4 @@
-name: Deployed Smoke
+name: Production Health Check
 
 on:
   deployment_status:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   smoke:
-    name: Playwright deployed smoke
+    name: Playwright production health check
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (
@@ -57,19 +57,19 @@ jobs:
               ;;
           esac
 
-      - name: Run deployed browser smoke tests
+      - name: Run production browser health checks
         run: npm run test:e2e
 
-      - name: Create or update smoke failure issue
+      - name: Create or update health check failure issue
         if: failure() && github.event_name == 'deployment_status'
         env:
           GH_TOKEN: ${{ github.token }}
           SMOKE_TARGET: ${{ env.PLAYWRIGHT_BASE_URL }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          issue_title="Production smoke test failed"
+          issue_title="Production health check failed"
           issue_body="$(cat <<BODY
-          The production smoke test failed.
+          The production health check failed.
 
           - Target: ${SMOKE_TARGET}
           - Workflow run: ${RUN_URL}
