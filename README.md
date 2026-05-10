@@ -8,6 +8,8 @@
 
 A GitHub-themed web application that discovers your origin story on GitHub. Enter any username to see their first public commit and the nine that followed, beautifully connected in an activity-graph style timeline.
 
+![My First Commit app screenshot showing a GitHub username search and first commit timeline](display.png)
+
 ## Features
 
 - **Origin Discovery:** Uses the GitHub Search API to find the earliest public commits for any user.
