@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import RootLayout from "./layout";
+import RootLayout, { metadata } from "./layout";
 
 vi.mock("next/font/google", () => ({
   Geist: () => ({ variable: "geist-sans" }),
@@ -12,6 +12,48 @@ vi.mock("@vercel/analytics/next", () => ({
 }));
 
 describe("RootLayout", () => {
+  it("defines production-ready metadata for shared links", () => {
+    expect(metadata.metadataBase?.toString()).toBe("http://localhost:3000/");
+    expect(metadata.title).toEqual({
+      default: "My First Commit",
+      template: "%s | My First Commit",
+    });
+    expect(metadata.description).toBe("Find and share the first public GitHub commit for any user.");
+    expect(metadata.alternates).toEqual({
+      canonical: "/",
+    });
+    expect(metadata.openGraph).toMatchObject({
+      title: "My First Commit",
+      description: "Find and share the first public GitHub commit for any user.",
+      type: "website",
+      url: "/",
+      siteName: "My First Commit",
+      images: [
+        {
+          url: "/opengraph-image",
+          width: 1200,
+          height: 630,
+          alt: "My First Commit social preview",
+        },
+      ],
+    });
+    expect(metadata.twitter).toMatchObject({
+      card: "summary_large_image",
+      title: "My First Commit",
+      description: "Find and share the first public GitHub commit for any user.",
+      images: [
+        {
+          url: "/twitter-image",
+          alt: "My First Commit social preview",
+        },
+      ],
+    });
+    expect(metadata.robots).toEqual({
+      index: true,
+      follow: true,
+    });
+  });
+
   it("mounts Vercel Analytics globally", () => {
     render(
       <RootLayout>

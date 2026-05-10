@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "My First Commit";
+export const alt = "My First Commit social preview";
 export const size = {
   width: 1200,
   height: 630,
@@ -68,7 +68,7 @@ export default function OpenGraphImage() {
                 maxWidth: 860,
               }}
             >
-              Find the first public GitHub commit for any user.
+              Find and share the first public GitHub commit for any user.
             </div>
           </div>
 
