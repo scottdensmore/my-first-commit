@@ -29,6 +29,22 @@ test("home page search field is keyboard-ready and not treated as a credential f
   await expect(page.getByText(/Not affiliated with GitHub/)).toBeVisible();
 });
 
+test("home page keeps the search form compact when helper text is visible", async ({ page }) => {
+  await page.goto("/");
+
+  const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+  const searchButton = page.getByRole("button", { name: "Search" });
+
+  const inputBox = await searchBox.boundingBox();
+  const buttonBox = await searchButton.boundingBox();
+
+  expect(inputBox).not.toBeNull();
+  expect(buttonBox).not.toBeNull();
+  expect(inputBox!.height).toBeLessThanOrEqual(56);
+  expect(buttonBox!.height).toBeLessThanOrEqual(inputBox!.height + 2);
+  expect(Math.abs(buttonBox!.y - inputBox!.y)).toBeLessThanOrEqual(2);
+});
+
 test("home page blocks invalid usernames without leaving keyboard flow", async ({ page }) => {
   await page.goto("/");
 
