@@ -123,3 +123,11 @@ test("home page advertises branded app and social preview images", async ({ page
   expect(ogResponse.headers()["content-type"]).toContain("image/png");
   expect(twitterResponse.headers()["content-type"]).toContain("image/png");
 });
+
+test("unknown routes show a branded not-found page", async ({ page }) => {
+  const response = await page.goto("/missing-commit-path");
+
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole("heading", { name: "This commit path does not exist." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Go home" })).toHaveAttribute("href", "/");
+});
