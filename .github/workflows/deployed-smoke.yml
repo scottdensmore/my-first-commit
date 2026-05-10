@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       base_url:
-        description: Fully qualified deployed app URL to smoke test.
+        description: Fully qualified deployed app URL to health check.
         required: true
 
 permissions:
@@ -41,7 +41,7 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Validate smoke target
+      - name: Validate health check target
         run: |
           if [ -z "$PLAYWRIGHT_BASE_URL" ]; then
             echo "PLAYWRIGHT_BASE_URL is required."

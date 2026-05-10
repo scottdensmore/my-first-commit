@@ -7,7 +7,7 @@ This runbook covers the production checks and levers for My First Commit.
 - Public app: https://my-first-commit-eta.vercel.app
 - GitHub repository: https://github.com/scottdensmore/my-first-commit
 
-Use the public app URL for smoke tests. Vercel's generated deployment URLs can be protected and may return `401`.
+Use the public app URL for production health checks. Vercel's generated deployment URLs can be protected and may return `401`.
 
 ## Required Configuration
 
@@ -44,12 +44,12 @@ When `Production Health Check` fails, GitHub Actions opens or updates a GitHub i
 Production health check failed
 ```
 
-Use that issue as the incident record. It includes the smoke target, workflow run, and commit SHA.
+Use that issue as the incident record. It includes the health check target, workflow run, and commit SHA.
 
-When responding to a smoke failure:
+When responding to a health check failure:
 
 1. Open the workflow run linked from the issue.
-2. Confirm the smoke target is the public production URL.
+2. Confirm the health check target is the public production URL.
 3. Open production manually and check whether the app renders.
 4. Fix the deployment, configuration, or app regression.
 5. Re-run `Production Health Check` or deploy a fix.
@@ -67,13 +67,13 @@ npm run build
 npm run test:e2e
 ```
 
-Run a smoke test against production:
+Run a health check against production:
 
 ```bash
 npm run test:e2e:deployed
 ```
 
-Run a smoke test against any deployed URL:
+Run a health check against any deployed URL:
 
 ```bash
 PLAYWRIGHT_BASE_URL=https://your-deployment.example npm run test:e2e
@@ -90,7 +90,7 @@ Use these signals together:
 - Vercel Analytics for traffic and page-level usage.
 - Vercel Logs for runtime errors and server-side GitHub API failures.
 - GitHub Actions for CI and production health check status.
-- GitHub issues for production smoke incidents.
+- GitHub issues for production health check incidents.
 
 ### Vercel Analytics
 
@@ -156,7 +156,7 @@ PRODUCTION_BASE_URL=https://my-first-commit-eta.vercel.app
 
 ### Production Health Check Cannot Find App Text
 
-Open the smoke target URL and confirm it renders the public app. If it shows a login, protection page, or unrelated Vercel page, fix the target URL.
+Open the health check target URL and confirm it renders the public app. If it shows a login, protection page, or unrelated Vercel page, fix the target URL.
 
 ### GitHub Searches Are Rate Limited
 

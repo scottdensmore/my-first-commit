@@ -66,13 +66,13 @@ npm run lint
 npm run build
 ```
 
-To run the browser smoke test against the deployed app:
+To run the browser health check against the deployed app:
 
 ```bash
 npm run test:e2e:deployed
 ```
 
-Or point the smoke test at any deployed URL:
+Or point the health check at any deployed URL:
 
 ```bash
 PLAYWRIGHT_BASE_URL=https://your-deployment.example npm run test:e2e
@@ -93,7 +93,7 @@ npm run test:watch
 - Usernames entered into the search field are sent to GitHub to retrieve public commit data.
 - Successful searches are stored only in the user's browser `localStorage` as recent-search shortcuts. The app does not store searches on a server.
 - CI runs on every push and pull request to `main`.
-- Production deployment smoke tests run after a successful Vercel deployment using the `PRODUCTION_BASE_URL` repository variable, and can also be started manually from GitHub Actions.
+- Production health checks run after a successful Vercel deployment using the `PRODUCTION_BASE_URL` repository variable, and can also be started manually from GitHub Actions.
 - Vercel Analytics is enabled in the root layout. Use Vercel Analytics for traffic and Vercel Logs for runtime errors.
 - See the [production runbook](docs/production.md) for deployment checks, observability, and troubleshooting.
 
