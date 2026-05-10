@@ -55,7 +55,13 @@ function getStoredRecentSearches() {
 }
 
 function saveStoredRecentSearches(searches: string[]) {
-  window.localStorage.setItem(RECENT_SEARCHES_STORAGE_KEY, JSON.stringify(searches));
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(RECENT_SEARCHES_STORAGE_KEY, JSON.stringify(searches));
+  } catch {
+    // Recent searches are a convenience only; searches should still succeed without storage.
+  }
 }
 
 export default function Home() {

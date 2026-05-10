@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "./page";
 import { getCommits } from "./actions";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./actions", () => ({
   getCommits: vi.fn(),
@@ -37,6 +37,10 @@ describe("Home", () => {
     mockGetCommits.mockReset();
     window.localStorage.clear();
     window.history.replaceState(null, "", "/");
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("focuses the GitHub search field and marks it as a non-credential search box", () => {
@@ -116,6 +120,21 @@ describe("Home", () => {
     const recentSearch = screen.getByRole("button", { name: /search octo again/i });
     expect(recentSearch).toBeInTheDocument();
     expect(JSON.parse(window.localStorage.getItem("my-first-commit:recent-searches") ?? "[]")).toEqual(["octo"]);
+  });
+
+  it("keeps successful searches working when local storage writes fail", async () => {
+    mockGetCommits.mockResolvedValue(commitResult);
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Storage is unavailable");
+    });
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+
+    expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /search another user/i })).toBeInTheDocument();
   });
 
   it("lets users rerun a recent search from local storage", async () => {
