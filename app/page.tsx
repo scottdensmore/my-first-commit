@@ -203,7 +203,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] font-sans">
       {/* Header */}
-      <header className="sticky top-0 z-50 py-3 px-6 border-b border-[var(--github-border)] bg-[var(--github-gray-light)] flex items-center justify-between backdrop-blur-sm bg-white/80">
+      <header aria-label="Site header" className="sticky top-0 z-50 py-3 px-6 border-b border-[var(--github-border)] bg-[var(--github-gray-light)] flex items-center justify-between backdrop-blur-sm bg-white/80">
          <div className="flex items-center gap-2 font-bold text-xl text-[var(--github-gray-dark)]">
             <FaGithub className="text-3xl" />
             <span>My First Commit</span>
@@ -219,7 +219,7 @@ export default function Home() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 flex flex-col items-center p-4 w-full max-w-4xl mx-auto">
+      <main aria-label="Commit search" className="flex-1 flex flex-col items-center p-4 w-full max-w-4xl mx-auto">
         
         {(!result?.found) && (
             <div className={`text-center mb-8 mt-20 transition-all duration-500 ${isPending ? 'opacity-50' : 'opacity-100'}`}>
@@ -403,7 +403,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--github-border)] bg-[var(--github-gray-light)] px-4 py-6 text-center text-xs text-[var(--github-gray-text)]">
+      <footer aria-label="Privacy and GitHub affiliation" className="border-t border-[var(--github-border)] bg-[var(--github-gray-light)] px-4 py-6 text-center text-xs text-[var(--github-gray-text)]">
         <p className="mx-auto mb-2 max-w-2xl">
             Privacy: searches are sent to GitHub to find public commits. Recent searches stay in this browser only and are not stored on this app&apos;s server.
         </p>

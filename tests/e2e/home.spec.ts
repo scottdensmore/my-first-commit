@@ -28,7 +28,7 @@ test("home page search field is keyboard-ready and not treated as a credential f
   await expect(searchBox).toHaveAttribute("autocapitalize", "none");
   await expect(searchBox).toHaveAttribute("spellcheck", "false");
 
-  const searchButton = page.getByRole("button", { name: "Search" });
+  const searchButton = page.getByRole("button", { name: "Search", exact: true });
   await expect(searchButton).toBeDisabled();
 
   await searchBox.pressSequentially("octocat");
@@ -39,6 +39,42 @@ test("home page search field is keyboard-ready and not treated as a credential f
   await expect(searchButton).toBeFocused();
 
   await expect(page.getByText(/Not affiliated with GitHub/)).toBeVisible();
+});
+
+test("home page exposes accessible landmarks and privacy content", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByRole("banner", { name: "Site header" })).toBeVisible();
+  await expect(page.getByRole("main", { name: "Commit search" })).toBeVisible();
+  await expect(page.getByRole("search", { name: "GitHub commit search" })).toBeVisible();
+  await expect(page.getByRole("contentinfo", { name: "Privacy and GitHub affiliation" })).toBeVisible();
+  await expect(page.getByText(/recent searches stay in this browser only/i)).toBeVisible();
+});
+
+test("home page tab order keeps primary actions reachable", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("my-first-commit:recent-searches", JSON.stringify(["octocat"]));
+  });
+
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+
+  const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+  const searchButton = page.getByRole("button", { name: "Search", exact: true });
+  const clearButton = page.getByRole("button", { name: "Clear recent searches" });
+  const recentSearchButton = page.getByRole("button", { name: "Search octocat again" });
+
+  await expect(searchBox).toBeFocused();
+
+  await searchBox.pressSequentially("octocat");
+  await page.keyboard.press("Tab");
+  await expect(searchButton).toBeFocused();
+
+  await page.keyboard.press("Tab");
+  await expect(clearButton).toBeFocused();
+
+  await page.keyboard.press("Tab");
+  await expect(recentSearchButton).toBeFocused();
 });
 
 test("home page keeps the search form compact when helper text is visible", async ({ page }) => {
