@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Added
 
+- Label sync configuration, issue template polish, and dependency update policy.
 - Roadmap and label guidance for lightweight project planning.
 
 ## 0.1.0 - 2026-05-11

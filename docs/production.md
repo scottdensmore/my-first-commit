@@ -101,7 +101,7 @@ Run a health check against production:
 npm run test:e2e:deployed
 ```
 
-The deployed browser health check covers the home page, branded 404 page, generated social assets, and `/api/health`.
+The Production Health Check browser workflow covers the home page, branded 404 page, generated social assets, and `/api/health`.
 
 Check the runtime health endpoint directly:
 

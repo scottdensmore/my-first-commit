@@ -2,7 +2,7 @@ name: Feature request
 description: Suggest a small product improvement.
 title: "feat: "
 labels:
-  - enhancement
+  - feature
 body:
   - type: textarea
     id: problem
@@ -33,3 +33,5 @@ body:
           required: false
         - label: This needs new tests.
           required: true
+        - label: This needs docs or manual QA updates.
+          required: false

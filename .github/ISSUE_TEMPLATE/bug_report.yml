@@ -42,3 +42,14 @@ body:
     attributes:
       label: Extra context
       description: Add browser, device, URL, screenshots, or logs if useful.
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - label: This affects production.
+          required: false
+        - label: This affects accessibility, keyboard flow, or screen-reader behavior.
+          required: false
+        - label: This may involve security, privacy, or token handling.
+          required: false

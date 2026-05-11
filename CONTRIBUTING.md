@@ -40,6 +40,8 @@ Thanks for helping improve My First Commit. Keep changes small, tested, and easy
 
 Dependabot opens dependency PRs. Review and merge them one at a time when possible, after CI passes.
 
+Major upgrades are handled manually as planned maintenance. Use the [development guide](docs/development.md#dependency-update-policy) before upgrading major versions.
+
 ## Production Checks
 
 After a PR merges to `main`, Vercel deploys production and GitHub Actions runs the production health check against the public app URL.

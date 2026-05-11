@@ -36,6 +36,7 @@ The app is intentionally small: no accounts, no database, and no server-side sto
 - **Contributing guide:** [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Roadmap:** [ROADMAP.md](ROADMAP.md)
 - **Changelog:** [CHANGELOG.md](CHANGELOG.md)
+- **Label guide:** [docs/labels.md](docs/labels.md)
 
 ## How It Works
 
@@ -72,6 +73,7 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 - Use the [manual QA checklist](docs/manual-qa.md) for release and Open Graph preview validation.
 - Use the [contributing guide](CONTRIBUTING.md) for branch, PR, review, and validation workflow.
 - Use the [roadmap](ROADMAP.md) to track near-term and deferred ideas.
+- Use the [label guide](docs/labels.md) for issue and pull request labels.
 - Use the [changelog](CHANGELOG.md) to track user-facing changes and release notes.
 
 ## License

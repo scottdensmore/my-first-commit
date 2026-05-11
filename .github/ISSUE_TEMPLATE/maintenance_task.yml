@@ -19,7 +19,7 @@ body:
       description: How will we know this is done?
       placeholder: |
         - CI passes
-        - Deployed smoke passes
+        - Production Health Check passes, if production behavior changes
         - Runbook is updated if needed
     validations:
       required: true
@@ -32,3 +32,5 @@ body:
           required: true
         - label: Tests or documentation are updated when behavior changes.
           required: true
+        - label: Labels match the label guide when this creates or updates issues.
+          required: false

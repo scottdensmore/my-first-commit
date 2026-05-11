@@ -1,0 +1,35 @@
+- name: bug
+  color: d73a4a
+  description: Something is broken or behaving unexpectedly.
+
+- name: feature
+  color: 0e8a16
+  description: A new user-facing capability.
+
+- name: maintenance
+  color: cfd3d7
+  description: Cleanup, refactors, chores, or upkeep that does not change user behavior.
+
+- name: dependencies
+  color: 0366d6
+  description: Dependency updates, lockfile changes, or package maintenance.
+
+- name: security
+  color: b60205
+  description: Security hardening, vulnerabilities, tokens, headers, or dependency advisories.
+
+- name: production
+  color: fbca04
+  description: Deployment, health checks, monitoring, Vercel, or production incidents.
+
+- name: docs
+  color: 0075ca
+  description: README, runbook, changelog, contributing, architecture, or QA documentation.
+
+- name: accessibility
+  color: 5319e7
+  description: Keyboard, focus, landmarks, announcements, or screen-reader improvements.
+
+- name: testing
+  color: 1d76db
+  description: Unit, e2e, CI, production health, or QA coverage.
