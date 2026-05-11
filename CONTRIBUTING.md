@@ -34,6 +34,7 @@ Thanks for helping improve My First Commit. Keep changes small, tested, and easy
 - Use Conventional Commit style for titles, for example `feat(app): add runtime health endpoint`.
 - Include what changed, why it changed, and how it was tested.
 - Do not include secrets, debug statements, or unrelated formatting churn.
+- Use the [label guide](docs/labels.md) to keep issue and pull request labels consistent.
 
 ## Dependency Updates
 
