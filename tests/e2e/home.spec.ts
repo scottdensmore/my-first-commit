@@ -65,8 +65,12 @@ test("home page tab order keeps primary actions reachable", async ({ page }) => 
   const recentSearchButton = page.getByRole("button", { name: "Search octocat again" });
 
   await expect(searchBox).toBeFocused();
+  await expect(clearButton).toBeVisible();
+  await expect(recentSearchButton).toBeVisible();
 
   await searchBox.pressSequentially("octocat");
+  await expect(searchButton).toBeEnabled();
+
   await page.keyboard.press("Tab");
   await expect(searchButton).toBeFocused();
 

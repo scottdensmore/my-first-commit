@@ -183,7 +183,7 @@ Content Security Policy is intentionally not enabled yet. Next.js and Vercel Ana
 
 ## Accessibility Checks
 
-The browser health checks include accessibility-oriented coverage for landmarks, search form labels, keyboard tab order, validation announcements, empty/error result announcements, and reachable recovery actions.
+The browser health checks include accessibility-oriented coverage for landmarks, search form labels, keyboard tab order, validation announcements, and reachable search/recent-search actions.
 
 When changing UI structure, confirm:
 
