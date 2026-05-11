@@ -181,6 +181,17 @@ The app sets baseline security headers from `next.config.ts`:
 
 Content Security Policy is intentionally not enabled yet. Next.js and Vercel Analytics need a carefully tuned policy so production scripts, generated images, and analytics continue to work without weakening the policy into noise.
 
+## Accessibility Checks
+
+The browser health checks include accessibility-oriented coverage for landmarks, search form labels, keyboard tab order, validation announcements, and reachable search/recent-search actions.
+
+When changing UI structure, confirm:
+
+1. The header, main content, search form, and footer keep clear accessible names.
+2. The search field receives focus on initial load and after reset/edit actions.
+3. Keyboard users can tab from the search field to primary actions and recent-search controls.
+4. Validation and result states use the appropriate `status` or `alert` role.
+
 ## Privacy And Local Storage
 
 The app does not persist searches on a server. Successful searches are stored in the user's browser `localStorage` under:
