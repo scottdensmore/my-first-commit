@@ -13,7 +13,7 @@ permissions:
   issues: write
 
 jobs:
-  smoke:
+  production-health-check:
     name: Playwright production health check
     if: >-
       github.event_name == 'workflow_dispatch' ||

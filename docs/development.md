@@ -111,3 +111,22 @@ See the [production runbook](production.md) for deployment checks, observability
 - Keep PRs focused and wait for CI, Vercel preview, and Copilot review.
 - Use the issue templates for bugs, feature ideas, and maintenance tasks.
 - Merge dependency updates one at a time when possible.
+
+## Dependency Update Policy
+
+Dependabot opens weekly patch and minor updates for npm packages and GitHub Actions. Major npm version updates are intentionally ignored by Dependabot because they often need compatibility review.
+
+For dependency pull requests:
+
+1. Merge one dependency PR at a time when possible.
+2. Confirm CI and Vercel preview are green.
+3. Review `package-lock.json` for unrelated churn.
+4. Check release notes for packages that touch Next.js, React, Octokit, Playwright, or Vercel.
+
+For major upgrades:
+
+1. Open a dedicated maintenance issue or PR.
+2. Read the migration guide or release notes first.
+3. Upgrade the package and lockfile together.
+4. Run `npm test`, `npm run lint`, `npm run build`, and `npm run test:e2e`.
+5. Update docs, runbook notes, or the changelog when behavior, commands, Node requirements, or deployment assumptions change.
