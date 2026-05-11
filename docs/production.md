@@ -170,6 +170,17 @@ Useful fields include:
 
 Search usernames and tokens should not appear in logs.
 
+## Security Headers
+
+The app sets baseline security headers from `next.config.ts`:
+
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` disabling camera, microphone, geolocation, and payment APIs
+- `X-Frame-Options: DENY`
+
+Content Security Policy is intentionally not enabled yet. Next.js and Vercel Analytics need a carefully tuned policy so production scripts, generated images, and analytics continue to work without weakening the policy into noise.
+
 ## Privacy And Local Storage
 
 The app does not persist searches on a server. Successful searches are stored in the user's browser `localStorage` under:

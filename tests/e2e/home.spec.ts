@@ -1,4 +1,16 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type APIResponse } from "@playwright/test";
+
+function expectSecurityHeaders(response: APIResponse) {
+  const headers = response.headers();
+
+  expect(headers["x-content-type-options"]).toBe("nosniff");
+  expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+  expect(headers["permissions-policy"]).toContain("camera=()");
+  expect(headers["permissions-policy"]).toContain("microphone=()");
+  expect(headers["permissions-policy"]).toContain("geolocation=()");
+  expect(headers["permissions-policy"]).toContain("payment=()");
+  expect(headers["x-frame-options"]).toBe("DENY");
+}
 
 test("home page search field is keyboard-ready and not treated as a credential field", async ({ page }) => {
   await page.goto("/");
@@ -122,6 +134,23 @@ test("home page advertises branded app and social preview images", async ({ page
   expect(iconResponse.headers()["content-type"]).toContain("image/png");
   expect(ogResponse.headers()["content-type"]).toContain("image/png");
   expect(twitterResponse.headers()["content-type"]).toContain("image/png");
+});
+
+test("app responses include baseline security headers", async ({ request }) => {
+  const homeResponse = await request.get("/");
+  const healthResponse = await request.get("/api/health");
+  const notFoundResponse = await request.get("/missing-commit-path");
+  const ogResponse = await request.get("/opengraph-image");
+
+  expect(homeResponse.ok()).toBe(true);
+  expect(healthResponse.ok()).toBe(true);
+  expect(notFoundResponse.status()).toBe(404);
+  expect(ogResponse.ok()).toBe(true);
+
+  expectSecurityHeaders(homeResponse);
+  expectSecurityHeaders(healthResponse);
+  expectSecurityHeaders(notFoundResponse);
+  expectSecurityHeaders(ogResponse);
 });
 
 test("unknown routes show a branded not-found page", async ({ page }) => {
