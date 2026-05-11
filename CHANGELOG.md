@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Added
 
+- Architecture note and manual QA checklist with Open Graph preview validation steps.
 - Accessibility checks for landmarks, keyboard tab order, and privacy content.
 - Baseline security headers for app, API, 404, and generated image responses.
 - Runtime `/api/health` endpoint for deployment checks and production troubleshooting.

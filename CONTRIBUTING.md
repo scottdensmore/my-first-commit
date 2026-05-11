@@ -44,3 +44,4 @@ Dependabot opens dependency PRs. Review and merge them one at a time when possib
 After a PR merges to `main`, Vercel deploys production and GitHub Actions runs the production health check against the public app URL.
 
 Use the [production runbook](docs/production.md) for deployment checks, observability, and troubleshooting.
+Use the [manual QA checklist](docs/manual-qa.md) for larger UI, metadata, or release-verification changes.
