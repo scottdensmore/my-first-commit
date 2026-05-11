@@ -32,6 +32,7 @@ The app is intentionally small: no accounts, no database, and no server-side sto
 - **Development guide:** [docs/development.md](docs/development.md)
 - **Production runbook:** [docs/production.md](docs/production.md)
 - **Contributing guide:** [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ## How It Works
 
@@ -65,6 +66,7 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 - Use the [development guide](docs/development.md) for local setup, environment variables, testing, and deployment commands.
 - Use the [production runbook](docs/production.md) for production checks, observability, and troubleshooting.
 - Use the [contributing guide](CONTRIBUTING.md) for branch, PR, review, and validation workflow.
+- Use the [changelog](CHANGELOG.md) to track user-facing changes and release notes.
 
 ## License
 
