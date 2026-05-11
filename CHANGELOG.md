@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Added
 
+- Baseline security headers for app, API, 404, and generated image responses.
 - Runtime `/api/health` endpoint for deployment checks and production troubleshooting.
 - Branded app error boundary and custom 404 page.
 - Production health check workflow with GitHub issue creation on deployment failures.
