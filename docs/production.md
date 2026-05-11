@@ -117,6 +117,8 @@ PLAYWRIGHT_BASE_URL=https://your-deployment.example npm run test:e2e
 
 You can also start `Production Health Check` manually from GitHub Actions. Provide the public app URL as `base_url`.
 
+Use the [manual QA checklist](manual-qa.md) for larger UI changes and Open Graph preview validation.
+
 ## Observability
 
 This app intentionally uses Vercel-only observability. Do not add Sentry, GlitchTip, or another paid error-monitoring service unless the app grows beyond personal use.
