@@ -19,7 +19,7 @@ body:
       description: How will we know this is done?
       placeholder: |
         - CI passes
-        - Production Health Check passes, if production behavior changes
+        - Production Health Check passes if production behavior changes
         - Runbook is updated if needed
     validations:
       required: true
