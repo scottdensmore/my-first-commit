@@ -34,6 +34,7 @@ The app is intentionally small: no accounts, no database, and no server-side sto
 - **Architecture:** [docs/architecture.md](docs/architecture.md)
 - **Manual QA checklist:** [docs/manual-qa.md](docs/manual-qa.md)
 - **Contributing guide:** [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Roadmap:** [ROADMAP.md](ROADMAP.md)
 - **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ## How It Works
@@ -70,6 +71,7 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 - Use the [architecture note](docs/architecture.md) to understand the browser, server action, GitHub API, and UI flow.
 - Use the [manual QA checklist](docs/manual-qa.md) for release and Open Graph preview validation.
 - Use the [contributing guide](CONTRIBUTING.md) for branch, PR, review, and validation workflow.
+- Use the [roadmap](ROADMAP.md) to track near-term and deferred ideas.
 - Use the [changelog](CHANGELOG.md) to track user-facing changes and release notes.
 
 ## License
