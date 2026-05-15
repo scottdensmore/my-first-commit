@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState, useTransition } from '
 import { getCommits, CommitData } from './actions';
 import FirstCommitDisplay from '@/components/FirstCommitDisplay';
 import { FaGithub } from "react-icons/fa";
+import { GoCopy } from "react-icons/go";
 
 const RECENT_SEARCHES_STORAGE_KEY = "my-first-commit:recent-searches";
 const MAX_RECENT_SEARCHES = 5;
@@ -109,11 +110,28 @@ function getResultMessage(result: CommitData) {
   }
 }
 
+function getRepositoryUrl(fullName: string) {
+  return `https://github.com/${fullName}`;
+}
+
+function buildResultShareText(username: string, result: CommitData) {
+  const firstCommit = result.commits[0];
+  const firstLine = firstCommit.message.split("\n")[0];
+
+  return [
+    `${username}'s first public commit: ${firstLine}`,
+    `Repository: ${firstCommit.repository.full_name}`,
+    `Commit: ${firstCommit.html_url}`,
+    `Search: ${window.location.href}`,
+  ].join("\n");
+}
+
 export default function Home() {
   const [username, setUsername] = useState(getInitialSharedUsername);
   const [result, setResult] = useState<CommitData | null>(null);
   const [lastSearchedUsername, setLastSearchedUsername] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [shareStatus, setShareStatus] = useState("");
   const [isPending, startTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -156,6 +174,7 @@ export default function Home() {
     if (options.updateUrl) updateSharedSearchUrl(trimmedUsername);
 
     setLastSearchedUsername(trimmedUsername);
+    setShareStatus("");
     startTransition(async () => {
        const data = await getCommits(trimmedUsername);
        setResult(data);
@@ -172,6 +191,7 @@ export default function Home() {
 
   const resetSearch = () => {
     setResult(null);
+    setShareStatus("");
     clearSharedSearchUrl();
     requestAnimationFrame(() => searchInputRef.current?.focus());
   };
@@ -199,6 +219,24 @@ export default function Home() {
     ? "username-hint username-validation"
     : "username-hint";
   const canSearch = Boolean(username.trim()) && !usernameValidationMessage && !isPending;
+  const firstCommit = result?.found ? result.commits[0] : null;
+  const uniqueRepositoryCount = result?.found
+    ? new Set(result.commits.map((commit) => commit.repository.full_name)).size
+    : 0;
+
+  const copyResult = async () => {
+    if (!result?.found || !navigator.clipboard) {
+      setShareStatus("Copy is not available in this browser.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(buildResultShareText(lastSearchedUsername, result));
+      setShareStatus("Result copied.");
+    } catch {
+      setShareStatus("Could not copy result. Use the commit link instead.");
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] font-sans">
@@ -210,7 +248,7 @@ export default function Home() {
          </div>
          {result?.found && (
             <button 
-                onClick={() => { setResult(null); setUsername(''); setLastSearchedUsername(''); clearSharedSearchUrl(); }}
+                onClick={() => { setResult(null); setUsername(''); setLastSearchedUsername(''); setShareStatus(''); clearSharedSearchUrl(); }}
                 className="px-3 py-1.5 text-xs font-semibold text-[var(--github-gray-dark)] bg-white border border-[var(--github-border)] rounded-md hover:bg-gray-50 transition-colors shadow-sm"
             >
                 Search another user
@@ -364,9 +402,33 @@ export default function Home() {
                     <h1 className="text-2xl font-bold text-[var(--github-gray-dark)]">
                         First public commit found
                     </h1>
+                    {firstCommit && (
+                        <p className="mt-2 text-sm text-[var(--github-gray-dark)]">
+                            Earliest indexed public commit for @{lastSearchedUsername} appears in{" "}
+                            <a href={getRepositoryUrl(firstCommit.repository.full_name)} className="font-semibold text-[var(--github-blue)] hover:underline">
+                                {firstCommit.repository.full_name}
+                            </a>
+                            {uniqueRepositoryCount > 1 ? `, with nearby early commits across ${uniqueRepositoryCount} repositories.` : "."}
+                        </p>
+                    )}
                     <p className="mt-2 text-sm text-[var(--github-gray-text)]">
                         GitHub search may miss older commits when indexing is incomplete, delayed, or author metadata changed.
                     </p>
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={copyResult}
+                            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--github-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--github-gray-dark)] shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2"
+                        >
+                            <GoCopy aria-hidden="true" />
+                            Copy result
+                        </button>
+                        {shareStatus && (
+                            <span role="status" aria-live="polite" className="text-sm font-medium text-[var(--github-gray-text)]">
+                                {shareStatus}
+                            </span>
+                        )}
+                    </div>
                 </div>
                 
                 <div className="w-full max-w-2xl relative">
@@ -386,7 +448,7 @@ export default function Home() {
 
                         {/* Subsequent Commits */}
                         {result.commits.slice(1).map((commit) => (
-                            <div key={commit.sha} className="flex gap-4 mb-4">
+                            <div key={`${commit.repository.full_name}-${commit.sha}`} className="flex gap-4 mb-4">
                                 <div className="hidden sm:flex flex-col items-center mt-8">
                                     <div className="w-4 h-4 rounded-sm bg-[var(--github-green)] opacity-70 border border-[var(--github-green-hover)] shadow-sm"></div>
                                 </div>

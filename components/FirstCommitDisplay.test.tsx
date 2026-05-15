@@ -33,6 +33,9 @@ describe("FirstCommitDisplay", () => {
     expect(screen.getByRole("link", { name: "abcdef1" })).toHaveAttribute("href", commit.html_url);
     expect(screen.getByText("Add the first files")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "octo" })).toHaveAttribute("src", expect.stringContaining("octo.png"));
+    expect(screen.getByText("Jan 1, 2024")).toBeInTheDocument();
+    expect(screen.getByText(/commit age/i)).toBeInTheDocument();
+    expect(screen.getByText(/source repository/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view full commit on github/i })).toHaveAttribute("href", commit.html_url);
   });
 
@@ -40,5 +43,6 @@ describe("FirstCommitDisplay", () => {
     const { container } = render(<FirstCommitDisplay data={commit} isMain={false} />);
 
     expect(container.firstElementChild).toHaveClass("max-w-xl");
+    expect(screen.queryByText(/commit date/i)).not.toBeInTheDocument();
   });
 });

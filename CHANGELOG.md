@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Added
 
+- Result sharing, source repository context, and richer first-commit metadata.
 - Label sync configuration, issue template polish, and dependency update policy.
 - Roadmap and label guidance for lightweight project planning.
 

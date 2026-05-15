@@ -71,7 +71,82 @@ describe("Home", () => {
     expect(window.location.search).toBe("?user=octo");
     expect(await screen.findByRole("heading", { name: /first public commit found/i })).toBeInTheDocument();
     expect(screen.getByText(/github search may miss older commits/i)).toBeInTheDocument();
+    expect(screen.getByText(/earliest indexed public commit for @octo appears in/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "octo/repo" })).toHaveAttribute("href", "https://github.com/octo/repo");
     expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
+  });
+
+  it("copies a shareable result summary", async () => {
+    mockGetCommits.mockResolvedValue(commitResult);
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+    await screen.findByRole("heading", { name: /first public commit found/i });
+
+    await user.click(screen.getByRole("button", { name: /copy result/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(/result copied/i);
+    });
+    await expect(navigator.clipboard.readText()).resolves.toContain("octo's first public commit: Initial commit");
+    await expect(navigator.clipboard.readText()).resolves.toContain("https://github.com/octo/repo/commit/abcdef123456");
+  });
+
+  it("shows a helpful status when copying a result fails", async () => {
+    mockGetCommits.mockResolvedValue(commitResult);
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Denied"));
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+    await screen.findByRole("heading", { name: /first public commit found/i });
+
+    await user.click(screen.getByRole("button", { name: /copy result/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(/could not copy result/i);
+    });
+    expect(writeText).toHaveBeenCalled();
+  });
+
+  it("renders same-SHA commits from different repositories without key collisions", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mockGetCommits.mockResolvedValue({
+      found: true,
+      commits: [
+        commitResult.commits[0],
+        {
+          ...commitResult.commits[0],
+          repository: {
+            name: "fork",
+            owner: "space",
+            full_name: "space/fork",
+          },
+          html_url: "https://github.com/space/fork/commit/abcdef123456",
+        },
+        {
+          ...commitResult.commits[0],
+          repository: {
+            name: "another-fork",
+            owner: "space",
+            full_name: "space/another-fork",
+          },
+          html_url: "https://github.com/space/another-fork/commit/abcdef123456",
+        },
+      ],
+    });
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+
+    expect(await screen.findByRole("link", { name: "fork" })).toHaveAttribute("href", "https://github.com/space/fork");
+    expect(await screen.findByRole("link", { name: "another-fork" })).toHaveAttribute("href", "https://github.com/space/another-fork");
+    expect(consoleError.mock.calls.flat().join(" ")).not.toMatch(/same key/i);
   });
 
   it("auto-searches a valid username from the URL", async () => {
