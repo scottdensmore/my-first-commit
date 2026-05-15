@@ -84,15 +84,17 @@ export default function FirstCommitDisplay({ data, isMain = true }: Props) {
                         {data.author.login}
                     </a>
                     <span>committed</span>
-                    <span title={formatCommitDateTime(dateObj)}>
+                    <time dateTime={data.date} title={formatCommitDateTime(dateObj)}>
                         {formatDistanceToNow(dateObj, { addSuffix: true })}
-                    </span>
+                    </time>
                 </div>
                 {isMain && (
                     <dl className="mt-4 grid gap-2 text-xs text-[var(--github-gray-text)] sm:grid-cols-3">
                         <div className="rounded-md border border-[var(--github-border)] bg-[var(--github-gray-light)] px-3 py-2">
                             <dt className="font-semibold text-[var(--github-gray-dark)]">Commit date</dt>
-                            <dd className="mt-1">{formatCommitDate(dateObj)}</dd>
+                            <dd className="mt-1">
+                                <time dateTime={data.date}>{formatCommitDate(dateObj)}</time>
+                            </dd>
                         </div>
                         <div className="rounded-md border border-[var(--github-border)] bg-[var(--github-gray-light)] px-3 py-2">
                             <dt className="font-semibold text-[var(--github-gray-dark)]">Commit age</dt>

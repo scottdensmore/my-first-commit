@@ -8,6 +8,7 @@ const octokit = new Octokit({
 });
 
 const GITHUB_SEARCH_TIMEOUT_MS = 10_000;
+const E2E_COMMIT_SEARCH_MOCKS_ENABLED = process.env.E2E_COMMIT_SEARCH_MOCKS === "1";
 
 type GitHubErrorDetails = {
   message?: string;
@@ -38,6 +39,72 @@ export interface CommitData {
   error?: string;
   errorKind?: "empty" | "rate_limit" | "timeout" | "unavailable" | "validation" | "unknown";
   commits: CommitInfo[];
+}
+
+function getE2eCommitSearchResult(username: string): CommitData | null {
+  if (!E2E_COMMIT_SEARCH_MOCKS_ENABLED) return null;
+
+  // Keep browser tests deterministic without coupling them to GitHub search availability.
+  const mockCommit: CommitInfo = {
+    message: "Initial public commit\n\nAdd the first project files",
+    date: "2020-01-02T03:04:05Z",
+    html_url: "https://github.com/e2e-user/origin-repo/commit/abcdef123456",
+    sha: "abcdef123456",
+    repository: {
+      name: "origin-repo",
+      owner: "e2e-user",
+      full_name: "e2e-user/origin-repo",
+    },
+    author: {
+      login: username,
+      avatar_url: "https://github.com/ghost.png",
+      html_url: `https://github.com/${username}`,
+    },
+  };
+
+  switch (username) {
+    case "e2e-result":
+      return {
+        found: true,
+        commits: [
+          mockCommit,
+          {
+            ...mockCommit,
+            message: "Follow-up commit",
+            html_url: "https://github.com/e2e-user/next-repo/commit/bcdefa234567",
+            sha: "bcdefa234567",
+            repository: {
+              name: "next-repo",
+              owner: "e2e-user",
+              full_name: "e2e-user/next-repo",
+            },
+          },
+        ],
+      };
+    case "e2e-empty":
+      return {
+        found: false,
+        error: "No public commits found for this user (or indexing is delayed).",
+        errorKind: "empty",
+        commits: [],
+      };
+    case "e2e-rate-limit":
+      return {
+        found: false,
+        error: "GitHub rate limit reached. Please try again in a few minutes.",
+        errorKind: "rate_limit",
+        commits: [],
+      };
+    case "e2e-unavailable":
+      return {
+        found: false,
+        error: "GitHub is temporarily unavailable. Please try again soon.",
+        errorKind: "unavailable",
+        commits: [],
+      };
+    default:
+      return null;
+  }
 }
 
 function getGitHubErrorDetails(error: unknown): GitHubErrorDetails {
@@ -169,6 +236,8 @@ function mapCommitItem(item: unknown, username: string): CommitInfo | null {
 
 export async function getCommits(username: string): Promise<CommitData> {
   if (!username) return { found: false, error: "Username is required", errorKind: "validation", commits: [] };
+  const e2eCommitSearchResult = getE2eCommitSearchResult(username);
+  if (e2eCommitSearchResult) return e2eCommitSearchResult;
 
   try {
     const response = await withTimeoutSignal((signal) => octokit.rest.search.commits({

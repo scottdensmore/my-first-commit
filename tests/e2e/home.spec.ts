@@ -1,4 +1,6 @@
-import { expect, test, type APIResponse } from "@playwright/test";
+import { expect, test, type APIResponse, type Page } from "@playwright/test";
+
+const isDeployedTarget = Boolean(process.env.PLAYWRIGHT_BASE_URL);
 
 function expectSecurityHeaders(response: APIResponse) {
   const headers = response.headers();
@@ -10,6 +12,15 @@ function expectSecurityHeaders(response: APIResponse) {
   expect(headers["permissions-policy"]).toContain("geolocation=()");
   expect(headers["permissions-policy"]).toContain("payment=()");
   expect(headers["x-frame-options"]).toBe("DENY");
+}
+
+async function searchForUsername(page: Page, username: string) {
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+
+  const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+  await searchBox.fill(username);
+  await page.getByRole("button", { name: "Search", exact: true }).click();
 }
 
 test("home page search field is keyboard-ready and not treated as a credential field", async ({ page }) => {
@@ -220,4 +231,53 @@ test("health endpoint reports app status without caching", async ({ request }) =
     },
   });
   expect(Date.parse(body.timestamp)).not.toBeNaN();
+});
+
+test.describe("local mocked commit search states", () => {
+  test.skip(isDeployedTarget, "mocked commit search states only run against the local Playwright server");
+
+  test("home page renders result sharing and source context", async ({ context, page }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await searchForUsername(page, "e2e-result");
+
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+    await expect(page.getByText(/earliest indexed public commit for @e2e-result appears in/i)).toBeVisible();
+    await expect(page.getByRole("link", { name: "e2e-user/origin-repo" })).toHaveAttribute("href", "https://github.com/e2e-user/origin-repo");
+    await expect(page.getByRole("link", { name: "Initial public commit" })).toHaveAttribute("href", "https://github.com/e2e-user/origin-repo/commit/abcdef123456");
+    await expect(page.getByText("Commit date")).toBeVisible();
+    await expect(page.locator('dl time[datetime="2020-01-02T03:04:05Z"]')).toHaveCount(1);
+    await expect(page.getByText("Commit age")).toBeVisible();
+    await expect(page.getByText("Source repository")).toBeVisible();
+
+    await page.getByRole("button", { name: "Copy result" }).click();
+
+    await expect(page.getByRole("status")).toContainText("Result copied.");
+  });
+
+  test("home page renders a helpful empty search state", async ({ page }) => {
+    await searchForUsername(page, "e2e-empty");
+
+    await expect(page.getByRole("heading", { name: "No public commits found." })).toBeVisible();
+    await expect(page.getByRole("status")).toContainText("No public commits found.");
+    await expect(page.getByText(/GitHub commit search indexing can lag/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Edit username" })).toBeVisible();
+  });
+
+  test("home page renders retry guidance for rate limits", async ({ page }) => {
+    await searchForUsername(page, "e2e-rate-limit");
+
+    await expect(page.getByRole("heading", { name: "GitHub is asking us to slow down." })).toBeVisible();
+    await expect(page.locator('main [role="alert"]').filter({ hasText: "GitHub is asking us to slow down." })).toBeVisible();
+    await expect(page.getByText(/temporarily limited commit search requests/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+  });
+
+  test("home page renders retry guidance when GitHub is unavailable", async ({ page }) => {
+    await searchForUsername(page, "e2e-unavailable");
+
+    await expect(page.getByRole("heading", { name: "GitHub search is temporarily unavailable." })).toBeVisible();
+    await expect(page.locator('main [role="alert"]').filter({ hasText: "GitHub search is temporarily unavailable." })).toBeVisible();
+    await expect(page.getByText(/temporary service error/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+  });
 });

@@ -33,6 +33,7 @@ The app is intentionally small: no accounts, no database, and no server-side sto
 - **Production runbook:** [docs/production.md](docs/production.md)
 - **Architecture:** [docs/architecture.md](docs/architecture.md)
 - **Manual QA checklist:** [docs/manual-qa.md](docs/manual-qa.md)
+- **Release guide:** [docs/release.md](docs/release.md)
 - **Contributing guide:** [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Roadmap:** [ROADMAP.md](ROADMAP.md)
 - **Changelog:** [CHANGELOG.md](CHANGELOG.md)
@@ -60,10 +61,12 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 
 ## Limitations
 
-- GitHub commit search can lag behind newly pushed commits.
-- Only public commits indexed by GitHub are searchable; private commits are never included.
-- Older commits can be missed if GitHub's public search index does not return them for the author query.
-- Results depend on the author metadata GitHub exposes for public commits.
+- GitHub commit search can lag behind newly pushed commits, so very recent history may not appear immediately.
+- Only public commits indexed by GitHub are searchable. Private commits, deleted repositories, and private forks are never included.
+- Squashed, rebased, rewritten, or force-pushed history can make a user's earliest visible public commit differ from their actual first commit.
+- Renamed users, changed author emails, bot-authored commits, and missing author metadata can affect which commits GitHub returns for an author search.
+- GitHub's public search index can miss older commits or return duplicate commit SHAs across forks and mirrored repositories.
+- Unauthenticated GitHub requests have stricter rate limits. A server-side `GITHUB_TOKEN` improves reliability but does not make private data searchable.
 
 ## Documentation
 
@@ -71,6 +74,7 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 - Use the [production runbook](docs/production.md) for production checks, observability, and troubleshooting.
 - Use the [architecture note](docs/architecture.md) to understand the browser, server action, GitHub API, and UI flow.
 - Use the [manual QA checklist](docs/manual-qa.md) for release and Open Graph preview validation.
+- Use the [release guide](docs/release.md) to cut tags and GitHub releases.
 - Use the [contributing guide](CONTRIBUTING.md) for branch, PR, review, and validation workflow.
 - Use the [roadmap](ROADMAP.md) to track near-term and deferred ideas.
 - Use the [label guide](docs/labels.md) for issue and pull request labels.
