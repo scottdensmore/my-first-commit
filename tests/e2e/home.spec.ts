@@ -245,7 +245,7 @@ test.describe("local mocked commit search states", () => {
     await expect(page.getByRole("link", { name: "e2e-user/origin-repo" })).toHaveAttribute("href", "https://github.com/e2e-user/origin-repo");
     await expect(page.getByRole("link", { name: "Initial public commit" })).toHaveAttribute("href", "https://github.com/e2e-user/origin-repo/commit/abcdef123456");
     await expect(page.getByText("Commit date")).toBeVisible();
-    await expect(page.getByText("Jan 2, 2020")).toBeVisible();
+    await expect(page.locator('dl time[datetime="2020-01-02T03:04:05Z"]')).toHaveCount(1);
     await expect(page.getByText("Commit age")).toBeVisible();
     await expect(page.getByText("Source repository")).toBeVisible();
 
