@@ -225,10 +225,17 @@ export default function Home() {
     : 0;
 
   const copyResult = async () => {
-    if (!result?.found || !navigator.clipboard) return;
+    if (!result?.found || !navigator.clipboard) {
+      setShareStatus("Copy is not available in this browser.");
+      return;
+    }
 
-    await navigator.clipboard.writeText(buildResultShareText(lastSearchedUsername, result));
-    setShareStatus("Result copied.");
+    try {
+      await navigator.clipboard.writeText(buildResultShareText(lastSearchedUsername, result));
+      setShareStatus("Result copied.");
+    } catch {
+      setShareStatus("Could not copy result. Use the commit link instead.");
+    }
   };
 
   return (

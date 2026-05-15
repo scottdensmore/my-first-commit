@@ -94,6 +94,24 @@ describe("Home", () => {
     await expect(navigator.clipboard.readText()).resolves.toContain("https://github.com/octo/repo/commit/abcdef123456");
   });
 
+  it("shows a helpful status when copying a result fails", async () => {
+    mockGetCommits.mockResolvedValue(commitResult);
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Denied"));
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+    await screen.findByRole("heading", { name: /first public commit found/i });
+
+    await user.click(screen.getByRole("button", { name: /copy result/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(/could not copy result/i);
+    });
+    expect(writeText).toHaveBeenCalled();
+  });
+
   it("renders same-SHA commits from different repositories without key collisions", async () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
     mockGetCommits.mockResolvedValue({
@@ -109,6 +127,15 @@ describe("Home", () => {
           },
           html_url: "https://github.com/space/fork/commit/abcdef123456",
         },
+        {
+          ...commitResult.commits[0],
+          repository: {
+            name: "another-fork",
+            owner: "space",
+            full_name: "space/another-fork",
+          },
+          html_url: "https://github.com/space/another-fork/commit/abcdef123456",
+        },
       ],
     });
     const user = userEvent.setup();
@@ -118,6 +145,7 @@ describe("Home", () => {
     await user.click(screen.getByRole("button", { name: /^search$/i }));
 
     expect(await screen.findByRole("link", { name: "fork" })).toHaveAttribute("href", "https://github.com/space/fork");
+    expect(await screen.findByRole("link", { name: "another-fork" })).toHaveAttribute("href", "https://github.com/space/another-fork");
     expect(consoleError.mock.calls.flat().join(" ")).not.toMatch(/same key/i);
   });
 
