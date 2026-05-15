@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { CommitInfo } from '../app/actions';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { GoGitCommit, GoRepo } from "react-icons/go";
 
 interface Props {
@@ -9,9 +9,27 @@ interface Props {
   isMain?: boolean;
 }
 
+function formatCommitDate(date: Date) {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+function formatCommitDateTime(date: Date) {
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(date);
+}
+
 export default function FirstCommitDisplay({ data, isMain = true }: Props) {
   const dateObj = new Date(data.date);
   const widthClass = isMain ? "max-w-2xl" : "max-w-xl";
+  const shortSha = data.sha.substring(0, 7);
   
   return (
     <div className={`w-full ${widthClass} mx-auto border border-[var(--github-border)] rounded-md overflow-hidden font-sans text-sm shadow-sm bg-white`}>
@@ -30,7 +48,7 @@ export default function FirstCommitDisplay({ data, isMain = true }: Props) {
         <div className="font-mono text-xs">
            <span className="opacity-60">commit </span>
            <a href={data.html_url} className="hover:text-[var(--github-blue)] hover:underline">
-             {data.sha.substring(0, 7)}
+             {shortSha}
            </a>
         </div>
       </div>
@@ -66,10 +84,26 @@ export default function FirstCommitDisplay({ data, isMain = true }: Props) {
                         {data.author.login}
                     </a>
                     <span>committed</span>
-                    <span title={format(dateObj, "PPP pp")}>
+                    <span title={formatCommitDateTime(dateObj)}>
                         {formatDistanceToNow(dateObj, { addSuffix: true })}
                     </span>
                 </div>
+                {isMain && (
+                    <dl className="mt-4 grid gap-2 text-xs text-[var(--github-gray-text)] sm:grid-cols-3">
+                        <div className="rounded-md border border-[var(--github-border)] bg-[var(--github-gray-light)] px-3 py-2">
+                            <dt className="font-semibold text-[var(--github-gray-dark)]">Commit date</dt>
+                            <dd className="mt-1">{formatCommitDate(dateObj)}</dd>
+                        </div>
+                        <div className="rounded-md border border-[var(--github-border)] bg-[var(--github-gray-light)] px-3 py-2">
+                            <dt className="font-semibold text-[var(--github-gray-dark)]">Commit age</dt>
+                            <dd className="mt-1">{formatDistanceToNow(dateObj, { addSuffix: false })}</dd>
+                        </div>
+                        <div className="rounded-md border border-[var(--github-border)] bg-[var(--github-gray-light)] px-3 py-2">
+                            <dt className="font-semibold text-[var(--github-gray-dark)]">Source repository</dt>
+                            <dd className="mt-1 truncate" title={data.repository.full_name}>{data.repository.full_name}</dd>
+                        </div>
+                    </dl>
+                )}
             </div>
         </div>
       </div>
