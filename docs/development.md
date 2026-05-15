@@ -62,6 +62,8 @@ Run the local browser health check:
 npm run test:e2e
 ```
 
+Local Playwright runs start the app with `E2E_COMMIT_SEARCH_MOCKS=1` so result and error-state coverage is deterministic and does not depend on GitHub search availability.
+
 Run the browser health check against production:
 
 ```bash
@@ -104,6 +106,7 @@ PRODUCTION_BASE_URL=https://my-first-commit-eta.vercel.app
 ```
 
 See the [production runbook](production.md) for deployment checks, observability, and troubleshooting.
+See the [release guide](release.md) for the release checklist, tag, and GitHub release workflow.
 
 ## Maintenance Workflow
 

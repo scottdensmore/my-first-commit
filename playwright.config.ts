@@ -14,7 +14,7 @@ export default defineConfig({
   webServer: deployedBaseUrl
     ? undefined
     : {
-        command: "npm run dev -- -H 127.0.0.1 -p 3100",
+        command: "E2E_COMMIT_SEARCH_MOCKS=1 npm run dev -- -H 127.0.0.1 -p 3100",
         url: localBaseUrl,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
