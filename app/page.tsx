@@ -10,6 +10,8 @@ import { GoCopy } from "react-icons/go";
 const RECENT_SEARCHES_STORAGE_KEY = "my-first-commit:recent-searches";
 const MAX_RECENT_SEARCHES = 5;
 const EXAMPLE_USERNAMES = ["octocat", "torvalds", "gaearon"];
+const APP_RELEASE = process.env.NEXT_PUBLIC_APP_RELEASE ?? "local";
+const APP_RELEASE_URL = process.env.NEXT_PUBLIC_APP_RELEASE_URL ?? "";
 
 function trackAppEvent(name: string, properties?: Record<string, string | number | boolean>) {
   try {
@@ -541,7 +543,16 @@ export default function Home() {
             </a>
             .
         </p>
-        <p>&copy; {new Date().getFullYear()} Not affiliated with GitHub.</p>
+        <p>
+            &copy; {new Date().getFullYear()} Not affiliated with GitHub.{" "}
+            {APP_RELEASE_URL ? (
+                <a href={APP_RELEASE_URL} className="font-semibold text-[var(--github-blue)] hover:underline">
+                    Release {APP_RELEASE}
+                </a>
+            ) : (
+                <span>Release {APP_RELEASE}</span>
+            )}
+        </p>
       </footer>
     </div>
   );

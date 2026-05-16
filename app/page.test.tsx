@@ -579,5 +579,6 @@ describe("Home", () => {
     expect(screen.getByText(/not stored on this app's server/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /read the privacy note/i })).toHaveAttribute("href", "/privacy");
     expect(screen.getByText(/Not affiliated with GitHub/i)).toBeInTheDocument();
+    expect(screen.getByText("Release local")).toBeInTheDocument();
   });
 });
