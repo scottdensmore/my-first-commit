@@ -52,6 +52,7 @@ test("home page search field is keyboard-ready and not treated as a credential f
   await expect(searchButton).toBeFocused();
 
   await expect(page.getByText(/Not affiliated with GitHub/)).toBeVisible();
+  await expect(page.getByText(/Release v0.1.0-/)).toBeVisible();
 });
 
 test("home page exposes accessible landmarks and privacy content", async ({ page }) => {

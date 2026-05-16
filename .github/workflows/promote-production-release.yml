@@ -1,0 +1,70 @@
+name: Promote Production Release
+
+on:
+  workflow_run:
+    workflows:
+      - Production Health Check
+    types:
+      - completed
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    name: Tag and release healthy production deployment
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'deployment_status' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out deployed commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Resolve release tag
+        id: release
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          short_sha="$(printf '%s' "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)"
+          tag="v${version}-${short_sha}"
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag and GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists."
+            exit 0
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists."
+          else
+            git tag "$TAG" "$TARGET_SHA"
+            git push origin "$TAG"
+          fi
+
+          {
+            echo "Production deployment release for $TAG."
+            echo
+            echo "This release was created automatically after Vercel deployed the commit and the Production Health Check passed."
+            echo
+            echo "- Commit: $TARGET_SHA"
+            echo "- Production health check: $RUN_URL"
+          } > release-notes.md
+
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file release-notes.md \
+            --target "$TARGET_SHA" \
+            --verify-tag

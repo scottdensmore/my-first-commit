@@ -23,6 +23,7 @@ The app is intentionally small: no accounts, no database, and no server-side sto
 - **Recent Searches:** Keeps successful searches as local browser shortcuts for quick reruns.
 - **Example Searches:** Offers known public GitHub profiles as quick checks for first-time use and empty-result recovery.
 - **Shareable Searches:** Updates the URL with the searched username so results can be shared.
+- **Release Visibility:** Shows the deployed release tag in the footer and links it to the matching GitHub release.
 - **GitHub Aesthetic:** Fully themed with GitHub's color palette, typography, and iconography.
 - **Responsive Design:** Optimized for both desktop and mobile viewing.
 - **Production Checks:** Uses CI, production health checks, Vercel Analytics, and structured server logs.
@@ -52,6 +53,7 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 - **Icons:** [React Icons](https://react-icons.github.io/react-icons/)
 - **Date Handling:** [date-fns](https://date-fns.org/)
 - **Monitoring:** [Vercel Analytics](https://vercel.com/analytics), Vercel Logs, and GitHub Actions
+- **Releases:** Automatic GitHub releases after healthy Vercel production deployments
 
 ## Privacy
 

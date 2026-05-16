@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing semantic version tag to publish, for example v0.1.0.
+        description: Existing release tag to publish, for example v0.1.0 or v0.1.0-abcdef1.
         required: true
 
 permissions:
@@ -35,8 +35,8 @@ jobs:
             tag="${GITHUB_REF_NAME}"
           fi
 
-          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "Release tag must match vX.Y.Z."
+          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9a-f]{7,40})?$'; then
+            echo "Release tag must match vX.Y.Z or vX.Y.Z-<commit-sha>."
             exit 1
           fi
 
@@ -46,16 +46,20 @@ jobs:
           fi
 
           version="${tag#v}"
+          base_version="${version%%-*}"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "base_version=$base_version" >> "$GITHUB_OUTPUT"
 
       - name: Extract changelog notes
         id: notes
         env:
           VERSION: ${{ steps.release.outputs.version }}
+          BASE_VERSION: ${{ steps.release.outputs.base_version }}
+          TAG: ${{ steps.release.outputs.tag }}
         run: |
-          awk -v version="$VERSION" '
-            $0 ~ "^## " version "($| )" {
+          awk -v version="$VERSION" -v base_version="$BASE_VERSION" '
+            $0 ~ "^## " version "($| )" || $0 ~ "^## " base_version "($| )" {
               capture = 1
               next
             }
@@ -67,7 +71,15 @@ jobs:
             }
           ' CHANGELOG.md > release-notes.md
 
-          if [ ! -s release-notes.md ]; then
+          if [ ! -s release-notes.md ] && printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]{7,40}$'; then
+            {
+              echo "Production deployment release for $TAG."
+              echo
+              echo "This release was created automatically after Vercel deployed the commit and the Production Health Check passed."
+              echo
+              echo "See the commit history for the exact changes included in this deployment."
+            } > release-notes.md
+          elif [ ! -s release-notes.md ]; then
             echo "No CHANGELOG.md section found for $VERSION."
             echo "Add a '## $VERSION' section before publishing."
             exit 1
