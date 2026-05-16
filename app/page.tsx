@@ -10,7 +10,7 @@ import { GoCopy } from "react-icons/go";
 const RECENT_SEARCHES_STORAGE_KEY = "my-first-commit:recent-searches";
 const MAX_RECENT_SEARCHES = 5;
 const EXAMPLE_USERNAMES = ["octocat", "torvalds", "gaearon"];
-const APP_RELEASE = process.env.NEXT_PUBLIC_APP_RELEASE ?? "v0.1.0-local";
+const APP_RELEASE = process.env.NEXT_PUBLIC_APP_RELEASE ?? "local";
 const APP_RELEASE_URL = process.env.NEXT_PUBLIC_APP_RELEASE_URL ?? "";
 
 function trackAppEvent(name: string, properties?: Record<string, string | number | boolean>) {
