@@ -26,9 +26,16 @@ Use this checklist when cutting a new My First Commit release.
    git push origin vX.Y.Z
    ```
 
-2. Create a GitHub release from the tag.
-3. Use the matching `CHANGELOG.md` section as the release notes.
-4. Mark prereleases only when the release is not intended for normal production use.
+2. Confirm the `Release` workflow publishes the GitHub release automatically.
+3. If needed, run the workflow manually with the existing `vX.Y.Z` tag.
+4. Use the matching `CHANGELOG.md` section as the release notes.
+5. Mark prereleases only when the release is not intended for normal production use.
+
+The release workflow requires a `CHANGELOG.md` section named for the tag without the `v` prefix, for example:
+
+```markdown
+## 0.2.0
+```
 
 ## After Release
 

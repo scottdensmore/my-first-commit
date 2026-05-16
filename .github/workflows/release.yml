@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing semantic version tag to publish, for example v0.1.0.
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    name: Publish GitHub release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: release
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            tag="$INPUT_TAG"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+
+          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Release tag must match vX.Y.Z."
+            exit 1
+          fi
+
+          if ! git rev-parse "$tag" >/dev/null 2>&1; then
+            echo "Tag $tag does not exist."
+            exit 1
+          fi
+
+          version="${tag#v}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Extract changelog notes
+        id: notes
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          awk -v version="$VERSION" '
+            $0 ~ "^## " version "($| )" {
+              capture = 1
+              next
+            }
+            capture && /^## / {
+              exit
+            }
+            capture {
+              print
+            }
+          ' CHANGELOG.md > release-notes.md
+
+          if [ ! -s release-notes.md ]; then
+            echo "No CHANGELOG.md section found for $VERSION."
+            echo "Add a '## $VERSION' section before publishing."
+            exit 1
+          fi
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: gh release create "$TAG" --title "$TAG" --notes-file release-notes.md --verify-tag

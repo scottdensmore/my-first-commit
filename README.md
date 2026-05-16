@@ -21,6 +21,7 @@ The app is intentionally small: no accounts, no database, and no server-side sto
 - **Origin Discovery:** Uses the GitHub Search API to find the earliest public commits for any user.
 - **Visual Timeline:** Displays a sequence of the first 10 commits, connected by a vertical line with GitHub-style contribution squares.
 - **Recent Searches:** Keeps successful searches as local browser shortcuts for quick reruns.
+- **Example Searches:** Offers known public GitHub profiles as quick checks for first-time use and empty-result recovery.
 - **Shareable Searches:** Updates the URL with the searched username so results can be shared.
 - **GitHub Aesthetic:** Fully themed with GitHub's color palette, typography, and iconography.
 - **Responsive Design:** Optimized for both desktop and mobile viewing.
@@ -57,6 +58,7 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 - Usernames entered into the search field are sent to GitHub to retrieve public commit data.
 - `GITHUB_TOKEN` is used only server-side and is never exposed to the browser.
 - Recent searches are stored only in the user's browser under `my-first-commit:recent-searches`.
+- Vercel Analytics records page views and privacy-safe product events; analytics events do not include searched usernames.
 - The app does not store searches on a server.
 
 ## Limitations

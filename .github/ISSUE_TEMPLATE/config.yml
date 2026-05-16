@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Production runbook
+    url: https://github.com/scottdensmore/my-first-commit/blob/main/docs/production.md
+    about: Use this when the live app, Vercel deployment, or production health check needs attention.
+  - name: Security guidance
+    url: https://github.com/scottdensmore/my-first-commit/blob/main/docs/development.md#environment-variables
+    about: Review token and environment-variable guidance before reporting sensitive configuration issues.

@@ -13,6 +13,8 @@ Use labels to make issues and pull requests easy to scan. Keep the set small.
 - `docs`: README, runbook, changelog, contributing, architecture, or QA documentation.
 - `accessibility`: Keyboard, focus, landmarks, announcements, or screen-reader improvements.
 - `testing`: Unit, e2e, CI, production health, or QA coverage.
+- `release`: Tags, changelog entries, release notes, or GitHub releases.
+- `privacy`: Search data handling, analytics boundaries, or local browser storage.
 
 ## Usage Notes
 
