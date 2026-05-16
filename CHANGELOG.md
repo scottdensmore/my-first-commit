@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Added
 
+- Privacy page, example searches, privacy-safe analytics events, issue chooser config, and release publishing workflow.
 - Release guide, expanded known limitations, and local Playwright coverage for result and error states.
 - Result sharing, source repository context, and richer first-commit metadata.
 - Label sync configuration, issue template polish, and dependency update policy.

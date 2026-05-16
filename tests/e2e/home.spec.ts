@@ -41,6 +41,8 @@ test("home page search field is keyboard-ready and not treated as a credential f
 
   const searchButton = page.getByRole("button", { name: "Search", exact: true });
   await expect(searchButton).toBeDisabled();
+  await expect(page.getByRole("heading", { name: "Examples" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Search example username octocat" })).toBeVisible();
 
   await searchBox.pressSequentially("octocat");
   await expect(searchBox).toHaveValue("octocat");
@@ -60,6 +62,17 @@ test("home page exposes accessible landmarks and privacy content", async ({ page
   await expect(page.getByRole("search", { name: "GitHub commit search" })).toBeVisible();
   await expect(page.getByRole("contentinfo", { name: "Privacy and GitHub affiliation" })).toBeVisible();
   await expect(page.getByText(/recent searches stay in this browser only/i)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Read the privacy note" })).toHaveAttribute("href", "/privacy");
+});
+
+test("privacy page documents search and analytics handling", async ({ page }) => {
+  await page.goto("/privacy");
+
+  await expect(page.getByRole("heading", { name: "Privacy" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back to search" })).toHaveAttribute("href", "/");
+  await expect(page.getByText(/usernames entered into the search form are sent to GitHub/i)).toBeVisible();
+  await expect(page.getByText(/analytics events do not include the searched GitHub username/i)).toBeVisible();
+  await expect(page.getByText(/never sent to the browser/i)).toBeVisible();
 });
 
 test("home page tab order keeps primary actions reachable", async ({ page }) => {
@@ -96,7 +109,7 @@ test("home page keeps the search form compact when helper text is visible", asyn
   await page.goto("/");
 
   const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
-  const searchButton = page.getByRole("button", { name: "Search" });
+  const searchButton = page.getByRole("button", { name: "Search", exact: true });
 
   await page.waitForLoadState("networkidle");
   await expect(searchBox).toBeVisible();
@@ -139,7 +152,7 @@ test("home page blocks invalid usernames without leaving keyboard flow", async (
   await page.goto("/");
 
   const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
-  const searchButton = page.getByRole("button", { name: "Search" });
+  const searchButton = page.getByRole("button", { name: "Search", exact: true });
 
   await searchBox.fill("octo_cat");
 
@@ -260,6 +273,8 @@ test.describe("local mocked commit search states", () => {
     await expect(page.getByRole("heading", { name: "No public commits found." })).toBeVisible();
     await expect(page.getByRole("status")).toContainText("No public commits found.");
     await expect(page.getByText(/GitHub commit search indexing can lag/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Check a known public profile" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Search example username octocat" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Edit username" })).toBeVisible();
   });
 

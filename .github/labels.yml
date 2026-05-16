@@ -33,3 +33,11 @@
 - name: testing
   color: 1d76db
   description: Unit, e2e, CI, production health, or QA coverage.
+
+- name: release
+  color: 0052cc
+  description: Tags, changelog entries, release notes, or GitHub releases.
+
+- name: privacy
+  color: 6f42c1
+  description: Search data handling, analytics boundaries, or local browser storage.

@@ -2,13 +2,19 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "./page";
 import { getCommits } from "./actions";
+import { track } from "@vercel/analytics";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./actions", () => ({
   getCommits: vi.fn(),
 }));
 
+vi.mock("@vercel/analytics", () => ({
+  track: vi.fn(),
+}));
+
 const mockGetCommits = vi.mocked(getCommits);
+const mockTrack = vi.mocked(track);
 
 const commitResult = {
   found: true,
@@ -35,6 +41,7 @@ const commitResult = {
 describe("Home", () => {
   beforeEach(() => {
     mockGetCommits.mockReset();
+    mockTrack.mockReset();
     window.localStorage.clear();
     window.history.replaceState(null, "", "/");
   });
@@ -74,6 +81,15 @@ describe("Home", () => {
     expect(screen.getByText(/earliest indexed public commit for @octo appears in/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "octo/repo" })).toHaveAttribute("href", "https://github.com/octo/repo");
     expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
+    expect(mockTrack).toHaveBeenCalledWith("search_submitted", {
+      source: "user",
+    });
+    expect(mockTrack).toHaveBeenCalledWith("search_completed", {
+      found: true,
+      error_kind: "none",
+      commit_count: 1,
+    });
+    expect(mockTrack.mock.calls.flatMap((call) => Object.values(call[1] ?? {}))).not.toContain("octo");
   });
 
   it("copies a shareable result summary", async () => {
@@ -92,6 +108,7 @@ describe("Home", () => {
     });
     await expect(navigator.clipboard.readText()).resolves.toContain("octo's first public commit: Initial commit");
     await expect(navigator.clipboard.readText()).resolves.toContain("https://github.com/octo/repo/commit/abcdef123456");
+    expect(mockTrack).toHaveBeenCalledWith("result_copied", undefined);
   });
 
   it("shows a helpful status when copying a result fails", async () => {
@@ -110,6 +127,7 @@ describe("Home", () => {
       expect(screen.getByRole("status")).toHaveTextContent(/could not copy result/i);
     });
     expect(writeText).toHaveBeenCalled();
+    expect(mockTrack).toHaveBeenCalledWith("result_copy_failed", undefined);
   });
 
   it("renders same-SHA commits from different repositories without key collisions", async () => {
@@ -159,6 +177,9 @@ describe("Home", () => {
       expect(mockGetCommits).toHaveBeenCalledWith("octo");
     });
     expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
+    expect(mockTrack).toHaveBeenCalledWith("search_submitted", {
+      source: "shared_url",
+    });
   });
 
   it("does not auto-search an invalid username from the URL", () => {
@@ -239,6 +260,21 @@ describe("Home", () => {
 
     expect(screen.queryByRole("heading", { name: /recent searches/i })).not.toBeInTheDocument();
     expect(window.localStorage.getItem("my-first-commit:recent-searches")).toBeNull();
+  });
+
+  it("renders example searches before any result is shown", async () => {
+    mockGetCommits.mockResolvedValue(commitResult);
+    const user = userEvent.setup();
+    render(<Home />);
+
+    expect(screen.getByRole("heading", { name: /examples/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /search example username octocat/i }));
+
+    await waitFor(() => {
+      expect(mockGetCommits).toHaveBeenCalledWith("octocat");
+    });
+    expect(window.location.search).toBe("?user=octocat");
   });
 
   it("does not save failed searches as recent local shortcuts", async () => {
@@ -393,6 +429,8 @@ describe("Home", () => {
     expect(await screen.findByRole("heading", { name: /no public commits found/i })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(/no public commits found/i);
     expect(screen.getByText(/try another username or check back later/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /check a known public profile/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /search example username octocat/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /edit username/i })).toBeInTheDocument();
   });
 
@@ -539,6 +577,7 @@ describe("Home", () => {
     expect(screen.queryByText(/MyFirstCommit Clone/i)).not.toBeInTheDocument();
     expect(screen.getByText(/recent searches stay in this browser only/i)).toBeInTheDocument();
     expect(screen.getByText(/not stored on this app's server/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /read the privacy note/i })).toHaveAttribute("href", "/privacy");
     expect(screen.getByText(/Not affiliated with GitHub/i)).toBeInTheDocument();
   });
 });

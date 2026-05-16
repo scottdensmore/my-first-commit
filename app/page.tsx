@@ -3,11 +3,21 @@
 import React, { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { getCommits, CommitData } from './actions';
 import FirstCommitDisplay from '@/components/FirstCommitDisplay';
+import { track } from "@vercel/analytics";
 import { FaGithub } from "react-icons/fa";
 import { GoCopy } from "react-icons/go";
 
 const RECENT_SEARCHES_STORAGE_KEY = "my-first-commit:recent-searches";
 const MAX_RECENT_SEARCHES = 5;
+const EXAMPLE_USERNAMES = ["octocat", "torvalds", "gaearon"];
+
+function trackAppEvent(name: string, properties?: Record<string, string | number | boolean>) {
+  try {
+    track(name, properties);
+  } catch {
+    // Analytics should never interrupt the search experience.
+  }
+}
 
 function getUsernameValidationMessage(value: string) {
   const username = value.trim();
@@ -173,11 +183,19 @@ export default function Home() {
     if (getUsernameValidationMessage(trimmedUsername)) return;
     if (options.updateUrl) updateSharedSearchUrl(trimmedUsername);
 
+    trackAppEvent("search_submitted", {
+      source: options.updateUrl ? "user" : "shared_url",
+    });
     setLastSearchedUsername(trimmedUsername);
     setShareStatus("");
     startTransition(async () => {
        const data = await getCommits(trimmedUsername);
        setResult(data);
+       trackAppEvent("search_completed", {
+        found: data.found,
+        error_kind: data.errorKind ?? "none",
+        commit_count: data.commits.length,
+       });
        if (data.found) {
         rememberRecentSearch(trimmedUsername);
        }
@@ -227,14 +245,17 @@ export default function Home() {
   const copyResult = async () => {
     if (!result?.found || !navigator.clipboard) {
       setShareStatus("Copy is not available in this browser.");
+      trackAppEvent("result_copy_unavailable");
       return;
     }
 
     try {
       await navigator.clipboard.writeText(buildResultShareText(lastSearchedUsername, result));
       setShareStatus("Result copied.");
+      trackAppEvent("result_copied");
     } catch {
       setShareStatus("Could not copy result. Use the commit link instead.");
+      trackAppEvent("result_copy_failed");
     }
   };
 
@@ -358,6 +379,30 @@ export default function Home() {
             </section>
         )}
 
+        {!result && (
+            <section aria-labelledby="examples-heading" className="mt-6 w-full max-w-md">
+                <h2 id="examples-heading" className="text-xs font-semibold uppercase tracking-normal text-[var(--github-gray-text)]">
+                    Examples
+                </h2>
+                <div className="mt-2 flex flex-wrap gap-2">
+                    {EXAMPLE_USERNAMES.map((exampleUsername) => (
+                        <button
+                            key={exampleUsername}
+                            type="button"
+                            onClick={() => {
+                                setUsername(exampleUsername);
+                                searchCommits(exampleUsername, { updateUrl: true });
+                            }}
+                            className="inline-flex items-center justify-center rounded-md border border-[var(--github-border)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--github-gray-dark)] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2"
+                            aria-label={`Search example username ${exampleUsername}`}
+                        >
+                            @{exampleUsername}
+                        </button>
+                    ))}
+                </div>
+            </section>
+        )}
+
         {isPending && !result && (
             <div role="status" aria-live="polite" className="mt-5 w-full max-w-md rounded-md border border-[var(--github-border)] bg-[var(--github-gray-light)] px-4 py-3 text-sm text-[var(--github-gray-text)]">
                 Searching GitHub for {lastSearchedUsername}...
@@ -373,6 +418,29 @@ export default function Home() {
                 <p className="mt-2 text-sm text-[var(--github-gray-text)]">
                     {resultMessage?.description}
                 </p>
+                {isEmptyResult && (
+                    <div className="mt-4 rounded-md border border-[var(--github-border)] bg-white p-3">
+                        <h3 className="text-sm font-semibold text-[var(--github-gray-dark)]">
+                            Check a known public profile
+                        </h3>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {EXAMPLE_USERNAMES.map((exampleUsername) => (
+                                <button
+                                    key={exampleUsername}
+                                    type="button"
+                                    onClick={() => {
+                                        setUsername(exampleUsername);
+                                        searchCommits(exampleUsername, { updateUrl: true });
+                                    }}
+                                    className="inline-flex items-center justify-center rounded-md border border-[var(--github-border)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--github-gray-dark)] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2"
+                                    aria-label={`Search example username ${exampleUsername}`}
+                                >
+                                    @{exampleUsername}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 <div className="mt-4 flex flex-wrap gap-2">
                     {canRetrySearch && (
                         <button
@@ -467,7 +535,11 @@ export default function Home() {
       {/* Footer */}
       <footer aria-label="Privacy and GitHub affiliation" className="border-t border-[var(--github-border)] bg-[var(--github-gray-light)] px-4 py-6 text-center text-xs text-[var(--github-gray-text)]">
         <p className="mx-auto mb-2 max-w-2xl">
-            Privacy: searches are sent to GitHub to find public commits. Recent searches stay in this browser only and are not stored on this app&apos;s server.
+            Privacy: searches are sent to GitHub to find public commits. Recent searches stay in this browser only and are not stored on this app&apos;s server.{" "}
+            <a href="/privacy" className="font-semibold text-[var(--github-blue)] hover:underline">
+                Read the privacy note
+            </a>
+            .
         </p>
         <p>&copy; {new Date().getFullYear()} Not affiliated with GitHub.</p>
       </footer>
