@@ -16,6 +16,18 @@ const isProductionDeployment = process.env.VERCEL_ENV === "production";
 const appReleaseUrl = process.env.NEXT_PUBLIC_APP_RELEASE_URL
   ?? (shortCommitSha && isProductionDeployment ? `https://github.com/scottdensmore/my-first-commit/releases/tag/${appRelease}` : "");
 
+const contentSecurityPolicyReportOnly = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "img-src 'self' data: blob: https://github.com https://avatars.githubusercontent.com",
+  "font-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
+  "connect-src 'self' https://vitals.vercel-insights.com https://*.vercel-insights.com",
+].join("; ");
+
 const securityHeaders = [
   {
     key: "X-Content-Type-Options",
@@ -32,6 +44,10 @@ const securityHeaders = [
   {
     key: "X-Frame-Options",
     value: "DENY",
+  },
+  {
+    key: "Content-Security-Policy-Report-Only",
+    value: contentSecurityPolicyReportOnly,
   },
 ];
 

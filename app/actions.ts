@@ -1,7 +1,9 @@
 'use server'
 
 import { Octokit } from "octokit";
+import { getCachedCommitSearch, setCachedCommitSearch } from "./commitSearchCache";
 import { logger } from "./logger";
+import { getUsernameValidationMessage, normalizeGitHubUsername } from "./username";
 
 const octokit = new Octokit({
     auth: process.env.GITHUB_TOKEN 
@@ -214,10 +216,10 @@ function mapCommitItem(item: unknown, username: string): CommitInfo | null {
 
   return {
     message,
-    date: typeof authorDate === "string"
-      ? authorDate
-      : typeof committerDate === "string"
-        ? committerDate
+    date: typeof committerDate === "string"
+      ? committerDate
+      : typeof authorDate === "string"
+        ? authorDate
         : "",
     html_url: htmlUrl,
     sha,
@@ -235,13 +237,24 @@ function mapCommitItem(item: unknown, username: string): CommitInfo | null {
 }
 
 export async function getCommits(username: string): Promise<CommitData> {
-  if (!username) return { found: false, error: "Username is required", errorKind: "validation", commits: [] };
-  const e2eCommitSearchResult = getE2eCommitSearchResult(username);
+  const normalizedUsername = normalizeGitHubUsername(username);
+  if (!normalizedUsername) return { found: false, error: "Username is required", errorKind: "validation", commits: [] };
+
+  const validationMessage = getUsernameValidationMessage(normalizedUsername);
+  if (validationMessage) {
+    return { found: false, error: validationMessage, errorKind: "validation", commits: [] };
+  }
+
+  const e2eCommitSearchResult = getE2eCommitSearchResult(normalizedUsername);
   if (e2eCommitSearchResult) return e2eCommitSearchResult;
+
+  const cacheKey = normalizedUsername.toLowerCase();
+  const cachedCommitSearch = getCachedCommitSearch(cacheKey);
+  if (cachedCommitSearch) return cachedCommitSearch;
 
   try {
     const response = await withTimeoutSignal((signal) => octokit.rest.search.commits({
-      q: `author:${username}`,
+      q: `author:${normalizedUsername}`,
       sort: 'committer-date',
       order: 'asc',
       per_page: 10,
@@ -253,16 +266,18 @@ export async function getCommits(username: string): Promise<CommitData> {
     const items = response.data.items;
 
     if (!items || items.length === 0) {
-      return {
+      const result: CommitData = {
         found: false,
         error: "No public commits found for this user (or indexing is delayed).",
         errorKind: "empty",
         commits: [],
       };
+      setCachedCommitSearch(cacheKey, result);
+      return result;
     }
 
     const commits = items.flatMap((item, itemIndex) => {
-      const commit = mapCommitItem(item, username);
+      const commit = mapCommitItem(item, normalizedUsername);
       if (commit) return [commit];
 
       logger.warn({
@@ -275,18 +290,22 @@ export async function getCommits(username: string): Promise<CommitData> {
     });
 
     if (commits.length === 0) {
-      return {
+      const result: CommitData = {
         found: false,
         error: "No public commits found for this user (or indexing is delayed).",
         errorKind: "empty",
         commits: [],
       };
+      setCachedCommitSearch(cacheKey, result);
+      return result;
     }
 
-    return {
+    const result: CommitData = {
       found: true,
       commits: commits
     };
+    setCachedCommitSearch(cacheKey, result);
+    return result;
 
   } catch (error: unknown) {
     let errorMessage = "Failed to fetch commits.";
@@ -326,7 +345,7 @@ export async function getCommits(username: string): Promise<CommitData> {
           status: typeof status === "number" ? status : undefined,
           message: errorDetails.message,
         },
-      }, error);
+      });
       errorMessage = "GitHub is temporarily unavailable. Please try again soon.";
       return { found: false, error: errorMessage, errorKind: "unavailable", commits: [] };
     }
@@ -338,7 +357,7 @@ export async function getCommits(username: string): Promise<CommitData> {
           status: typeof status === "number" ? status : undefined,
           message: errorDetails.message,
         },
-      }, error);
+      });
     }
 
     if (status === 422) {

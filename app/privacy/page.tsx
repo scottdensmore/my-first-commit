@@ -33,6 +33,9 @@ export default function PrivacyPage() {
           <p className="mt-3 leading-7 text-[var(--github-gray-text)]">
             Successful searches can appear as recent-search shortcuts. Those shortcuts are stored only in this browser using local storage under <code className="font-mono text-sm">my-first-commit:recent-searches</code>.
           </p>
+          <p className="mt-3 leading-7 text-[var(--github-gray-text)]">
+            The server may also keep successful or empty GitHub search results in short-lived memory cache to reduce repeated GitHub API calls. This cache is temporary and is not a database.
+          </p>
         </section>
 
         <section className="mt-8">

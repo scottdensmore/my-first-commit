@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { clearCommitSearchCache } from "./commitSearchCache";
 import { getCommits } from "./actions";
 
 const { searchCommits } = vi.hoisted(() => ({
@@ -45,6 +46,7 @@ const commitItem = {
 
 describe("getCommits", () => {
   beforeEach(() => {
+    clearCommitSearchCache();
     searchCommits.mockReset();
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -96,7 +98,7 @@ describe("getCommits", () => {
       commits: [
         {
           message: "Initial commit\n\nAdd project files",
-          date: "2024-01-01T00:00:00Z",
+          date: "2024-01-02T00:00:00Z",
           html_url: "https://github.com/octo/repo/commit/abcdef123456",
           sha: "abcdef123456",
           repository: {
@@ -112,6 +114,43 @@ describe("getCommits", () => {
         },
       ],
     });
+  });
+
+  it("rejects invalid usernames before calling GitHub", async () => {
+    await expect(getCommits("octo_cat")).resolves.toEqual({
+      found: false,
+      error: "Use only letters, numbers, and hyphens.",
+      errorKind: "validation",
+      commits: [],
+    });
+    expect(searchCommits).not.toHaveBeenCalled();
+  });
+
+  it("trims usernames before querying GitHub", async () => {
+    searchCommits.mockResolvedValue({
+      data: {
+        items: [commitItem],
+      },
+    });
+
+    await getCommits("  octo  ");
+
+    expect(searchCommits).toHaveBeenCalledWith(expect.objectContaining({
+      q: "author:octo",
+    }));
+  });
+
+  it("reuses cached successful search results for the same username", async () => {
+    searchCommits.mockResolvedValue({
+      data: {
+        items: [commitItem],
+      },
+    });
+
+    await getCommits("Octo");
+    await getCommits("octo");
+
+    expect(searchCommits).toHaveBeenCalledTimes(1);
   });
 
   it("falls back to committer date and ghost author details when GitHub omits author data", async () => {
@@ -240,7 +279,7 @@ describe("getCommits", () => {
       event: "github_commit_search_unavailable",
       status: 503,
       message: "Service Unavailable",
-    }, error);
+    });
   });
 
   it("does not classify non-rate-limit GitHub 403 errors as rate limits", async () => {
@@ -261,7 +300,7 @@ describe("getCommits", () => {
       event: "github_commit_search_failed",
       status: 403,
       message: "Resource not accessible by integration",
-    }, error);
+    });
   });
 
   it("ignores malformed GitHub commit items before deciding whether results exist", async () => {
@@ -322,7 +361,7 @@ describe("getCommits", () => {
       event: "github_commit_search_failed",
       status: 422,
       message: undefined,
-    }, error);
+    });
   });
 
   it("returns a generic message for unknown GitHub errors", async () => {
@@ -339,6 +378,6 @@ describe("getCommits", () => {
       event: "github_commit_search_failed",
       status: undefined,
       message: "GitHub is unavailable",
-    }, error);
+    });
   });
 });

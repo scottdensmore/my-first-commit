@@ -9,14 +9,16 @@ My First Commit is a small Next.js App Router application. It has no database, n
 3. The client validates the username format before submitting.
 4. The client calls the `getCommits` server action in `app/actions.ts`.
 5. The server action queries GitHub's public commit search through Octokit.
-6. The server action maps GitHub results into the app's `CommitData` shape.
-7. The client renders the first public commit and the next several commits in `FirstCommitDisplay`.
-8. Successful searches are stored in browser `localStorage` as recent-search shortcuts.
+6. Successful and empty GitHub search results are cached briefly in memory by normalized username to reduce repeated API calls.
+7. The server action maps GitHub results into the app's `CommitData` shape.
+8. The client renders the first public commit and the next several commits in `FirstCommitDisplay`.
+9. Successful searches are stored in browser `localStorage` as recent-search shortcuts.
 
 ## Data Boundaries
 
 - `GITHUB_TOKEN` is server-side only and is used by Octokit in the server action.
 - Usernames are sent to GitHub to search public commit data.
+- GitHub username validation runs on both the client and server action boundary.
 - Recent searches are stored only in the user's browser under `my-first-commit:recent-searches`.
 - The app does not persist searches, users, commits, or analytics events in its own database.
 
@@ -33,7 +35,7 @@ GitHub API failures are normalized in `app/actions.ts`:
 
 - Empty public search results show a polite empty state.
 - Rate limits, timeouts, unavailable GitHub services, validation failures, and unknown errors show recovery-focused copy.
-- Server-side failures are logged with structured event names and without usernames or tokens.
+- Server-side failures are logged with structured event names and sanitized fields only, without usernames, tokens, or raw Octokit error objects.
 
 ## Operational Checks
 
@@ -42,4 +44,5 @@ GitHub Actions and Vercel cover the main production path:
 - `CI / validate` runs lint, unit tests, build, and browser checks.
 - Vercel deploys previews and production.
 - `Production Health Check` runs Playwright against the public production URL after successful production deployments.
+- `Promote Production Release` creates a tag and GitHub release only after the matching `main` CI run and production health check pass.
 - `/api/health` exposes runtime status without secrets.

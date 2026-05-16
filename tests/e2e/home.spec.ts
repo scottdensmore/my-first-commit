@@ -12,6 +12,8 @@ function expectSecurityHeaders(response: APIResponse) {
   expect(headers["permissions-policy"]).toContain("geolocation=()");
   expect(headers["permissions-policy"]).toContain("payment=()");
   expect(headers["x-frame-options"]).toBe("DENY");
+  expect(headers["content-security-policy-report-only"]).toContain("default-src 'self'");
+  expect(headers["content-security-policy-report-only"]).toContain("frame-ancestors 'none'");
 }
 
 async function searchForUsername(page: Page, username: string) {

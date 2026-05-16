@@ -19,7 +19,7 @@ Use this checklist when cutting a new My First Commit release.
 
 ## Publish Release
 
-Production releases are created automatically after a merge to `main`, a successful Vercel production deployment, and a passing `Production Health Check`. The `Promote Production Release` workflow creates both the Git tag and the GitHub release. The automatic tag format is:
+Production releases are created automatically after a merge to `main`, a successful `CI / validate` run, a successful Vercel production deployment, and a passing `Production Health Check`. The `Promote Production Release` workflow creates both the Git tag and the GitHub release. The automatic tag format is:
 
 ```text
 vX.Y.Z-<deployed-short-sha>
