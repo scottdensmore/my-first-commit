@@ -34,6 +34,7 @@ describe("GET /api/health", () => {
         },
       },
     });
+    expect(body.runtime).toBeUndefined();
     expect(Date.parse(body.timestamp)).not.toBeNaN();
     expect(JSON.stringify(body)).not.toContain("secret-token");
   });

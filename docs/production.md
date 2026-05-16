@@ -15,7 +15,7 @@ The app also exposes a lightweight runtime health endpoint:
 https://my-first-commit-eta.vercel.app/api/health
 ```
 
-It returns JSON status, deployment metadata, Node runtime version, and whether the public site URL is configured. It does not expose server-side secrets.
+It returns JSON status, deployment metadata, and whether the public site URL is configured. It does not expose server-side secrets or detailed runtime versions.
 
 ## Required Configuration
 
@@ -41,8 +41,9 @@ PRODUCTION_BASE_URL=https://my-first-commit-eta.vercel.app
 3. Vercel builds and deploys production.
 4. GitHub receives a production `deployment_status` event.
 5. The `Production Health Check` workflow runs Playwright against `PRODUCTION_BASE_URL`.
+6. The `Promote Production Release` workflow creates the deployment tag and GitHub release only after the matching `main` CI run and production health check pass.
 
-The production deploy is healthy when both `CI / validate` and `Production Health Check` pass on `main`.
+The production deploy is healthy when `CI / validate`, `Production Health Check`, and `Promote Production Release` pass on `main`.
 
 ## Release Checklist
 
@@ -180,8 +181,9 @@ The app sets baseline security headers from `next.config.ts`:
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Permissions-Policy` disabling camera, microphone, geolocation, and payment APIs
 - `X-Frame-Options: DENY`
+- `Content-Security-Policy-Report-Only` for CSP tuning without blocking production traffic
 
-Content Security Policy is intentionally not enabled yet. Next.js and Vercel Analytics need a carefully tuned policy so production scripts, generated images, and analytics continue to work without weakening the policy into noise.
+Content Security Policy is currently report-only. Review Vercel logs and browser reports before moving from report-only to enforcement.
 
 ## Accessibility Checks
 
@@ -203,6 +205,8 @@ my-first-commit:recent-searches
 ```
 
 This powers the recent-search shortcuts. Clearing browser site data removes the list.
+
+Successful and empty GitHub search results may also be cached briefly in server memory by normalized username to reduce repeated GitHub API calls. This cache is ephemeral and is not a database.
 
 ## Troubleshooting
 

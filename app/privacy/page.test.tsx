@@ -10,6 +10,7 @@ describe("PrivacyPage", () => {
     expect(screen.getByRole("link", { name: /back to search/i })).toHaveAttribute("href", "/");
     expect(screen.getByText(/sent to GitHub/i)).toBeInTheDocument();
     expect(screen.getByText(/my-first-commit:recent-searches/i)).toBeInTheDocument();
+    expect(screen.getByText(/short-lived memory cache/i)).toBeInTheDocument();
     expect(screen.getByText(/analytics events do not include the searched GitHub username/i)).toBeInTheDocument();
     expect(screen.getByText(/never sent to the browser/i)).toBeInTheDocument();
   });

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { getCommits, CommitData } from './actions';
+import { getUsernameValidationMessage, normalizeGitHubUsername } from "./username";
 import FirstCommitDisplay from '@/components/FirstCommitDisplay';
 import { track } from "@vercel/analytics";
 import { FaGithub } from "react-icons/fa";
@@ -19,18 +20,6 @@ function trackAppEvent(name: string, properties?: Record<string, string | number
   } catch {
     // Analytics should never interrupt the search experience.
   }
-}
-
-function getUsernameValidationMessage(value: string) {
-  const username = value.trim();
-
-  if (!username) return "";
-  if (username.length > 39) return "GitHub usernames must be 39 characters or fewer.";
-  if (!/^[a-zA-Z0-9-]+$/.test(username)) return "Use only letters, numbers, and hyphens.";
-  if (username.startsWith("-") || username.endsWith("-")) return "GitHub usernames cannot start or end with a hyphen.";
-  if (username.includes("--")) return "GitHub usernames cannot include consecutive hyphens.";
-
-  return "";
 }
 
 function updateSharedSearchUrl(username: string) {
@@ -180,7 +169,7 @@ export default function Home() {
   };
 
   const searchCommits = useCallback((searchUsername: string, options: { updateUrl?: boolean } = {}) => {
-    const trimmedUsername = searchUsername.trim();
+    const trimmedUsername = normalizeGitHubUsername(searchUsername);
     if (!trimmedUsername) return;
     if (getUsernameValidationMessage(trimmedUsername)) return;
     if (options.updateUrl) updateSharedSearchUrl(trimmedUsername);

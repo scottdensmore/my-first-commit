@@ -7,9 +7,6 @@ type HealthPayload = {
   timestamp: string;
   environment: string;
   commit: string;
-  runtime: {
-    node: string;
-  };
   checks: {
     siteUrl: {
       configured: boolean;
@@ -22,6 +19,12 @@ function getPublicSiteUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL?.trim() || null;
 }
 
+function getShortCommit() {
+  const commit = process.env.VERCEL_GIT_COMMIT_SHA?.trim();
+
+  return commit ? commit.slice(0, 7) : "local";
+}
+
 export function buildHealthPayload(now = new Date()): HealthPayload {
   const siteUrl = getPublicSiteUrl();
 
@@ -30,10 +33,7 @@ export function buildHealthPayload(now = new Date()): HealthPayload {
     service: "my-first-commit",
     timestamp: now.toISOString(),
     environment: process.env.VERCEL_ENV?.trim() || "local",
-    commit: process.env.VERCEL_GIT_COMMIT_SHA?.trim() || "local",
-    runtime: {
-      node: process.version,
-    },
+    commit: getShortCommit(),
     checks: {
       siteUrl: {
         configured: Boolean(siteUrl),

@@ -8,7 +8,12 @@ on:
       - completed
 
 permissions:
+  actions: read
   contents: write
+
+concurrency:
+  group: production-release-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
 
 jobs:
   promote:
@@ -34,6 +39,21 @@ jobs:
 
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Confirm CI passed for deployed commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          ci_conclusion="$(
+            gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${TARGET_SHA}&branch=main&event=push&status=completed&per_page=10" \
+              --jq '.workflow_runs[0].conclusion // ""'
+          )"
+
+          if [ "$ci_conclusion" != "success" ]; then
+            echo "Expected successful CI run for ${TARGET_SHA}, got '${ci_conclusion:-none}'."
+            exit 1
+          fi
 
       - name: Create tag and GitHub release
         env:

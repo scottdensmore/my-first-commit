@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Added
 
+- Server-side username validation, sanitized GitHub error logging, short-lived search caching, CSP report-only headers, release workflow hardening, and tighter public health metadata.
 - Automatic production release promotion and footer release links for deployed versions.
 - Privacy page, example searches, privacy-safe analytics events, issue chooser config, and release publishing workflow.
 - Release guide, expanded known limitations, and local Playwright coverage for result and error states.
