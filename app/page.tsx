@@ -1,19 +1,16 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FaGithub } from "react-icons/fa";
-import type { CommitData } from "./commitTypes";
 import { trackAppEvent } from "./home/analytics";
 import { EXAMPLE_USERNAMES } from "./home/constants";
-import { isRecoverableClipboardWriteError } from "./home/browserErrors";
 import SearchErrorState from "./home/SearchErrorState";
 import SearchForm from "./home/SearchForm";
 import SearchResults from "./home/SearchResults";
 import SearchShortcutSection from "./home/SearchShortcutSection";
-import { clearStoredRecentSearches, getStoredRecentSearches } from "./home/recentSearches";
-import { runCommitSearch } from "./home/searchExecution";
+import { useCommitSearch } from "./home/useCommitSearch";
 import {
   buildResultShareText,
   clearSharedSearchUrl,
@@ -24,22 +21,25 @@ const APP_RELEASE = process.env.NEXT_PUBLIC_APP_RELEASE ?? "local";
 const APP_RELEASE_URL = process.env.NEXT_PUBLIC_APP_RELEASE_URL ?? "";
 
 export default function Home() {
-  const initialSharedUsername = getInitialSharedUsername();
+  const [initialSharedUsername] = useState(getInitialSharedUsername);
   const [username, setUsername] = useState(initialSharedUsername);
-  const [result, setResult] = useState<CommitData | null>(null);
-  const [lastSearchedUsername, setLastSearchedUsername] = useState("");
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [shareStatus, setShareStatus] = useState("");
-  const [isPending, startTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const {
+    result,
+    setResult,
+    lastSearchedUsername,
+    setLastSearchedUsername,
+    recentSearches,
+    clearRecentSearches,
+    shareStatus,
+    setShareStatus,
+    isPending,
+    runSearch,
+  } = useCommitSearch();
 
-  useEffect(() => {
-    const loadRecentSearches = window.setTimeout(() => {
-      setRecentSearches(getStoredRecentSearches());
-    }, 0);
-
-    return () => window.clearTimeout(loadRecentSearches);
-  }, []);
+  const focusSearchInput = () => {
+    requestAnimationFrame(() => searchInputRef.current?.focus());
+  };
 
   useEffect(() => {
     if (!result?.found) {
@@ -47,46 +47,24 @@ export default function Home() {
     }
   }, [result?.found]);
 
-  const clearRecentSearches = () => {
-    setRecentSearches([]);
-    clearStoredRecentSearches();
-    focusSearchInput();
-  };
-
   useEffect(() => {
-    const sharedUsername = getInitialSharedUsername();
-    if (!sharedUsername) return;
+    if (!initialSharedUsername) return;
 
     const autoSearch = window.setTimeout(() => {
-      runCommitSearch(sharedUsername, undefined, {
-        startTransition,
-        setLastSearchedUsername,
-        setShareStatus,
-        setResult,
-        setRecentSearches,
-      });
+      runSearch(initialSharedUsername);
     }, 0);
 
     return () => window.clearTimeout(autoSearch);
-  }, [startTransition]);
+  }, [initialSharedUsername, runSearch]);
 
-  const focusSearchInput = () => {
-    requestAnimationFrame(() => searchInputRef.current?.focus());
+  const handleClearRecentSearches = () => {
+    clearRecentSearches();
+    focusSearchInput();
   };
 
   const handleSearch = (event: FormEvent) => {
     event.preventDefault();
-    runCommitSearch(
-      username,
-      { updateUrl: true },
-      {
-        startTransition,
-        setLastSearchedUsername,
-        setShareStatus,
-        setResult,
-        setRecentSearches,
-      },
-    );
+    runSearch(username, { updateUrl: true });
   };
 
   const resetSearch = () => {
@@ -107,17 +85,7 @@ export default function Home() {
 
   const handleShortcutSearch = (shortcutUsername: string) => {
     setUsername(shortcutUsername);
-    runCommitSearch(
-      shortcutUsername,
-      { updateUrl: true },
-      {
-        startTransition,
-        setLastSearchedUsername,
-        setShareStatus,
-        setResult,
-        setRecentSearches,
-      },
-    );
+    runSearch(shortcutUsername, { updateUrl: true });
   };
 
   const usernameValidationMessage = getUsernameValidationMessage(username);
@@ -134,11 +102,9 @@ export default function Home() {
       await navigator.clipboard.writeText(buildResultShareText(lastSearchedUsername, result));
       setShareStatus("Result copied.");
       trackAppEvent("result_copied");
-    } catch (error) {
-      if (!isRecoverableClipboardWriteError(error)) {
-        throw error;
-      }
-
+    } catch {
+      // Clipboard writes can fail on permissions or unsupported browsers;
+      // surface a fallback message instead of letting the rejection bubble up.
       setShareStatus("Could not copy result. Use the commit link instead.");
       trackAppEvent("result_copy_failed");
     }
@@ -202,7 +168,7 @@ export default function Home() {
             onSearch={handleShortcutSearch}
             getButtonLabel={(recentUsername) => `@${recentUsername}`}
             buttonAriaLabel={(recentUsername) => `Search ${recentUsername} again`}
-            onClear={clearRecentSearches}
+            onClear={handleClearRecentSearches}
           />
         ) : null}
 
@@ -232,15 +198,7 @@ export default function Home() {
             exampleUsernames={EXAMPLE_USERNAMES}
             isPending={isPending}
             lastSearchedUsername={lastSearchedUsername}
-            onRetry={(searchUsername) =>
-              runCommitSearch(searchUsername, undefined, {
-                startTransition,
-                setLastSearchedUsername,
-                setShareStatus,
-                setResult,
-                setRecentSearches,
-              })
-            }
+            onRetry={(searchUsername) => runSearch(searchUsername)}
             onReset={resetSearch}
             onExampleSearch={handleShortcutSearch}
           />
