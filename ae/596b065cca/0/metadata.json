@@ -1,0 +1,58 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "ae596b065cca",
+  "session_id": "c4eaab7c-2442-4244-aea0-55099028299b",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-25T18:23:20.014992Z",
+  "branch": "scottdensmore/refactor/tidy-search-internals",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/githubUrls.ts",
+    "app/home/useCommitSearch.ts",
+    "app/page.tsx",
+    "app/home/recentSearches.ts",
+    "app/home/sharedSearch.ts",
+    "app/home/SearchResults.tsx",
+    "components/FirstCommitDisplay.tsx",
+    "app/actions.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7[1m]",
+  "turn_id": "efcd7d39a397",
+  "checkpoint_transcript_start": 291,
+  "transcript_lines_at_start": 291,
+  "token_usage": {
+    "input_tokens": 56,
+    "cache_creation_tokens": 209167,
+    "cache_read_tokens": 3835968,
+    "output_tokens": 43542,
+    "api_call_count": 28
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-25T18:23:19.998899Z",
+    "agent_lines": 150,
+    "agent_removed": 153,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 150,
+    "total_lines_changed": 314,
+    "agent_percentage": 96.4968152866242,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 17,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 17
+      }
+    }
+  ]
+}

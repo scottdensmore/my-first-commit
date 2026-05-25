@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "ae596b065cca",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/refactor/tidy-search-internals",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/actions.ts",
+    "app/githubUrls.ts",
+    "app/home/SearchResults.tsx",
+    "app/home/recentSearches.ts",
+    "app/home/sharedSearch.ts",
+    "app/home/useCommitSearch.ts",
+    "app/page.tsx",
+    "components/FirstCommitDisplay.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ae/596b065cca/0/metadata.json",
+      "transcript": "/ae/596b065cca/0/full.jsonl",
+      "content_hash": "/ae/596b065cca/0/content_hash.txt",
+      "prompt": "/ae/596b065cca/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 56,
+    "cache_creation_tokens": 209167,
+    "cache_read_tokens": 3835968,
+    "output_tokens": 43542,
+    "api_call_count": 28
+  }
+}
