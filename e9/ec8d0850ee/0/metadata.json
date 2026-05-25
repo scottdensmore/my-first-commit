@@ -1,0 +1,55 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "e9ec8d0850ee",
+  "session_id": "c4eaab7c-2442-4244-aea0-55099028299b",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-25T19:47:46.182643Z",
+  "branch": "scottdensmore/chore/docs-rename-and-tests",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "SPEC.md",
+    "package.json",
+    "app/home/resultMessages.test.ts",
+    "app/home/sharedSearch.test.ts",
+    "app/home/searchExecution.test.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7[1m]",
+  "turn_id": "ff4b6c942d64",
+  "checkpoint_transcript_start": 496,
+  "transcript_lines_at_start": 496,
+  "token_usage": {
+    "input_tokens": 22,
+    "cache_creation_tokens": 21746,
+    "cache_read_tokens": 2014547,
+    "output_tokens": 17956,
+    "api_call_count": 11
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-25T19:47:46.165394Z",
+    "agent_lines": 263,
+    "agent_removed": 6,
+    "human_added": 2,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 265,
+    "total_lines_changed": 273,
+    "agent_percentage": 98.53479853479854,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 21,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 21
+      }
+    }
+  ]
+}
