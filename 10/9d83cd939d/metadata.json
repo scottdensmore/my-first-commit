@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "109d83cd939d",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/chore/add-prettier-formatting",
+  "checkpoints_count": 0,
+  "files_touched": [
+    ".editorconfig",
+    ".github/workflows/ci.yml",
+    ".prettierignore",
+    ".prettierrc.json",
+    "CONTRIBUTING.md",
+    "components/FirstCommitDisplay.tsx",
+    "package.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/10/9d83cd939d/0/metadata.json",
+      "transcript": "/10/9d83cd939d/0/full.jsonl",
+      "content_hash": "/10/9d83cd939d/0/content_hash.txt",
+      "prompt": "/10/9d83cd939d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 62,
+    "cache_creation_tokens": 94514,
+    "cache_read_tokens": 2026196,
+    "output_tokens": 29593,
+    "api_call_count": 31
+  }
+}

@@ -1,0 +1,6 @@
+Do a code review on this project. Check it for good practices. Make sure it has good code hygine and easy for humans to
+navigate. Create a todo list of the changes that need to be addressed.. don't make any changes.
+
+---
+
+Ok lets do the High-value group first. Make sure you use a branch pr squash merge style on this. When we are done merging the first pr, remind me of what is next so we can continue.
