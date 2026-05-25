@@ -1,8 +1,4 @@
-import type {
-  Dispatch,
-  SetStateAction,
-  TransitionStartFunction,
-} from "react";
+import type { Dispatch, SetStateAction, TransitionStartFunction } from "react";
 import { getCommits } from "../actions";
 import type { CommitData } from "../commitTypes";
 import { getUsernameValidationMessage, normalizeGitHubUsername } from "../username";

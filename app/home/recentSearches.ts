@@ -1,12 +1,6 @@
 import { getUsernameValidationMessage } from "../username";
-import {
-  isRecoverableStorageReadError,
-  isRecoverableStorageWriteError,
-} from "./browserErrors";
-import {
-  MAX_RECENT_SEARCHES,
-  RECENT_SEARCHES_STORAGE_KEY,
-} from "./constants";
+import { isRecoverableStorageReadError, isRecoverableStorageWriteError } from "./browserErrors";
+import { MAX_RECENT_SEARCHES, RECENT_SEARCHES_STORAGE_KEY } from "./constants";
 
 export function getStoredRecentSearches() {
   if (typeof window === "undefined") return [];
@@ -36,10 +30,7 @@ export function saveStoredRecentSearches(searches: string[]) {
   if (typeof window === "undefined") return;
 
   try {
-    window.localStorage.setItem(
-      RECENT_SEARCHES_STORAGE_KEY,
-      JSON.stringify(searches),
-    );
+    window.localStorage.setItem(RECENT_SEARCHES_STORAGE_KEY, JSON.stringify(searches));
   } catch (error) {
     if (isRecoverableStorageWriteError(error)) {
       return;

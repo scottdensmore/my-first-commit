@@ -76,10 +76,17 @@ describe("Home", () => {
       expect(mockGetCommits).toHaveBeenCalledWith("octo");
     });
     expect(window.location.search).toBe("?user=octo");
-    expect(await screen.findByRole("heading", { name: /first public commit found/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /first public commit found/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/github search may miss older commits/i)).toBeInTheDocument();
-    expect(screen.getByText(/earliest indexed public commit for @octo appears in/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "octo/repo" })).toHaveAttribute("href", "https://github.com/octo/repo");
+    expect(
+      screen.getByText(/earliest indexed public commit for @octo appears in/i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "octo/repo" })).toHaveAttribute(
+      "href",
+      "https://github.com/octo/repo",
+    );
     expect(await screen.findByRole("link", { name: "Initial commit" })).toBeInTheDocument();
     expect(mockTrack).toHaveBeenCalledWith("search_submitted", {
       source: "user",
@@ -89,7 +96,9 @@ describe("Home", () => {
       error_kind: "none",
       commit_count: 1,
     });
-    expect(mockTrack.mock.calls.flatMap((call) => Object.values(call[1] ?? {}))).not.toContain("octo");
+    expect(mockTrack.mock.calls.flatMap((call) => Object.values(call[1] ?? {}))).not.toContain(
+      "octo",
+    );
   });
 
   it("copies a shareable result summary", async () => {
@@ -106,8 +115,12 @@ describe("Home", () => {
     await waitFor(() => {
       expect(screen.getByRole("status")).toHaveTextContent(/result copied/i);
     });
-    await expect(navigator.clipboard.readText()).resolves.toContain("octo's first public commit: Initial commit");
-    await expect(navigator.clipboard.readText()).resolves.toContain("https://github.com/octo/repo/commit/abcdef123456");
+    await expect(navigator.clipboard.readText()).resolves.toContain(
+      "octo's first public commit: Initial commit",
+    );
+    await expect(navigator.clipboard.readText()).resolves.toContain(
+      "https://github.com/octo/repo/commit/abcdef123456",
+    );
     expect(mockTrack).toHaveBeenCalledWith("result_copied", undefined);
   });
 
@@ -164,8 +177,14 @@ describe("Home", () => {
     await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
     await user.click(screen.getByRole("button", { name: /^search$/i }));
 
-    expect(await screen.findByRole("link", { name: "fork" })).toHaveAttribute("href", "https://github.com/space/fork");
-    expect(await screen.findByRole("link", { name: "another-fork" })).toHaveAttribute("href", "https://github.com/space/another-fork");
+    expect(await screen.findByRole("link", { name: "fork" })).toHaveAttribute(
+      "href",
+      "https://github.com/space/fork",
+    );
+    expect(await screen.findByRole("link", { name: "another-fork" })).toHaveAttribute(
+      "href",
+      "https://github.com/space/another-fork",
+    );
     expect(consoleError.mock.calls.flat().join(" ")).not.toMatch(/same key/i);
   });
 
@@ -219,7 +238,9 @@ describe("Home", () => {
 
     const recentSearch = screen.getByRole("button", { name: /search octo again/i });
     expect(recentSearch).toBeInTheDocument();
-    expect(JSON.parse(window.localStorage.getItem("my-first-commit:recent-searches") ?? "[]")).toEqual(["octo"]);
+    expect(
+      JSON.parse(window.localStorage.getItem("my-first-commit:recent-searches") ?? "[]"),
+    ).toEqual(["octo"]);
   });
 
   it("keeps successful searches working when local storage writes fail", async () => {
@@ -293,14 +314,18 @@ describe("Home", () => {
     await user.click(screen.getByRole("button", { name: /^search$/i }));
     await screen.findByRole("heading", { name: /no public commits found/i });
 
-    expect(screen.queryByRole("button", { name: /search new-user again/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /search new-user again/i }),
+    ).not.toBeInTheDocument();
     expect(window.localStorage.getItem("my-first-commit:recent-searches")).toBeNull();
   });
 
   it("shows a username format hint before the user types", () => {
     render(<Home />);
 
-    expect(screen.getByText(/github usernames can use letters, numbers, or single hyphens/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/github usernames can use letters, numbers, or single hyphens/i),
+    ).toBeInTheDocument();
   });
 
   it("describes the search field with only rendered accessibility text", async () => {
@@ -377,9 +402,11 @@ describe("Home", () => {
 
   it("announces the search while a request is pending", async () => {
     let resolveSearch: (value: typeof commitResult) => void = () => undefined;
-    mockGetCommits.mockReturnValue(new Promise((resolve) => {
-      resolveSearch = resolve;
-    }));
+    mockGetCommits.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSearch = resolve;
+      }),
+    );
     const user = userEvent.setup();
     render(<Home />);
 
@@ -396,9 +423,11 @@ describe("Home", () => {
 
   it("marks the search form as busy while a request is pending", async () => {
     let resolveSearch: (value: typeof commitResult) => void = () => undefined;
-    mockGetCommits.mockReturnValue(new Promise((resolve) => {
-      resolveSearch = resolve;
-    }));
+    mockGetCommits.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSearch = resolve;
+      }),
+    );
     const user = userEvent.setup();
     render(<Home />);
 
@@ -428,11 +457,17 @@ describe("Home", () => {
     await user.type(screen.getByRole("searchbox", { name: /github username/i }), "new-user");
     await user.click(screen.getByRole("button", { name: /^search$/i }));
 
-    expect(await screen.findByRole("heading", { name: /no public commits found/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /no public commits found/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(/no public commits found/i);
     expect(screen.getByText(/try another username or check back later/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /check a known public profile/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /search example username octocat/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /check a known public profile/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /search example username octocat/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /edit username/i })).toBeInTheDocument();
   });
 
@@ -449,7 +484,9 @@ describe("Home", () => {
     await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
     await user.click(screen.getByRole("button", { name: /^search$/i }));
 
-    expect(await screen.findByRole("heading", { name: /github is asking us to slow down/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /github is asking us to slow down/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(/github is asking us to slow down/i);
     expect(screen.getByText(/temporarily limited commit search requests/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
@@ -474,27 +511,30 @@ describe("Home", () => {
       details: /check the username/i,
       canRetry: false,
     },
-  ])("renders specific recovery copy for $errorKind errors", async ({ errorKind, heading, details, canRetry }) => {
-    mockGetCommits.mockResolvedValue({
-      found: false,
-      error: "Search failed.",
-      errorKind,
-      commits: [],
-    });
-    const user = userEvent.setup();
-    render(<Home />);
+  ])(
+    "renders specific recovery copy for $errorKind errors",
+    async ({ errorKind, heading, details, canRetry }) => {
+      mockGetCommits.mockResolvedValue({
+        found: false,
+        error: "Search failed.",
+        errorKind,
+        commits: [],
+      });
+      const user = userEvent.setup();
+      render(<Home />);
 
-    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
-    await user.click(screen.getByRole("button", { name: /^search$/i }));
+      await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+      await user.click(screen.getByRole("button", { name: /^search$/i }));
 
-    expect(await screen.findByRole("heading", { name: heading })).toBeInTheDocument();
-    expect(screen.getByText(details)).toBeInTheDocument();
-    if (canRetry) {
-      expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
-    } else {
-      expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
-    }
-  });
+      expect(await screen.findByRole("heading", { name: heading })).toBeInTheDocument();
+      expect(screen.getByText(details)).toBeInTheDocument();
+      if (canRetry) {
+        expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
+      } else {
+        expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
+      }
+    },
+  );
 
   it("shows a retry action for unknown GitHub errors", async () => {
     mockGetCommits.mockResolvedValue({
@@ -509,7 +549,9 @@ describe("Home", () => {
     await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
     await user.click(screen.getByRole("button", { name: /^search$/i }));
 
-    expect(await screen.findByRole("heading", { name: /we could not complete that search/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /we could not complete that search/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
   });
 
@@ -579,7 +621,10 @@ describe("Home", () => {
     expect(screen.queryByText(/MyFirstCommit Clone/i)).not.toBeInTheDocument();
     expect(screen.getByText(/recent searches stay in this browser only/i)).toBeInTheDocument();
     expect(screen.getByText(/not stored on this app's server/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /read the privacy note/i })).toHaveAttribute("href", "/privacy");
+    expect(screen.getByRole("link", { name: /read the privacy note/i })).toHaveAttribute(
+      "href",
+      "/privacy",
+    );
     expect(screen.getByText(/Not affiliated with GitHub/i)).toBeInTheDocument();
     expect(screen.getByText("Release local")).toBeInTheDocument();
   });

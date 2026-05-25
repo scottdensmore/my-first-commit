@@ -75,15 +75,17 @@ describe("getCommits", () => {
 
     await getCommits("octo");
 
-    expect(searchCommits).toHaveBeenCalledWith(expect.objectContaining({
-      q: "author:octo",
-      sort: "committer-date",
-      order: "asc",
-      per_page: 10,
-      request: {
-        signal: expect.any(AbortSignal),
-      },
-    }));
+    expect(searchCommits).toHaveBeenCalledWith(
+      expect.objectContaining({
+        q: "author:octo",
+        sort: "committer-date",
+        order: "asc",
+        per_page: 10,
+        request: {
+          signal: expect.any(AbortSignal),
+        },
+      }),
+    );
   });
 
   it("maps GitHub commit search results into display data", async () => {
@@ -135,9 +137,11 @@ describe("getCommits", () => {
 
     await getCommits("  octo  ");
 
-    expect(searchCommits).toHaveBeenCalledWith(expect.objectContaining({
-      q: "author:octo",
-    }));
+    expect(searchCommits).toHaveBeenCalledWith(
+      expect.objectContaining({
+        q: "author:octo",
+      }),
+    );
   });
 
   it("reuses cached successful search results for the same username", async () => {

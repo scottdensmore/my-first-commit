@@ -12,9 +12,7 @@ export default function NotFound() {
         <p className="text-sm font-semibold uppercase tracking-normal text-[var(--github-gray-text)]">
           404
         </p>
-        <h1 className="mt-3 text-4xl font-bold sm:text-5xl">
-          This commit path does not exist.
-        </h1>
+        <h1 className="mt-3 text-4xl font-bold sm:text-5xl">This commit path does not exist.</h1>
         <p className="mt-4 max-w-xl text-lg text-[var(--github-gray-text)]">
           The page may have moved, or the link may have been copied incorrectly.
         </p>

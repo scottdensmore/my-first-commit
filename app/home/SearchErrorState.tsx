@@ -38,9 +38,7 @@ export default function SearchErrorState({
       <h2 className="text-base font-semibold text-[var(--github-gray-dark)]">
         {resultMessage.title}
       </h2>
-      <p className="mt-2 text-sm text-[var(--github-gray-text)]">
-        {resultMessage.description}
-      </p>
+      <p className="mt-2 text-sm text-[var(--github-gray-text)]">{resultMessage.description}</p>
       {isEmptyResult ? (
         <div className="mt-4 rounded-md border border-[var(--github-border)] bg-white p-3">
           <h3 className="text-sm font-semibold text-[var(--github-gray-dark)]">

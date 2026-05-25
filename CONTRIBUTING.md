@@ -20,6 +20,7 @@ Thanks for helping improve My First Commit. Keep changes small, tested, and easy
    ```bash
    npm test
    npm run lint
+   npm run format:check
    npm run build
    npm run test:e2e
    ```

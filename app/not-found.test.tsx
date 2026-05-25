@@ -8,7 +8,9 @@ describe("NotFound", () => {
 
     expect(metadata.title).toBe("Page not found");
     expect(screen.getByText("404")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /this commit path does not exist/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /this commit path does not exist/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/link may have been copied incorrectly/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /go home/i })).toHaveAttribute("href", "/");
   });

@@ -10,11 +10,7 @@ export function clearSharedSearchUrl() {
   const url = new URL(window.location.href);
   url.searchParams.delete("user");
   const search = url.searchParams.toString();
-  window.history.replaceState(
-    null,
-    "",
-    `${url.pathname}${search ? `?${search}` : ""}${url.hash}`,
-  );
+  window.history.replaceState(null, "", `${url.pathname}${search ? `?${search}` : ""}${url.hash}`);
 }
 
 export function getInitialSharedUsername() {

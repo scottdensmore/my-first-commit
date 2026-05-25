@@ -18,4 +18,3 @@ describe("GitHub username helpers", () => {
     expect(getUsernameValidationMessage(username)).toBe(expectedMessage);
   });
 });
-
