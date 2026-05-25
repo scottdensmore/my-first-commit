@@ -2,6 +2,7 @@ import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { GoGitCommit, GoRepo } from "react-icons/go";
 import type { CommitInfo } from "../app/commitTypes";
+import { githubProfileUrl, githubRepositoryUrl } from "../app/githubUrls";
 
 type FirstCommitDisplayProps = {
   data: CommitInfo;
@@ -41,14 +42,14 @@ export default function FirstCommitDisplay({ data, isMain = true }: FirstCommitD
         <div className="flex items-center gap-1.5">
           <GoRepo className="text-base" />
           <a
-            href={`https://github.com/${data.repository.owner}`}
+            href={githubProfileUrl(data.repository.owner)}
             className="hover:text-[var(--github-blue)] hover:underline"
           >
             {data.repository.owner}
           </a>
           <span>/</span>
           <a
-            href={`https://github.com/${data.repository.full_name}`}
+            href={githubRepositoryUrl(data.repository.full_name)}
             className="font-semibold hover:text-[var(--github-blue)] hover:underline text-[var(--github-gray-dark)]"
           >
             {data.repository.name}

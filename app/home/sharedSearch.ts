@@ -19,10 +19,6 @@ export function getInitialSharedUsername() {
   return new URLSearchParams(window.location.search).get("user") ?? "";
 }
 
-export function getRepositoryUrl(fullName: string) {
-  return `https://github.com/${fullName}`;
-}
-
 export function buildResultShareText(username: string, result: CommitData) {
   const firstCommit = result.commits[0];
   if (!firstCommit) {

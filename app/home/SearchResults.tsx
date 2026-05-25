@@ -1,7 +1,7 @@
 import { GoCopy } from "react-icons/go";
 import FirstCommitDisplay from "@/components/FirstCommitDisplay";
+import { githubRepositoryUrl } from "../githubUrls";
 import type { CommitInfo } from "../commitTypes";
-import { getRepositoryUrl } from "./sharedSearch";
 
 type SearchResultsProps = {
   commits: CommitInfo[];
@@ -30,7 +30,7 @@ export default function SearchResults({
         <p className="mt-2 text-sm text-[var(--github-gray-dark)]">
           Earliest indexed public commit for @{lastSearchedUsername} appears in{" "}
           <a
-            href={getRepositoryUrl(firstCommit.repository.full_name)}
+            href={githubRepositoryUrl(firstCommit.repository.full_name)}
             className="font-semibold text-[var(--github-blue)] hover:underline"
           >
             {firstCommit.repository.full_name}

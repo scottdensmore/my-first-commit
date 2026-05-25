@@ -1,6 +1,10 @@
 import { getUsernameValidationMessage } from "../username";
-import { isRecoverableStorageReadError, isRecoverableStorageWriteError } from "./browserErrors";
 import { MAX_RECENT_SEARCHES, RECENT_SEARCHES_STORAGE_KEY } from "./constants";
+
+// Recent searches are a best-effort convenience. Reading or writing them can
+// fail on corrupt data or a blocked localStorage (private mode, quota, or a
+// security policy); none of that should break the page, so we swallow the
+// failure and fall back to an empty/no-op result.
 
 export function getStoredRecentSearches() {
   if (typeof window === "undefined") return [];
@@ -17,12 +21,8 @@ export function getStoredRecentSearches() {
           typeof search === "string" && !getUsernameValidationMessage(search),
       )
       .slice(0, MAX_RECENT_SEARCHES);
-  } catch (error) {
-    if (isRecoverableStorageReadError(error)) {
-      return [];
-    }
-
-    throw error;
+  } catch {
+    return [];
   }
 }
 
@@ -31,12 +31,8 @@ export function saveStoredRecentSearches(searches: string[]) {
 
   try {
     window.localStorage.setItem(RECENT_SEARCHES_STORAGE_KEY, JSON.stringify(searches));
-  } catch (error) {
-    if (isRecoverableStorageWriteError(error)) {
-      return;
-    }
-
-    throw error;
+  } catch {
+    // Ignore storage write failures.
   }
 }
 
@@ -45,11 +41,7 @@ export function clearStoredRecentSearches() {
 
   try {
     window.localStorage.removeItem(RECENT_SEARCHES_STORAGE_KEY);
-  } catch (error) {
-    if (isRecoverableStorageWriteError(error)) {
-      return;
-    }
-
-    throw error;
+  } catch {
+    // Ignore storage write failures.
   }
 }

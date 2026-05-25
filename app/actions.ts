@@ -1,8 +1,9 @@
 "use server";
 
 import { Octokit } from "octokit";
-import type { CommitData, CommitInfo } from "./commitTypes";
+import type { CommitData, CommitErrorKind, CommitInfo } from "./commitTypes";
 import { getCachedCommitSearch, setCachedCommitSearch } from "./commitSearchCache";
+import { githubProfileUrl } from "./githubUrls";
 import { logger } from "./logger";
 import { getUsernameValidationMessage, normalizeGitHubUsername } from "./username";
 
@@ -12,6 +13,12 @@ const octokit = new Octokit({
 
 const GITHUB_SEARCH_TIMEOUT_MS = 10_000;
 const E2E_COMMIT_SEARCH_MOCKS_ENABLED = process.env.E2E_COMMIT_SEARCH_MOCKS === "1";
+const EMPTY_COMMIT_SEARCH_MESSAGE =
+  "No public commits found for this user (or indexing is delayed).";
+
+function commitSearchError(error: string, errorKind: CommitErrorKind): CommitData {
+  return { found: false, error, errorKind, commits: [] };
+}
 
 type GitHubErrorDetails = {
   message?: string;
@@ -37,7 +44,7 @@ function getE2eCommitSearchResult(username: string): CommitData | null {
     author: {
       login: username,
       avatar_url: "https://github.com/ghost.png",
-      html_url: `https://github.com/${username}`,
+      html_url: githubProfileUrl(username),
     },
   };
 
@@ -61,26 +68,17 @@ function getE2eCommitSearchResult(username: string): CommitData | null {
         ],
       };
     case "e2e-empty":
-      return {
-        found: false,
-        error: "No public commits found for this user (or indexing is delayed).",
-        errorKind: "empty",
-        commits: [],
-      };
+      return commitSearchError(EMPTY_COMMIT_SEARCH_MESSAGE, "empty");
     case "e2e-rate-limit":
-      return {
-        found: false,
-        error: "GitHub rate limit reached. Please try again in a few minutes.",
-        errorKind: "rate_limit",
-        commits: [],
-      };
+      return commitSearchError(
+        "GitHub rate limit reached. Please try again in a few minutes.",
+        "rate_limit",
+      );
     case "e2e-unavailable":
-      return {
-        found: false,
-        error: "GitHub is temporarily unavailable. Please try again soon.",
-        errorKind: "unavailable",
-        commits: [],
-      };
+      return commitSearchError(
+        "GitHub is temporarily unavailable. Please try again soon.",
+        "unavailable",
+      );
     default:
       return null;
   }
@@ -218,21 +216,17 @@ function mapCommitItem(item: unknown, username: string): CommitInfo | null {
       login: typeof authorLogin === "string" ? authorLogin : username,
       avatar_url:
         typeof authorAvatarUrl === "string" ? authorAvatarUrl : "https://github.com/ghost.png",
-      html_url:
-        typeof authorHtmlUrl === "string" ? authorHtmlUrl : `https://github.com/${username}`,
+      html_url: typeof authorHtmlUrl === "string" ? authorHtmlUrl : githubProfileUrl(username),
     },
   };
 }
 
 export async function getCommits(username: string): Promise<CommitData> {
   const normalizedUsername = normalizeGitHubUsername(username);
-  if (!normalizedUsername)
-    return { found: false, error: "Username is required", errorKind: "validation", commits: [] };
+  if (!normalizedUsername) return commitSearchError("Username is required", "validation");
 
   const validationMessage = getUsernameValidationMessage(normalizedUsername);
-  if (validationMessage) {
-    return { found: false, error: validationMessage, errorKind: "validation", commits: [] };
-  }
+  if (validationMessage) return commitSearchError(validationMessage, "validation");
 
   const e2eCommitSearchResult = getE2eCommitSearchResult(normalizedUsername);
   if (e2eCommitSearchResult) return e2eCommitSearchResult;
@@ -257,14 +251,9 @@ export async function getCommits(username: string): Promise<CommitData> {
     const items = response.data.items;
 
     if (!items || items.length === 0) {
-      const result: CommitData = {
-        found: false,
-        error: "No public commits found for this user (or indexing is delayed).",
-        errorKind: "empty",
-        commits: [],
-      };
-      setCachedCommitSearch(cacheKey, result);
-      return result;
+      const emptyResult = commitSearchError(EMPTY_COMMIT_SEARCH_MESSAGE, "empty");
+      setCachedCommitSearch(cacheKey, emptyResult);
+      return emptyResult;
     }
 
     const commits = items.flatMap((item, itemIndex) => {
@@ -281,14 +270,9 @@ export async function getCommits(username: string): Promise<CommitData> {
     });
 
     if (commits.length === 0) {
-      const result: CommitData = {
-        found: false,
-        error: "No public commits found for this user (or indexing is delayed).",
-        errorKind: "empty",
-        commits: [],
-      };
-      setCachedCommitSearch(cacheKey, result);
-      return result;
+      const emptyResult = commitSearchError(EMPTY_COMMIT_SEARCH_MESSAGE, "empty");
+      setCachedCommitSearch(cacheKey, emptyResult);
+      return emptyResult;
     }
 
     const result: CommitData = {
@@ -298,7 +282,6 @@ export async function getCommits(username: string): Promise<CommitData> {
     setCachedCommitSearch(cacheKey, result);
     return result;
   } catch (error: unknown) {
-    let errorMessage = "Failed to fetch commits.";
     const errorDetails = getGitHubErrorDetails(error);
     const { status } = errorDetails;
 
@@ -310,8 +293,7 @@ export async function getCommits(username: string): Promise<CommitData> {
           message: errorDetails.message,
         },
       });
-      errorMessage = "GitHub took too long to respond. Please try again.";
-      return { found: false, error: errorMessage, errorKind: "timeout", commits: [] };
+      return commitSearchError("GitHub took too long to respond. Please try again.", "timeout");
     }
 
     if (isGitHubRateLimitError(errorDetails)) {
@@ -324,8 +306,10 @@ export async function getCommits(username: string): Promise<CommitData> {
           rateLimitReset: errorDetails.rateLimitReset,
         },
       });
-      errorMessage = "GitHub rate limit reached. Please try again in a few minutes.";
-      return { found: false, error: errorMessage, errorKind: "rate_limit", commits: [] };
+      return commitSearchError(
+        "GitHub rate limit reached. Please try again in a few minutes.",
+        "rate_limit",
+      );
     }
 
     if (isGitHubUnavailableError(errorDetails)) {
@@ -336,8 +320,10 @@ export async function getCommits(username: string): Promise<CommitData> {
           message: errorDetails.message,
         },
       });
-      errorMessage = "GitHub is temporarily unavailable. Please try again soon.";
-      return { found: false, error: errorMessage, errorKind: "unavailable", commits: [] };
+      return commitSearchError(
+        "GitHub is temporarily unavailable. Please try again soon.",
+        "unavailable",
+      );
     }
 
     logger.error({
@@ -349,10 +335,9 @@ export async function getCommits(username: string): Promise<CommitData> {
     });
 
     if (status === 422) {
-      errorMessage = "Validation failed. User might not exist.";
-      return { found: false, error: errorMessage, errorKind: "validation", commits: [] };
+      return commitSearchError("Validation failed. User might not exist.", "validation");
     }
 
-    return { found: false, error: errorMessage, errorKind: "unknown", commits: [] };
+    return commitSearchError("Failed to fetch commits.", "unknown");
   }
 }
