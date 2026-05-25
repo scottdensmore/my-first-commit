@@ -1,17 +1,17 @@
 export function isRecoverableStorageReadError(
   error: unknown,
-): error is DOMException | SyntaxError {
-  return error instanceof DOMException || error instanceof SyntaxError;
+): error is Error | DOMException {
+  return error instanceof Error || error instanceof DOMException;
 }
 
 export function isRecoverableStorageWriteError(
   error: unknown,
-): error is DOMException {
-  return error instanceof DOMException;
+): error is Error | DOMException {
+  return error instanceof Error || error instanceof DOMException;
 }
 
 export function isRecoverableClipboardWriteError(
   error: unknown,
-): error is DOMException {
-  return error instanceof DOMException;
+): error is Error | DOMException {
+  return error instanceof Error || error instanceof DOMException;
 }

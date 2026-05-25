@@ -115,7 +115,7 @@ describe("Home", () => {
     mockGetCommits.mockResolvedValue(commitResult);
     const writeText = vi
       .spyOn(navigator.clipboard, "writeText")
-      .mockRejectedValue(new DOMException("Denied", "NotAllowedError"));
+      .mockRejectedValue(new Error("Denied"));
     const user = userEvent.setup();
     render(<Home />);
 
@@ -225,7 +225,7 @@ describe("Home", () => {
   it("keeps successful searches working when local storage writes fail", async () => {
     mockGetCommits.mockResolvedValue(commitResult);
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new DOMException("Storage is unavailable", "QuotaExceededError");
+      throw new Error("Storage is unavailable");
     });
     const user = userEvent.setup();
     render(<Home />);
