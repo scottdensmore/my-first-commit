@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import RootLayout, { metadata } from "./layout";
 
@@ -57,13 +57,13 @@ describe("RootLayout", () => {
   });
 
   it("mounts Vercel Analytics globally", () => {
-    render(
+    const html = renderToStaticMarkup(
       <RootLayout>
         <main>Page content</main>
       </RootLayout>,
     );
 
-    expect(screen.getByText("Page content")).toBeInTheDocument();
-    expect(screen.getByTestId("vercel-analytics")).toBeInTheDocument();
+    expect(html).toContain("Page content");
+    expect(html).toContain("data-testid=\"vercel-analytics\"");
   });
 });

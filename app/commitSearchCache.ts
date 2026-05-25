@@ -1,4 +1,4 @@
-import type { CommitData } from "./actions";
+import type { CommitData } from "./commitTypes";
 
 const COMMIT_SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
 const COMMIT_SEARCH_CACHE_MAX_ENTRIES = 100;

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { CommitData } from "./actions";
+import type { CommitData } from "./commitTypes";
 import {
   clearCommitSearchCache,
   getCachedCommitSearch,
