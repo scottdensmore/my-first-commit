@@ -92,9 +92,8 @@ function getGitHubErrorDetails(error: unknown): GitHubErrorDetails {
   }
 
   const status = "status" in error ? error.status : undefined;
-  const message = "message" in error && typeof error.message === "string"
-    ? error.message
-    : undefined;
+  const message =
+    "message" in error && typeof error.message === "string" ? error.message : undefined;
   const headers =
     "response" in error &&
     typeof error.response === "object" &&
@@ -102,7 +101,7 @@ function getGitHubErrorDetails(error: unknown): GitHubErrorDetails {
     "headers" in error.response &&
     typeof error.response.headers === "object" &&
     error.response.headers !== null
-      ? error.response.headers as Record<string, string | undefined>
+      ? (error.response.headers as Record<string, string | undefined>)
       : undefined;
 
   return {
@@ -117,8 +116,9 @@ function isGitHubRateLimitError(errorDetails: GitHubErrorDetails) {
   if (errorDetails.status === 429) return true;
   if (errorDetails.rateLimitRemaining === "0") return true;
 
-  return errorDetails.status === 403
-    && /rate limit|too many requests/i.test(errorDetails.message ?? "");
+  return (
+    errorDetails.status === 403 && /rate limit|too many requests/i.test(errorDetails.message ?? "")
+  );
 }
 
 function isTimeoutError(error: unknown, errorDetails: GitHubErrorDetails) {
@@ -135,9 +135,11 @@ function isTimeoutError(error: unknown, errorDetails: GitHubErrorDetails) {
 }
 
 function isGitHubUnavailableError(errorDetails: GitHubErrorDetails) {
-  return typeof errorDetails.status === "number"
-    && errorDetails.status >= 500
-    && errorDetails.status < 600;
+  return (
+    typeof errorDetails.status === "number" &&
+    errorDetails.status >= 500 &&
+    errorDetails.status < 600
+  );
 }
 
 function withTimeoutSignal<T>(callback: (signal: AbortSignal) => Promise<T>) {
@@ -179,14 +181,14 @@ function mapCommitItem(item: unknown, username: string): CommitInfo | null {
   const repositoryOwner = candidate.repository?.owner?.login;
 
   if (
-    typeof message !== "string"
-    || typeof htmlUrl !== "string"
-    || !htmlUrl
-    || typeof sha !== "string"
-    || !sha
-    || typeof repositoryName !== "string"
-    || typeof repositoryFullName !== "string"
-    || typeof repositoryOwner !== "string"
+    typeof message !== "string" ||
+    typeof htmlUrl !== "string" ||
+    !htmlUrl ||
+    typeof sha !== "string" ||
+    !sha ||
+    typeof repositoryName !== "string" ||
+    typeof repositoryFullName !== "string" ||
+    typeof repositoryOwner !== "string"
   ) {
     return null;
   }
@@ -199,11 +201,12 @@ function mapCommitItem(item: unknown, username: string): CommitInfo | null {
 
   return {
     message,
-    date: typeof committerDate === "string"
-      ? committerDate
-      : typeof authorDate === "string"
-        ? authorDate
-        : "",
+    date:
+      typeof committerDate === "string"
+        ? committerDate
+        : typeof authorDate === "string"
+          ? authorDate
+          : "",
     html_url: htmlUrl,
     sha,
     repository: {
@@ -213,15 +216,18 @@ function mapCommitItem(item: unknown, username: string): CommitInfo | null {
     },
     author: {
       login: typeof authorLogin === "string" ? authorLogin : username,
-      avatar_url: typeof authorAvatarUrl === "string" ? authorAvatarUrl : "https://github.com/ghost.png",
-      html_url: typeof authorHtmlUrl === "string" ? authorHtmlUrl : `https://github.com/${username}`,
+      avatar_url:
+        typeof authorAvatarUrl === "string" ? authorAvatarUrl : "https://github.com/ghost.png",
+      html_url:
+        typeof authorHtmlUrl === "string" ? authorHtmlUrl : `https://github.com/${username}`,
     },
   };
 }
 
 export async function getCommits(username: string): Promise<CommitData> {
   const normalizedUsername = normalizeGitHubUsername(username);
-  if (!normalizedUsername) return { found: false, error: "Username is required", errorKind: "validation", commits: [] };
+  if (!normalizedUsername)
+    return { found: false, error: "Username is required", errorKind: "validation", commits: [] };
 
   const validationMessage = getUsernameValidationMessage(normalizedUsername);
   if (validationMessage) {

@@ -19,9 +19,7 @@ export default function SearchResults({
   const firstCommit = commits[0];
   if (!firstCommit) return null;
 
-  const uniqueRepositoryCount = new Set(
-    commits.map((commit) => commit.repository.full_name),
-  ).size;
+  const uniqueRepositoryCount = new Set(commits.map((commit) => commit.repository.full_name)).size;
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full flex flex-col items-center pb-12 pt-8">
@@ -42,8 +40,8 @@ export default function SearchResults({
             : "."}
         </p>
         <p className="mt-2 text-sm text-[var(--github-gray-text)]">
-          GitHub search may miss older commits when indexing is incomplete,
-          delayed, or author metadata changed.
+          GitHub search may miss older commits when indexing is incomplete, delayed, or author
+          metadata changed.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <button
@@ -80,10 +78,7 @@ export default function SearchResults({
           </div>
 
           {commits.slice(1).map((commit) => (
-            <div
-              key={`${commit.repository.full_name}-${commit.sha}`}
-              className="mb-4 flex gap-4"
-            >
+            <div key={`${commit.repository.full_name}-${commit.sha}`} className="mb-4 flex gap-4">
               <div className="mt-8 hidden flex-col items-center sm:flex">
                 <div className="h-4 w-4 rounded-sm border border-[var(--github-green-hover)] bg-[var(--github-green)] opacity-70 shadow-sm" />
               </div>

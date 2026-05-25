@@ -14,9 +14,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
         <p className="text-sm font-semibold uppercase tracking-normal text-[var(--github-gray-text)]">
           Something went wrong
         </p>
-        <h1 className="mt-3 text-4xl font-bold sm:text-5xl">
-          We lost the commit trail.
-        </h1>
+        <h1 className="mt-3 text-4xl font-bold sm:text-5xl">We lost the commit trail.</h1>
         <p className="mt-4 max-w-xl text-lg text-[var(--github-gray-text)]">
           The app hit an unexpected error. You can try again without losing your place.
         </p>

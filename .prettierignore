@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+package-lock.json
+
+# Build output / generated
+.next
+out
+build
+coverage
+test-results
+playwright-report
+next-env.d.ts
+
+# Vendored assets
+public/*.svg
+
+# Tooling state (managed by external tools)
+.entire
+.codex
+.claude
+.vercel
+
+# Hand-written prose is formatted by hand, not Prettier
+*.md

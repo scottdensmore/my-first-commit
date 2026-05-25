@@ -28,15 +28,27 @@ describe("FirstCommitDisplay", () => {
     expect(ownerLinks).toHaveLength(2);
     expect(ownerLinks[0]).toHaveAttribute("href", "https://github.com/octo");
     expect(ownerLinks[1]).toHaveAttribute("href", "https://github.com/octo");
-    expect(screen.getByRole("link", { name: "repo" })).toHaveAttribute("href", "https://github.com/octo/repo");
-    expect(screen.getByRole("link", { name: "Initial commit" })).toHaveAttribute("href", commit.html_url);
+    expect(screen.getByRole("link", { name: "repo" })).toHaveAttribute(
+      "href",
+      "https://github.com/octo/repo",
+    );
+    expect(screen.getByRole("link", { name: "Initial commit" })).toHaveAttribute(
+      "href",
+      commit.html_url,
+    );
     expect(screen.getByRole("link", { name: "abcdef1" })).toHaveAttribute("href", commit.html_url);
     expect(screen.getByText("Add the first files")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "octo" })).toHaveAttribute("src", expect.stringContaining("octo.png"));
+    expect(screen.getByRole("img", { name: "octo" })).toHaveAttribute(
+      "src",
+      expect.stringContaining("octo.png"),
+    );
     expect(screen.getByText("Jan 1, 2024")).toBeInTheDocument();
     expect(screen.getByText(/commit age/i)).toBeInTheDocument();
     expect(screen.getByText(/source repository/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /view full commit on github/i })).toHaveAttribute("href", commit.html_url);
+    expect(screen.getByRole("link", { name: /view full commit on github/i })).toHaveAttribute(
+      "href",
+      commit.html_url,
+    );
   });
 
   it("uses a narrower layout for secondary commits", () => {

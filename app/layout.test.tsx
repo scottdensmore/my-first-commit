@@ -13,14 +13,18 @@ vi.mock("@vercel/analytics/next", () => ({
 
 describe("RootLayout", () => {
   it("defines production-ready metadata for shared links", () => {
-    const expectedMetadataBase = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").toString();
+    const expectedMetadataBase = new URL(
+      process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+    ).toString();
 
     expect(metadata.metadataBase?.toString()).toBe(expectedMetadataBase);
     expect(metadata.title).toEqual({
       default: "My First Commit",
       template: "%s | My First Commit",
     });
-    expect(metadata.description).toBe("Find and share the first public GitHub commit for any user.");
+    expect(metadata.description).toBe(
+      "Find and share the first public GitHub commit for any user.",
+    );
     expect(metadata.alternates).toEqual({
       canonical: "/",
     });
@@ -64,6 +68,6 @@ describe("RootLayout", () => {
     );
 
     expect(html).toContain("Page content");
-    expect(html).toContain("data-testid=\"vercel-analytics\"");
+    expect(html).toContain('data-testid="vercel-analytics"');
   });
 });

@@ -40,8 +40,7 @@ export function getResultMessage(result: CommitData): ResultMessage {
     default:
       return {
         title: "We could not complete that search.",
-        description:
-          result.error ?? "GitHub commit search failed. Please try again.",
+        description: result.error ?? "GitHub commit search failed. Please try again.",
       };
   }
 }
