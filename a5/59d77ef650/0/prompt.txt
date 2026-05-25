@@ -1,0 +1,9 @@
+Do a code review on this project. Check it for good swift practices  Make sure it has good code hygine and easy for humans to navigate. Create a todo list of the changes that need to be addressed.. don't make any changes.
+
+---
+
+Do a code review on this project. Check it for good practices. Make sure it has good code hygine and easy for humans to navigate. Create a todo list of the changes that need to be addressed.. don't make any changes.
+
+---
+
+Ok lets do those

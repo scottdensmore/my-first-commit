@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "a559d77ef650",
+  "strategy": "manual-commit",
+  "branch": "refactor/homepage-maintainability",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/actions.ts",
+    "app/commitSearchCache.test.ts",
+    "app/commitSearchCache.ts",
+    "app/commitTypes.ts",
+    "app/home/SearchErrorState.tsx",
+    "app/home/SearchForm.tsx",
+    "app/home/SearchResults.tsx",
+    "app/home/SearchShortcutSection.tsx",
+    "app/home/analytics.ts",
+    "app/home/browserErrors.ts",
+    "app/home/constants.ts",
+    "app/home/recentSearches.ts",
+    "app/home/resultMessages.ts",
+    "app/home/searchExecution.ts",
+    "app/home/sharedSearch.ts",
+    "app/layout.test.tsx",
+    "app/page.test.tsx",
+    "app/page.tsx",
+    "components/FirstCommitDisplay.test.tsx",
+    "components/FirstCommitDisplay.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a5/59d77ef650/0/metadata.json",
+      "transcript": "/a5/59d77ef650/0/full.jsonl",
+      "content_hash": "/a5/59d77ef650/0/content_hash.txt",
+      "prompt": "/a5/59d77ef650/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 48384,
+    "api_call_count": 36
+  }
+}
