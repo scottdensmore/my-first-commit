@@ -1,12 +1,13 @@
-'use server'
+"use server";
 
 import { Octokit } from "octokit";
+import type { CommitData, CommitInfo } from "./commitTypes";
 import { getCachedCommitSearch, setCachedCommitSearch } from "./commitSearchCache";
 import { logger } from "./logger";
 import { getUsernameValidationMessage, normalizeGitHubUsername } from "./username";
 
 const octokit = new Octokit({
-    auth: process.env.GITHUB_TOKEN 
+  auth: process.env.GITHUB_TOKEN,
 });
 
 const GITHUB_SEARCH_TIMEOUT_MS = 10_000;
@@ -18,30 +19,6 @@ type GitHubErrorDetails = {
   rateLimitReset?: string;
   status?: unknown;
 };
-
-export interface CommitInfo {
-    message: string;
-    date: string;
-    html_url: string;
-    sha: string;
-    repository: {
-      name: string;
-      owner: string;
-      full_name: string;
-    };
-    author: {
-      login: string;
-      avatar_url: string;
-      html_url: string;
-    };
-}
-
-export interface CommitData {
-  found: boolean;
-  error?: string;
-  errorKind?: "empty" | "rate_limit" | "timeout" | "unavailable" | "validation" | "unknown";
-  commits: CommitInfo[];
-}
 
 function getE2eCommitSearchResult(username: string): CommitData | null {
   if (!E2E_COMMIT_SEARCH_MOCKS_ENABLED) return null;
@@ -118,12 +95,13 @@ function getGitHubErrorDetails(error: unknown): GitHubErrorDetails {
   const message = "message" in error && typeof error.message === "string"
     ? error.message
     : undefined;
-  const headers = "response" in error
-    && typeof error.response === "object"
-    && error.response !== null
-    && "headers" in error.response
-    && typeof error.response.headers === "object"
-    && error.response.headers !== null
+  const headers =
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "headers" in error.response &&
+    typeof error.response.headers === "object" &&
+    error.response.headers !== null
       ? error.response.headers as Record<string, string | undefined>
       : undefined;
 
@@ -144,7 +122,12 @@ function isGitHubRateLimitError(errorDetails: GitHubErrorDetails) {
 }
 
 function isTimeoutError(error: unknown, errorDetails: GitHubErrorDetails) {
-  if (typeof error === "object" && error !== null && "name" in error && error.name === "AbortError") {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    error.name === "AbortError"
+  ) {
     return true;
   }
 
@@ -253,15 +236,17 @@ export async function getCommits(username: string): Promise<CommitData> {
   if (cachedCommitSearch) return cachedCommitSearch;
 
   try {
-    const response = await withTimeoutSignal((signal) => octokit.rest.search.commits({
-      q: `author:${normalizedUsername}`,
-      sort: 'committer-date',
-      order: 'asc',
-      per_page: 10,
-      request: {
-        signal,
-      },
-    }));
+    const response = await withTimeoutSignal((signal) =>
+      octokit.rest.search.commits({
+        q: `author:${normalizedUsername}`,
+        sort: "committer-date",
+        order: "asc",
+        per_page: 10,
+        request: {
+          signal,
+        },
+      }),
+    );
 
     const items = response.data.items;
 
@@ -302,11 +287,10 @@ export async function getCommits(username: string): Promise<CommitData> {
 
     const result: CommitData = {
       found: true,
-      commits: commits
+      commits,
     };
     setCachedCommitSearch(cacheKey, result);
     return result;
-
   } catch (error: unknown) {
     let errorMessage = "Failed to fetch commits.";
     const errorDetails = getGitHubErrorDetails(error);
@@ -350,21 +334,19 @@ export async function getCommits(username: string): Promise<CommitData> {
       return { found: false, error: errorMessage, errorKind: "unavailable", commits: [] };
     }
 
-    {
-      logger.error({
-        event: "github_commit_search_failed",
-        fields: {
-          status: typeof status === "number" ? status : undefined,
-          message: errorDetails.message,
-        },
-      });
-    }
+    logger.error({
+      event: "github_commit_search_failed",
+      fields: {
+        status: typeof status === "number" ? status : undefined,
+        message: errorDetails.message,
+      },
+    });
 
     if (status === 422) {
       errorMessage = "Validation failed. User might not exist.";
       return { found: false, error: errorMessage, errorKind: "validation", commits: [] };
     }
-    
+
     return { found: false, error: errorMessage, errorKind: "unknown", commits: [] };
   }
 }

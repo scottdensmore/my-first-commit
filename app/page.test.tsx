@@ -113,7 +113,9 @@ describe("Home", () => {
 
   it("shows a helpful status when copying a result fails", async () => {
     mockGetCommits.mockResolvedValue(commitResult);
-    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Denied"));
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockRejectedValue(new DOMException("Denied", "NotAllowedError"));
     const user = userEvent.setup();
     render(<Home />);
 
@@ -223,7 +225,7 @@ describe("Home", () => {
   it("keeps successful searches working when local storage writes fail", async () => {
     mockGetCommits.mockResolvedValue(commitResult);
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new Error("Storage is unavailable");
+      throw new DOMException("Storage is unavailable", "QuotaExceededError");
     });
     const user = userEvent.setup();
     render(<Home />);
