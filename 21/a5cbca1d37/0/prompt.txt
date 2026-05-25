@@ -1,0 +1,5 @@
+For now lets look into why I keep getting faoiled preview deployment emails from Vercel
+
+---
+
+Yes lets do 1 then we should also do 2
