@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "666259670c8b",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/chore/agents-md-single-source",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".github/copilot-instructions.md",
+    ".github/workflows/ci.yml",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "GEMINI.md",
+    "README.md",
+    "docs/development.md",
+    "package.json",
+    "scripts/check-agent-docs.mjs"
+  ],
+  "sessions": [
+    {
+      "metadata": "/66/6259670c8b/0/metadata.json",
+      "transcript": "/66/6259670c8b/0/full.jsonl",
+      "compact_transcript": "/66/6259670c8b/0/transcript.jsonl",
+      "content_hash": "/66/6259670c8b/0/content_hash.txt",
+      "prompt": "/66/6259670c8b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 48,
+    "cache_creation_tokens": 45935,
+    "cache_read_tokens": 1423477,
+    "output_tokens": 18640,
+    "api_call_count": 26
+  }
+}

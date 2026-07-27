@@ -1,0 +1,5 @@
+/claude-md-improver
+
+---
+
+lets update and add it to AGENTS.MD and link that in CLAUDE.md and write a CI check to ensure we don't deviate and put things in CLAUDE.md because of '#'. Also add GEMINI.md for GeminiCLI and update for Copilot CLI where they link AGENTS.md
