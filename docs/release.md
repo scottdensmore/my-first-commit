@@ -45,7 +45,21 @@ The release workflow requires a `CHANGELOG.md` section named for the tag without
 ## 0.2.0
 ```
 
-Automatic deployment release tags can use generated release notes when a matching changelog section does not exist.
+## Which Workflow Owns Which Tag
+
+The two release workflows own different tag shapes and must not both publish the same tag:
+
+| Tag | Owner | Notes come from |
+| --- | --- | --- |
+| `vX.Y.Z` | `Release` | the matching `CHANGELOG.md` section |
+| `vX.Y.Z-<deployed-short-sha>` | `Promote Production Release` | deployment metadata |
+
+`Release` ignores deployment tags on push. Both workflows used to fire on `vX.Y.Z-<sha>` and race to
+call `gh release create`; the loser's notes were discarded, so a deployment release could end up
+carrying the `vX.Y.Z` changelog instead of its deployment metadata.
+
+To publish a deployment tag by hand, for example when an automatic promotion was skipped, run
+`Release` manually with the tag as input. It produces deployment notes rather than changelog notes.
 
 ## After Release
 

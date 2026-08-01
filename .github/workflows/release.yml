@@ -3,7 +3,12 @@ name: Release
 on:
   push:
     tags:
+      # Semantic release tags only. Deployment tags (vX.Y.Z-<sha>) are owned by
+      # promote-production-release.yml, which creates their release with deployment metadata. Both
+      # workflows firing on the same tag raced to call `gh release create`, and the loser's notes
+      # were silently discarded. The negative pattern must stay after the positive one.
       - "v*.*.*"
+      - "!v*.*.*-*"
   workflow_dispatch:
     inputs:
       tag:
@@ -46,20 +51,41 @@ jobs:
           fi
 
           version="${tag#v}"
-          base_version="${version%%-*}"
+
+          if printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]{7,40}$'; then
+            deployment=true
+          else
+            deployment=false
+          fi
+
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "base_version=$base_version" >> "$GITHUB_OUTPUT"
+          echo "deployment=$deployment" >> "$GITHUB_OUTPUT"
 
       - name: Extract changelog notes
         id: notes
         env:
           VERSION: ${{ steps.release.outputs.version }}
-          BASE_VERSION: ${{ steps.release.outputs.base_version }}
+          DEPLOYMENT: ${{ steps.release.outputs.deployment }}
           TAG: ${{ steps.release.outputs.tag }}
         run: |
-          awk -v version="$VERSION" -v base_version="$BASE_VERSION" '
-            $0 ~ "^## " version "($| )" || $0 ~ "^## " base_version "($| )" {
+          # A deployment tag only reaches this workflow through a manual dispatch, because
+          # promote-production-release.yml normally publishes it. Its notes describe the deployment,
+          # not a version's changelog. Matching the base version here used to pull in the whole
+          # vX.Y.Z changelog section, which is not what a per-deployment release should say.
+          if [ "$DEPLOYMENT" = "true" ]; then
+            {
+              echo "Production deployment release for $TAG."
+              echo
+              echo "This release was published manually for a deployment that was already healthy."
+              echo
+              echo "See the commit history for the exact changes included in this deployment."
+            } > release-notes.md
+            exit 0
+          fi
+
+          awk -v version="$VERSION" '
+            $0 ~ "^## " version "($| )" {
               capture = 1
               next
             }
@@ -71,15 +97,7 @@ jobs:
             }
           ' CHANGELOG.md > release-notes.md
 
-          if [ ! -s release-notes.md ] && printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]{7,40}$'; then
-            {
-              echo "Production deployment release for $TAG."
-              echo
-              echo "This release was created automatically after Vercel deployed the commit and the Production Health Check passed."
-              echo
-              echo "See the commit history for the exact changes included in this deployment."
-            } > release-notes.md
-          elif [ ! -s release-notes.md ]; then
+          if [ ! -s release-notes.md ]; then
             echo "No CHANGELOG.md section found for $VERSION."
             echo "Add a '## $VERSION' section before publishing."
             exit 1
