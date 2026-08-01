@@ -20,6 +20,12 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 ### Fixed
 
 - Stopped Vercel building the Entire checkpoint branch, which had no application code and failed every push at `npm install`. Checkpoints are stored as git refs instead of a branch, and the `vercel.json` setting that could not suppress the branch was removed in favor of a runbook note.
+- Release promotion no longer fails when two production deployments land close together. The older promotion is superseded by the newer commit and now skips instead of failing on a rejected tag push.
+- `Release` and `Promote Production Release` no longer race to publish the same deployment tag. Each workflow owns one tag shape, so a deployment release can no longer end up carrying a version changelog instead of its deployment notes.
+
+### Changed
+
+- Updated production dependencies to React 19.2.8, date-fns 4.4, and react-icons 5.7, development dependencies including Playwright 1.62, Vitest 4.1.10, Tailwind 4.3.3, and Prettier 3.9.6, and the `actions/checkout` and `actions/setup-node` workflow actions to v7.
 
 ### Security
 
