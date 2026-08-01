@@ -29,8 +29,39 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
+      # Two production deployments landing close together queue two promotions. The older one runs
+      # after main has already advanced, and pushing its tag is rejected when the deployed commit's
+      # workflow files no longer match main:
+      #   refusing to allow a GitHub App to create or update workflow `.github/workflows/ci.yml`
+      #   without `workflows` permission
+      # The superseded commit is no longer production, so skip it instead of failing the run. The
+      # newer commit gets its own promotion.
+      - name: Skip superseded deployment
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          # Resolved through the API rather than git, because the checkout above is shallow and
+          # pinned to the deployed commit, so origin/main is not necessarily present locally.
+          tip="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq '.sha')"
+
+          if [ -z "$tip" ]; then
+            echo "Could not resolve the current main tip."
+            exit 1
+          fi
+
+          if [ "$tip" != "$TARGET_SHA" ]; then
+            echo "main has advanced to ${tip}."
+            echo "${TARGET_SHA} is no longer the deployed production commit; skipping its release."
+            echo "superseded=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "superseded=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Resolve release tag
         id: release
+        if: steps.guard.outputs.superseded != 'true'
         run: |
           version="$(node -p "require('./package.json').version")"
           short_sha="$(printf '%s' "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)"
@@ -40,6 +71,7 @@ jobs:
           echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
 
       - name: Confirm CI passed for deployed commit
+        if: steps.guard.outputs.superseded != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
@@ -55,6 +87,7 @@ jobs:
           fi
 
       - name: Create tag and GitHub release
+        if: steps.guard.outputs.superseded != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
