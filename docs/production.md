@@ -248,6 +248,36 @@ Check logs for `github_commit_search_malformed_item`. The app skips malformed re
 
 Preview deployments may not have all production environment variables. Check Vercel project environment variable scope and branch/preview settings.
 
+### Vercel Builds A Branch That Has No App Code
+
+Vercel creates a deployment for every branch push. A branch whose tree has no `package.json` fails at
+the install step with `ENOENT ... /vercel/path0/package.json`.
+
+This happened with Entire's checkpoint storage. Entire used to push `entire/checkpoints/v1`, a branch
+holding only its object store, on every `git push`, and each push produced a failed preview
+deployment.
+
+Do not try to fix this with `vercel.json`. Vercel reads `vercel.json` from the commit being deployed,
+so `git.deploymentEnabled` and `ignoreCommand` are never consulted for a branch that does not contain
+the file. That is exactly the branch class the setting appears to target, which makes the fix look
+correct while doing nothing.
+
+Fix it at the source instead, so no branch is pushed:
+
+```bash
+entire configure --checkpoint-backend refs
+```
+
+Checkpoints then land under `refs/entire/checkpoints/*` rather than `refs/heads/*`, and Vercel has no
+branch to deploy. The old `entire/checkpoints/v1` branch can stay; it is simply no longer pushed to.
+
+Verify from the GitHub side without Vercel access:
+
+```bash
+git ls-remote origin 'refs/*' | grep entire   # checkpoints should be outside refs/heads/
+gh api "repos/<owner>/<repo>/deployments?per_page=10" --jq '.[] | "\(.id) \(.environment) \(.ref)"'
+```
+
 ## Dependency Updates
 
 Dependabot opens minor and patch dependency PRs. Major version upgrades are intentionally ignored by Dependabot and should be handled as planned compatibility work.
