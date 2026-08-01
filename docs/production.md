@@ -45,6 +45,29 @@ PRODUCTION_BASE_URL=https://my-first-commit-eta.vercel.app
 
 The production deploy is healthy when `CI / validate`, `Production Health Check`, and `Promote Production Release` pass on `main`.
 
+### Skipped Promotions Are Normal
+
+When two merges land close together, both queue a promotion. The older one runs after `main` has
+already advanced, so its commit is no longer the deployed production commit. That run logs:
+
+```text
+main has advanced to <sha>.
+<older-sha> is no longer the deployed production commit; skipping its release.
+```
+
+This is expected. The superseded commit intentionally gets no tag and no release, because the newer
+commit is promoted in its place. Gaps in the deployment tag sequence are normal for the same reason.
+
+Before this guard existed, the older promotion instead failed while pushing its tag, because
+`GITHUB_TOKEN` cannot push a ref whose workflow files no longer match `main`:
+
+```text
+refusing to allow a GitHub App to create or update workflow `.github/workflows/ci.yml`
+without `workflows` permission
+```
+
+A promotion that fails for any other reason is a real failure and should be investigated.
+
 ## Release Checklist
 
 Use this checklist before treating a `main` merge as a healthy release:
