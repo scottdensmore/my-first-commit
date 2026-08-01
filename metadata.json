@@ -1,0 +1,24 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "01KYXMBMA2K2AGWBM04HKWHQHW",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/chore/entire-checkpoint-refs",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 10221,
+    "cache_creation_tokens": 257680,
+    "cache_read_tokens": 9494948,
+    "output_tokens": 63884,
+    "api_call_count": 106
+  }
+}
