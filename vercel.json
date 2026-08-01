@@ -1,7 +1,0 @@
-{
-  "git": {
-    "deploymentEnabled": {
-      "entire/checkpoints/v1": false
-    }
-  }
-}
