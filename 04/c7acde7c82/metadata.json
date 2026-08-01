@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "04c7acde7c82",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/chore/npm-audit-fixes",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "package.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/04/c7acde7c82/0/metadata.json",
+      "transcript": "/04/c7acde7c82/0/full.jsonl",
+      "compact_transcript": "/04/c7acde7c82/0/transcript.jsonl",
+      "content_hash": "/04/c7acde7c82/0/content_hash.txt",
+      "prompt": "/04/c7acde7c82/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 34,
+    "cache_creation_tokens": 72939,
+    "cache_read_tokens": 1418726,
+    "output_tokens": 6702,
+    "api_call_count": 18
+  }
+}
