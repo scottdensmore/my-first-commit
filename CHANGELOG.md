@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Added
 
+- Canonical `AGENTS.md` agent instructions, with `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` reduced to pointer files that CI keeps in sync through `npm run check:agent-docs`.
 - Server-side username validation, sanitized GitHub error logging, short-lived search caching, CSP report-only headers, release workflow hardening, and tighter public health metadata.
 - Automatic production release promotion and footer release links for deployed versions.
 - Privacy page, example searches, privacy-safe analytics events, issue chooser config, and release publishing workflow.
@@ -15,6 +16,14 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 - Result sharing, source repository context, and richer first-commit metadata.
 - Label sync configuration, issue template polish, and dependency update policy.
 - Roadmap and label guidance for lightweight project planning.
+
+### Fixed
+
+- Stopped Vercel building the Entire checkpoint branch, which had no application code and failed every push at `npm install`. Checkpoints are stored as git refs instead of a branch, and the `vercel.json` setting that could not suppress the branch was removed in favor of a runbook note.
+
+### Security
+
+- Cleared all npm audit advisories: patch upgrades for Next.js and its ESLint config, raised postcss and sharp overrides, and lockfile fixes for undici, vite, js-yaml, brace-expansion, and Babel.
 
 ## 0.1.0 - 2026-05-11
 
