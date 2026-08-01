@@ -16,12 +16,7 @@ export type CommitInfo = {
 };
 
 export type CommitErrorKind =
-  | "empty"
-  | "rate_limit"
-  | "timeout"
-  | "unavailable"
-  | "validation"
-  | "unknown";
+  "empty" | "rate_limit" | "timeout" | "unavailable" | "validation" | "unknown";
 
 export type CommitData = {
   found: boolean;
