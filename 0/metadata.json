@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "01KYZD1YHZQVNY2NY1ERPWKBND",
+  "session_id": "32294a5c-5834-48dc-9f47-699a88ab24cd",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-01T19:33:20.347038974Z",
+  "branch": "scottdensmore/docs/promotion-skip-runbook",
+  "checkpoints_count": 5,
+  "save_step_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "f60f89ba496b",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 10464,
+    "cache_creation_tokens": 556759,
+    "cache_read_tokens": 36740090,
+    "output_tokens": 147377,
+    "api_call_count": 237
+  },
+  "session_metrics": {
+    "turn_count": 33
+  }
+}
