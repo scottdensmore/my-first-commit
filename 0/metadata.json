@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "01KYZD0KJZAG4397T1FS5ETMKH",
+  "session_id": "32294a5c-5834-48dc-9f47-699a88ab24cd",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-01T19:32:36.494390508Z",
+  "branch": "scottdensmore/chore/changelog-release-fixes",
+  "checkpoints_count": 5,
+  "save_step_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "f60f89ba496b",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 10457,
+    "cache_creation_tokens": 554100,
+    "cache_read_tokens": 35657224,
+    "output_tokens": 145795,
+    "api_call_count": 233
+  },
+  "session_metrics": {
+    "turn_count": 33
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
