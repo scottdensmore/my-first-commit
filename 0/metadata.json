@@ -3,7 +3,7 @@
   "checkpoint_id": "01KYXMBMA2K2AGWBM04HKWHQHW",
   "session_id": "32294a5c-5834-48dc-9f47-699a88ab24cd",
   "strategy": "manual-commit",
-  "created_at": "2026-08-01T03:02:28.123750945Z",
+  "created_at": "2026-08-01T03:02:54.89200114Z",
   "branch": "scottdensmore/chore/entire-checkpoint-refs",
   "checkpoints_count": 1,
   "save_step_count": 1,
@@ -13,22 +13,13 @@
   "turn_id": "fea498decf46",
   "compact_transcript_start": 0,
   "token_usage": {
-    "input_tokens": 10221,
-    "cache_creation_tokens": 257680,
-    "cache_read_tokens": 9494948,
-    "output_tokens": 63884,
-    "api_call_count": 106
+    "input_tokens": 10224,
+    "cache_creation_tokens": 258991,
+    "cache_read_tokens": 9795487,
+    "output_tokens": 64943,
+    "api_call_count": 108
   },
   "session_metrics": {
     "turn_count": 6
-  },
-  "prompt_attributions": [
-    {
-      "checkpoint_number": 2,
-      "user_lines_added": 0,
-      "user_lines_removed": 0,
-      "agent_lines_added": 0,
-      "agent_lines_removed": 0
-    }
-  ]
+  }
 }
