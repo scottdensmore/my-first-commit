@@ -14,6 +14,11 @@ function expectSecurityHeaders(response: APIResponse) {
   expect(headers["x-frame-options"]).toBe("DENY");
   expect(headers["content-security-policy-report-only"]).toContain("default-src 'self'");
   expect(headers["content-security-policy-report-only"]).toContain("frame-ancestors 'none'");
+  // Without a reporting destination the report-only policy is unobservable: violations reach the
+  // browser console and nowhere else.
+  expect(headers["content-security-policy-report-only"]).toContain("report-uri /api/csp-report");
+  expect(headers["content-security-policy-report-only"]).toContain("report-to csp-endpoint");
+  expect(headers["reporting-endpoints"]).toContain('csp-endpoint="/api/csp-report"');
 }
 
 async function searchForUsername(page: Page, username: string) {
@@ -271,6 +276,26 @@ test("health endpoint reports app status without caching", async ({ request }) =
   }
 
   expect(JSON.stringify(body)).not.toMatch(/gh[pousr]_/);
+});
+
+test("csp report endpoint accepts a violation report", async ({ request }) => {
+  // Local only. Against production this would write a synthetic violation into the very logs the
+  // endpoint exists to make trustworthy.
+  test.skip(isDeployedTarget, "csp report posting only runs against the local Playwright server");
+
+  const response = await request.post("/api/csp-report", {
+    headers: { "content-type": "application/csp-report" },
+    data: {
+      "csp-report": {
+        "document-uri": "http://localhost/",
+        "effective-directive": "img-src",
+        "blocked-uri": "https://example.test/pixel.gif",
+        disposition: "report",
+      },
+    },
+  });
+
+  expect(response.status()).toBe(204);
 });
 
 test.describe("local mocked commit search states", () => {

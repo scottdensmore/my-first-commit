@@ -242,7 +242,55 @@ The app sets baseline security headers from `next.config.ts`:
 - `X-Frame-Options: DENY`
 - `Content-Security-Policy-Report-Only` for CSP tuning without blocking production traffic
 
-Content Security Policy is currently report-only. Review Vercel logs and browser reports before moving from report-only to enforcement.
+Content Security Policy is currently report-only. Review Vercel logs before moving from report-only to enforcement.
+
+### CSP Violation Reports
+
+The policy names a reporting destination through both `report-uri` and `report-to`, backed by the
+`Reporting-Endpoints` header. Browsers post violations to `/api/csp-report`, which logs them as
+structured `csp_violation` events. Without this, a report-only policy is unobservable: violations
+reach each visitor's browser console and nowhere else.
+
+Find them in Vercel Logs by searching for:
+
+```text
+csp_violation
+```
+
+Logged fields:
+
+- `documentUri`
+- `blockedUri`
+- `effectiveDirective`
+- `disposition`
+- `statusCode`
+- `sourceFile`
+- `lineNumber`
+- `columnNumber`
+
+URLs are reduced to origin and path. Query strings are dropped because the app puts the searched
+username in `?user=`, and search usernames must not reach logs. Opaque schemes such as `data:` are
+reduced to the scheme so an inline payload is not logged. The reported `original-policy` and
+`script-sample` are never read at all: the policy is long and already known, and the sample can
+contain page content or user input.
+
+Other events from the same endpoint indicate a malformed or hostile POST rather than a real
+violation: `csp_report_malformed`, `csp_report_empty`, `csp_report_too_large`, and
+`csp_report_unreadable`.
+
+### Moving CSP To Enforcement
+
+Do not simply rename the header. `script-src` currently allows `'unsafe-inline'` and `'unsafe-eval'`,
+so enforcing the policy as written would activate `frame-ancestors`, `base-uri`, `form-action`, and
+`default-src` without blocking injected inline script, which is the main thing CSP defends against.
+
+The intended order is:
+
+1. Collect `csp_violation` events from real traffic in preview and production.
+2. Tighten the policy against what actually fires.
+3. Replace `'unsafe-inline'` and `'unsafe-eval'` in `script-src` with per-request nonces, which
+   requires middleware and can break the Next.js inline bootstrap and Vercel Analytics.
+4. Only then rename the header to `Content-Security-Policy`.
 
 ## Accessibility Checks
 
