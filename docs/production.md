@@ -15,7 +15,9 @@ The app also exposes a lightweight runtime health endpoint:
 https://my-first-commit-eta.vercel.app/api/health
 ```
 
-It returns JSON status, deployment metadata, and whether the public site URL is configured. It does not expose server-side secrets or detailed runtime versions.
+It returns JSON status, deployment metadata, and whether the public site URL and `GITHUB_TOKEN` are configured. It does not expose server-side secrets or detailed runtime versions.
+
+`checks.githubToken` reports presence only, never the value, a prefix, a length, or a hash. The endpoint is public and uncached, so nothing beyond a boolean belongs there. It confirms the variable is set; it does not prove the token is valid or unexpired.
 
 ## Required Configuration
 
@@ -33,6 +35,27 @@ PRODUCTION_BASE_URL=https://my-first-commit-eta.vercel.app
 ```
 
 `GITHUB_TOKEN` is server-side only. Do not expose it as a public `NEXT_PUBLIC_*` variable.
+
+### Rotating `GITHUB_TOKEN`
+
+Vercel applies environment variable changes to new builds only, so a rotation does nothing until the
+project is redeployed.
+
+1. Add the new token in Vercel before revoking the old one, so production never falls back to
+   unauthenticated requests at 60 requests per hour.
+2. Redeploy production.
+3. Confirm the variable reached the running deployment:
+
+   ```bash
+   curl -s https://my-first-commit-eta.vercel.app/api/health | grep -o '"githubToken":{"configured":[a-z]*}'
+   ```
+
+4. Run a search on the public app. `configured: true` only proves the variable is set; a search is
+   what proves the token is accepted by GitHub.
+5. Revoke the old token.
+
+The app only reads public commit search data, so the token needs no scopes. An unscoped classic token
+still raises the Search API limit from 60 to 5,000 requests per hour.
 
 ## Deployment Flow
 
@@ -263,6 +286,16 @@ Open the health check target URL and confirm it renders the public app. If it sh
 Check logs for `github_commit_search_rate_limited`.
 
 Confirm `GITHUB_TOKEN` is set in Vercel production. Unauthenticated GitHub Search API requests have a much lower rate limit.
+
+Check whether the running deployment sees it:
+
+```bash
+curl -s https://my-first-commit-eta.vercel.app/api/health
+```
+
+`checks.githubToken.configured: false` means the variable is missing from the deployment, usually
+because it was changed without redeploying. `true` with rate limiting means the token is set but
+expired, revoked, or genuinely over its limit.
 
 ### GitHub Searches Fail With Validation Errors
 

@@ -32,16 +32,56 @@ describe("GET /api/health", () => {
           configured: true,
           value: "https://my-first-commit-eta.vercel.app",
         },
+        githubToken: {
+          configured: true,
+        },
       },
     });
     expect(body.runtime).toBeUndefined();
     expect(Date.parse(body.timestamp)).not.toBeNaN();
     expect(JSON.stringify(body)).not.toContain("secret-token");
+    // The token check must report presence and nothing else. A value, prefix, length, or hash on a
+    // public endpoint would leak more than "it is set".
+    expect(Object.keys(body.checks.githubToken)).toEqual(["configured"]);
+  });
+
+  it("reports a missing GitHub token without failing health", async () => {
+    process.env = {
+      ...originalEnv,
+      GITHUB_TOKEN: "",
+      NEXT_PUBLIC_SITE_URL: "https://my-first-commit-eta.vercel.app",
+    };
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      status: "ok",
+      checks: {
+        githubToken: {
+          configured: false,
+        },
+      },
+    });
+  });
+
+  it("treats a whitespace-only GitHub token as missing", async () => {
+    process.env = {
+      ...originalEnv,
+      GITHUB_TOKEN: "   ",
+    };
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body.checks.githubToken.configured).toBe(false);
   });
 
   it("reports missing optional public configuration without failing health", async () => {
     process.env = {
       ...originalEnv,
+      GITHUB_TOKEN: "",
       NEXT_PUBLIC_SITE_URL: "",
       VERCEL_ENV: "",
       VERCEL_GIT_COMMIT_SHA: "",

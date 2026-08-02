@@ -257,9 +257,20 @@ test("health endpoint reports app status without caching", async ({ request }) =
       siteUrl: {
         configured: expect.any(Boolean),
       },
+      githubToken: {
+        configured: expect.any(Boolean),
+      },
     },
   });
   expect(Date.parse(body.timestamp)).not.toBeNaN();
+
+  // Against a deployed target this is the check that catches a botched token rotation. Locally the
+  // token is optional, so only its shape is asserted above.
+  if (isDeployedTarget) {
+    expect(body.checks.githubToken.configured).toBe(true);
+  }
+
+  expect(JSON.stringify(body)).not.toMatch(/gh[pousr]_/);
 });
 
 test.describe("local mocked commit search states", () => {
