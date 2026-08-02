@@ -49,10 +49,18 @@ The release workflow requires a `CHANGELOG.md` section named for the tag without
 
 The two release workflows own different tag shapes and must not both publish the same tag:
 
-| Tag | Owner | Notes come from |
-| --- | --- | --- |
-| `vX.Y.Z` | `Release` | the matching `CHANGELOG.md` section |
-| `vX.Y.Z-<deployed-short-sha>` | `Promote Production Release` | deployment metadata |
+| Tag | Owner | Notes come from | Marked "Latest" |
+| --- | --- | --- | --- |
+| `vX.Y.Z` | `Release` | the matching `CHANGELOG.md` section | yes |
+| `vX.Y.Z-<deployed-short-sha>` | `Promote Production Release` | deployment metadata | no |
+
+Only version releases are marked "Latest". Deployment tags are deployment records, so
+`https://github.com/scottdensmore/my-first-commit/releases/latest` keeps resolving to the current
+version rather than to whichever commit deployed most recently.
+
+Both workflows pass `--latest` explicitly. GitHub otherwise picks the pointer automatically from date
+and version, and a newly published deployment tag takes "Latest" away from the version release it was
+deployed from.
 
 `Release` ignores deployment tags on push. Both workflows used to fire on `vX.Y.Z-<sha>` and race to
 call `gh release create`; the loser's notes were discarded, so a deployment release could end up

@@ -6,6 +6,10 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ## Unreleased
 
+### Fixed
+
+- Deployment releases no longer take the "Latest" pointer from the version release they were deployed from. Both release workflows now set it explicitly, so `releases/latest` resolves to the current version instead of the most recent deployment.
+
 ## 0.2.0 - 2026-08-01
 
 ### Added

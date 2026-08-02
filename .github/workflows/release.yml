@@ -107,4 +107,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
-        run: gh release create "$TAG" --title "$TAG" --notes-file release-notes.md --verify-tag
+          DEPLOYMENT: ${{ steps.release.outputs.deployment }}
+        run: |
+          # Set the "Latest" pointer explicitly in both directions. The default is chosen from date
+          # and version, which makes it depend on publish order rather than intent. A version release
+          # owns "Latest"; a deployment tag published here by manual dispatch must not take it.
+          if [ "$DEPLOYMENT" = "true" ]; then
+            latest=false
+          else
+            latest=true
+          fi
+
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file release-notes.md \
+            --latest="$latest" \
+            --verify-tag

@@ -115,8 +115,13 @@ jobs:
             echo "- Production health check: $RUN_URL"
           } > release-notes.md
 
+          # --latest=false is required. Without it the "Latest" pointer is chosen automatically from
+          # date and version, and a fresh deployment tag always wins against the vX.Y.Z release it
+          # was deployed from. A deployment tag is a deployment record, not the current version, so
+          # /releases/latest must keep pointing at the version release.
           gh release create "$TAG" \
             --title "$TAG" \
             --notes-file release-notes.md \
             --target "$TARGET_SHA" \
+            --latest=false \
             --verify-tag
