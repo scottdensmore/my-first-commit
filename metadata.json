@@ -1,0 +1,24 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "01KYZZN696YM9C4ZX3K2FQJPRF",
+  "strategy": "manual-commit",
+  "branch": "fix/deployment-tag-latest-pointer",
+  "checkpoints_count": 3,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 10575,
+    "cache_creation_tokens": 883699,
+    "cache_read_tokens": 43090600,
+    "output_tokens": 177386,
+    "api_call_count": 296
+  }
+}
