@@ -6,6 +6,10 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ## Unreleased
 
+### Added
+
+- `/api/health` now reports whether `GITHUB_TOKEN` is configured, so a rotation that never reached the running deployment is visible without a live search. Presence only is reported, never the value. The production health check asserts it against deployed targets.
+
 ### Fixed
 
 - Deployment releases no longer take the "Latest" pointer from the version release they were deployed from. Both release workflows now set it explicitly, so `releases/latest` resolves to the current version instead of the most recent deployment.
