@@ -22,6 +22,7 @@ Thanks for helping improve My First Commit. Keep changes small, tested, and easy
    npm run lint
    npm run format:check
    npm run check:agent-docs
+   npm run check:labels
    npm run build
    npm run test:e2e
    ```

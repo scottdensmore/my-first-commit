@@ -14,7 +14,6 @@ This roadmap is intentionally lightweight. It captures useful next ideas without
   what actually fires.
 - Replace `'unsafe-inline'` and `'unsafe-eval'` in `script-src` with per-request nonces before
   enforcing the policy, once Next.js runtime behavior and Vercel Analytics are confirmed.
-- Add label sync automation if manual label management becomes annoying.
 
 ## Maybe
 

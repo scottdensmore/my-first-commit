@@ -24,22 +24,51 @@ Use labels to make issues and pull requests easy to scan. Keep the set small.
 - Use `maintenance` for small ownership improvements that are not visible to users.
 - Use `docs` for documentation-only changes.
 
-## Future Automation
+## Syncing
 
-The canonical label set is captured in `.github/labels.yml`.
+`.github/labels.yml` is the canonical label set. Edit that file and merge it to `main`; the
+`Sync Labels` workflow reconciles GitHub with it on any push that touches the file.
 
-To sync labels manually with GitHub CLI:
+Locally:
 
 ```bash
-gh label create bug --color d73a4a --description "Something is broken or behaving unexpectedly."
-gh label create feature --color 0e8a16 --description "A new user-facing capability."
-gh label create maintenance --color cfd3d7 --description "Cleanup, refactors, chores, or upkeep that does not change user behavior."
-gh label create dependencies --color 0366d6 --description "Dependency updates, lockfile changes, or package maintenance."
-gh label create security --color b60205 --description "Security hardening, vulnerabilities, tokens, headers, or dependency advisories."
-gh label create production --color fbca04 --description "Deployment, health checks, monitoring, Vercel, or production incidents."
-gh label create docs --color 0075ca --description "README, runbook, changelog, contributing, architecture, or QA documentation."
-gh label create accessibility --color 5319e7 --description "Keyboard, focus, landmarks, announcements, or screen-reader improvements."
-gh label create testing --color 1d76db --description "Unit, e2e, CI, production health, or QA coverage."
+npm run check:labels                      # validate the file, no network, no token
+npm run sync:labels -- --dry-run          # report what would change
+npm run sync:labels                       # create and update
 ```
 
-Use `gh label edit <name>` instead of `create` when a label already exists. Add automated label syncing later only if manual sync becomes annoying.
+The local commands need `GITHUB_TOKEN` and `GITHUB_REPOSITORY`:
+
+```bash
+GITHUB_REPOSITORY=scottdensmore/my-first-commit GITHUB_TOKEN="$(gh auth token)" \
+  npm run sync:labels -- --dry-run
+```
+
+`npm run check:labels` also runs in CI, so an invalid label file fails the pull request rather than
+the sync.
+
+### Colors Must Be Quoted
+
+YAML reads an unquoted `5319e7` as scientific notation and `000000` as the integer zero, so a color
+silently stops being a string. Every color in `.github/labels.yml` is quoted, and the validator
+rejects one that is not with a message naming the problem.
+
+### Deleting Labels
+
+Syncing never deletes anything by default. Deleting a label removes it from every issue and pull
+request that carries it, and that cannot be undone.
+
+Pruning is available through `--prune`, and from the `Sync Labels` workflow only as a deliberate
+manual dispatch with the `prune` input checked. Run it as a dry run first:
+
+```bash
+npm run sync:labels -- --dry-run --prune
+```
+
+### Dependabot's Labels
+
+Dependabot creates `javascript` and `github_actions` on its own and applies them to its pull
+requests. Both are listed in `.github/labels.yml` with the values Dependabot uses, so a sync leaves
+them untouched and a prune does not delete labels the repository is actually using.
+
+If Dependabot later introduces another label, add it to the file before pruning.

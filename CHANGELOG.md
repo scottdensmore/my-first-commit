@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Added
 
+- Label sync automation. `.github/labels.yml` is reconciled with GitHub by the `Sync Labels` workflow on merge, or locally through `npm run sync:labels`. Deleting labels is opt-in, and CI validates the label file on every pull request.
 - CSP violation reporting. The report-only policy now names a reporting destination through `report-uri`, `report-to`, and the `Reporting-Endpoints` header, and `/api/csp-report` records violations as structured `csp_violation` log events. Reported URLs are reduced to origin and path so searched usernames cannot reach logs, and the original policy and script sample are never read.
 - `/api/health` now reports whether `GITHUB_TOKEN` is configured, so a rotation that never reached the running deployment is visible without a live search. Presence only is reported, never the value. The production health check asserts it against deployed targets.
 

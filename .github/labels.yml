@@ -1,43 +1,58 @@
+# Colors are quoted on purpose. YAML reads an unquoted 5319e7 as scientific notation and 000000 as
+# the integer zero, so an unquoted color silently stops being a string.
+
 - name: bug
-  color: d73a4a
+  color: "d73a4a"
   description: Something is broken or behaving unexpectedly.
 
 - name: feature
-  color: 0e8a16
+  color: "0e8a16"
   description: A new user-facing capability.
 
 - name: maintenance
-  color: cfd3d7
+  color: "cfd3d7"
   description: Cleanup, refactors, chores, or upkeep that does not change user behavior.
 
 - name: dependencies
-  color: 0366d6
+  color: "0366d6"
   description: Dependency updates, lockfile changes, or package maintenance.
 
 - name: security
-  color: b60205
+  color: "b60205"
   description: Security hardening, vulnerabilities, tokens, headers, or dependency advisories.
 
 - name: production
-  color: fbca04
+  color: "fbca04"
   description: Deployment, health checks, monitoring, Vercel, or production incidents.
 
 - name: docs
-  color: 0075ca
+  color: "0075ca"
   description: README, runbook, changelog, contributing, architecture, or QA documentation.
 
 - name: accessibility
-  color: 5319e7
+  color: "5319e7"
   description: Keyboard, focus, landmarks, announcements, or screen-reader improvements.
 
 - name: testing
-  color: 1d76db
+  color: "1d76db"
   description: Unit, e2e, CI, production health, or QA coverage.
 
 - name: release
-  color: 0052cc
+  color: "0052cc"
   description: Tags, changelog entries, release notes, or GitHub releases.
 
 - name: privacy
-  color: 6f42c1
+  color: "6f42c1"
   description: Search data handling, analytics boundaries, or local browser storage.
+
+# Created automatically by Dependabot, which applies them to its own pull requests. They are listed
+# here so `npm run sync:labels -- --prune` does not delete labels the repository actually uses.
+# Colors and descriptions match what Dependabot creates, so syncing leaves them untouched.
+
+- name: javascript
+  color: "168700"
+  description: Pull requests that update javascript code
+
+- name: github_actions
+  color: "000000"
+  description: Pull requests that update GitHub Actions code

@@ -1,0 +1,61 @@
+name: Sync Labels
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/labels.yml
+      - scripts/sync-labels.mjs
+      - .github/workflows/label-sync.yml
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Report the changes without applying them.
+        type: boolean
+        default: true
+      prune:
+        description: Delete labels that are missing from .github/labels.yml. This removes them from every issue and pull request that carries them.
+        type: boolean
+        default: false
+
+# Labels live under the issues scope.
+permissions:
+  issues: write
+
+jobs:
+  sync-labels:
+    name: Reconcile labels with .github/labels.yml
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # On push the inputs are empty, so the sync applies creates and updates and never prunes.
+      # Deleting a label is only ever reachable through a deliberate manual dispatch.
+      - name: Sync labels
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PRUNE: ${{ inputs.prune }}
+        run: |
+          args=()
+
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
+          fi
+
+          if [ "$PRUNE" = "true" ]; then
+            args+=(--prune)
+          fi
+
+          node scripts/sync-labels.mjs "${args[@]}"

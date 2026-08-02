@@ -55,6 +55,7 @@ npm test
 npm run lint
 npm run format:check
 npm run check:agent-docs
+npm run check:labels
 npm run build
 ```
 
@@ -63,6 +64,9 @@ npm run build
 it, so notes captured by a coding agent (for example Claude Code's `#` shortcut) do not quietly
 accumulate in a tool-specific file. Move the content into `AGENTS.md`, then run
 `npm run check:agent-docs -- --fix` to restore the pointers.
+
+`npm run check:labels` validates `.github/labels.yml` offline, without a token or network access. See
+[labels](labels.md) for syncing labels to GitHub.
 
 Run the local browser health check:
 
