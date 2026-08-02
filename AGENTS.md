@@ -62,7 +62,7 @@ npm test && npm run lint && npm run format:check && npm run check:agent-docs && 
 
 ## Conventions
 
-- Node 22 (`.nvmrc`). Import alias `@/*` resolves to the repo root.
+- Node 24 (`.nvmrc`). Import alias `@/*` resolves to the repo root.
 - Branch names: `<your-github-handle>/<type>/<short-description>`.
 - PR titles use Conventional Commits, for example `feat(app): add runtime health endpoint`.
 - One logical change per PR, roughly 400 changed lines or fewer.

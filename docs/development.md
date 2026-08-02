@@ -4,7 +4,7 @@ This guide covers local setup, configuration, validation, deployment, and mainte
 
 ## Prerequisites
 
-- Node.js 22
+- Node.js 24
 - npm
 
 ## Installation
@@ -96,7 +96,7 @@ npm run test:watch
 
 ## Deployment
 
-This is a standard Next.js app and can be deployed to Vercel or any host that supports Next.js with Node.js 22.
+This is a standard Next.js app and can be deployed to Vercel or any host that supports Next.js with Node.js 24.
 
 Required production build command:
 
