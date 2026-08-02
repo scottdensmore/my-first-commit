@@ -44,5 +44,8 @@ jobs:
       - name: Check agent instruction files
         run: npm run check:agent-docs
 
+      - name: Check label definitions
+        run: npm run check:labels
+
       - name: Build
         run: npm run build

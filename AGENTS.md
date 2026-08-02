@@ -20,6 +20,8 @@ npm run lint             # eslint
 npm run format           # prettier --write
 npm run format:check     # prettier --check (CI gate)
 npm run check:agent-docs # verify agent pointer files have not drifted
+npm run check:labels     # validate .github/labels.yml
+npm run sync:labels      # reconcile GitHub labels with .github/labels.yml
 npm run build
 npm run test:e2e         # playwright; boots its own dev server on :3100
 ```
@@ -27,7 +29,7 @@ npm run test:e2e         # playwright; boots its own dev server on :3100
 Full pre-PR validation, matching the `CI / validate` job:
 
 ```bash
-npm test && npm run lint && npm run format:check && npm run check:agent-docs && npm run build && npm run test:e2e
+npm test && npm run lint && npm run format:check && npm run check:agent-docs && npm run check:labels && npm run build && npm run test:e2e
 ```
 
 ## Layout

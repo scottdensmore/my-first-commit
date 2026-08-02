@@ -16,7 +16,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:deployed": "PLAYWRIGHT_BASE_URL=https://my-first-commit-eta.vercel.app playwright test"
+    "test:e2e:deployed": "PLAYWRIGHT_BASE_URL=https://my-first-commit-eta.vercel.app playwright test",
+    "check:labels": "node scripts/sync-labels.mjs --check",
+    "sync:labels": "node scripts/sync-labels.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -40,6 +42,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
+    "js-yaml": "4.3.1",
     "jsdom": "^29.1.1",
     "prettier": "3.9.6",
     "tailwindcss": "^4",
