@@ -68,6 +68,19 @@ without `workflows` permission
 
 A promotion that fails for any other reason is a real failure and should be investigated.
 
+### Promotion Waits For CI
+
+Vercel deploys in parallel with `CI / validate`, so a deployment and its health check can finish
+before CI concludes on `main`. The promotion waits up to 15 minutes for the deployed commit's CI run
+to reach a conclusion, logging one line per poll:
+
+```text
+CI run for <sha> is in_progress; waiting for it to finish.
+```
+
+Waiting is normal. A promotion fails only when CI concludes with something other than success, or
+when no CI run reaches a conclusion inside the timeout.
+
 ## Release Checklist
 
 Use this checklist before treating a `main` merge as a healthy release:

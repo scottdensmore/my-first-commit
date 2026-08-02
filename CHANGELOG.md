@@ -9,6 +9,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 ### Fixed
 
 - Deployment releases no longer take the "Latest" pointer from the version release they were deployed from. Both release workflows now set it explicitly, so `releases/latest` resolves to the current version instead of the most recent deployment.
+- Release promotion no longer fails when a deployment and its health check finish before CI concludes on `main`. The promotion now waits for the deployed commit's CI run to reach a conclusion instead of treating an unfinished run as a missing one.
 
 ## 0.2.0 - 2026-08-01
 

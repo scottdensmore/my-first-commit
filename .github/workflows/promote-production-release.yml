@@ -76,15 +76,49 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          ci_conclusion="$(
-            gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${TARGET_SHA}&branch=main&event=push&status=completed&per_page=10" \
-              --jq '.workflow_runs[0].conclusion // ""'
-          )"
+          # Vercel can deploy, and the health check can pass, before CI finishes on main. This query
+          # used to filter on status=completed, which made "CI is still running" look identical to
+          # "CI does not exist" — both returned an empty list and the step failed. A promotion was
+          # lost that way after checking 8 seconds before CI concluded.
+          #
+          # Poll for a conclusion instead of taking a single snapshot. A missing run stays a failure,
+          # but an unfinished one is simply not an answer yet.
+          deadline=$(( SECONDS + 900 ))
+          ci_conclusion=""
+
+          while :; do
+            ci_run="$(
+              gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${TARGET_SHA}&branch=main&event=push&per_page=10" \
+                --jq '(.workflow_runs[0] // {}) | "\(.status // "") \(.conclusion // "")"' || true
+            )"
+            ci_status="${ci_run%% *}"
+            ci_conclusion="${ci_run#* }"
+
+            if [ "$ci_status" = "completed" ]; then
+              break
+            fi
+
+            if [ -z "$ci_status" ]; then
+              echo "No CI run found yet for ${TARGET_SHA}."
+            else
+              echo "CI run for ${TARGET_SHA} is ${ci_status}; waiting for it to finish."
+            fi
+
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "Timed out after 15 minutes waiting for CI to finish for ${TARGET_SHA}."
+              echo "Last observed status: '${ci_status:-none}'."
+              exit 1
+            fi
+
+            sleep 15
+          done
 
           if [ "$ci_conclusion" != "success" ]; then
             echo "Expected successful CI run for ${TARGET_SHA}, got '${ci_conclusion:-none}'."
             exit 1
           fi
+
+          echo "CI succeeded for ${TARGET_SHA}."
 
       - name: Create tag and GitHub release
         if: steps.guard.outputs.superseded != 'true'
