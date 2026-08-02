@@ -6,6 +6,8 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ## Unreleased
 
+## 0.2.0 - 2026-08-01
+
 ### Added
 
 - Canonical `AGENTS.md` agent instructions, with `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` reduced to pointer files that CI keeps in sync through `npm run check:agent-docs`.
