@@ -6,6 +6,8 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ## Unreleased
 
+## 0.3.0 - 2026-08-01
+
 ### Added
 
 - Label sync automation. `.github/labels.yml` is reconciled with GitHub by the `Sync Labels` workflow on merge, or locally through `npm run sync:labels`. Deleting labels is opt-in, and CI validates the label file on every pull request.
