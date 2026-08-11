@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "01KZQDR0QXD16A02QK81RGSTX6",
+  "session_id": "019feec2-cd5f-79e1-86df-26f1aea24e7a",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-11T03:27:07.418663696Z",
+  "branch": "scottdensmore/fix/csp-report-test-types",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "app/api/csp-report/route.test.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "98f1c6b6ef00",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 145728,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3788032,
+    "output_tokens": 21711,
+    "api_call_count": 75
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-11T03:27:07.239950956Z",
+    "agent_lines": 4,
+    "agent_removed": 4,
+    "human_added": 4,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 8,
+    "total_lines_changed": 16,
+    "agent_percentage": 50,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 227,
+      "user_lines_removed": 1,
+      "agent_lines_added": 4,
+      "agent_lines_removed": 4,
+      "user_added_per_file": {
+        ".claude/agents/code-review.md": 46,
+        ".claude/agents/ui-review.md": 39,
+        ".claude/agents/verifier.md": 45,
+        "AGENTS.md": 97
+      },
+      "user_removed_per_file": {
+        "AGENTS.md": 1
+      }
+    }
+  ]
+}

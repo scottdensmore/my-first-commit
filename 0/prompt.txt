@@ -1,0 +1,5 @@
+There is an error in the deployment to vercel Running TypeScript ...
+app/api/csp-report/route.test.ts(17,12): error TS7031: Binding element 'logEvent' implicitly has an 'any' type.
+app/api/csp-report/route.test.ts(18,14): error TS7006: Parameter 'logEvent' implicitly has an 'any' type.
+Failed to type check.
+Error: Command "next build" exited with 1
