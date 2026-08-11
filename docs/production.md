@@ -225,12 +225,14 @@ GitHub API failures are logged with structured event names:
 Useful fields include:
 
 - `status`
-- `message`
+- `errorKind`
 - `rateLimitRemaining`
 - `rateLimitReset`
 - `itemIndex`
 
-Search usernames and tokens should not appear in logs.
+Upstream error messages are used only to classify failures and are not logged. Rate-limit metadata
+is logged only when header values are valid non-negative integers. Search usernames, request URLs,
+tokens, and raw upstream error details should not appear in logs.
 
 ## Security Headers
 

@@ -25,10 +25,21 @@ function commitSearchError(error: string, errorKind: CommitErrorKind): CommitDat
 
 type GitHubErrorDetails = {
   message?: string;
-  rateLimitRemaining?: string;
-  rateLimitReset?: string;
+  rateLimitRemaining?: number;
+  rateLimitReset?: number;
   status?: unknown;
 };
+
+function parseNonNegativeInteger(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    return Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+  }
+
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return undefined;
+
+  const parsedValue = Number(value);
+  return Number.isSafeInteger(parsedValue) ? parsedValue : undefined;
+}
 
 function getE2eCommitSearchResult(username: string): CommitData | null {
   if (!E2E_COMMIT_SEARCH_MOCKS_ENABLED) return null;
@@ -129,20 +140,20 @@ function getGitHubErrorDetails(error: unknown): GitHubErrorDetails {
     "headers" in error.response &&
     typeof error.response.headers === "object" &&
     error.response.headers !== null
-      ? (error.response.headers as Record<string, string | undefined>)
+      ? (error.response.headers as Record<string, unknown>)
       : undefined;
 
   return {
     message,
-    rateLimitRemaining: headers?.["x-ratelimit-remaining"],
-    rateLimitReset: headers?.["x-ratelimit-reset"],
+    rateLimitRemaining: parseNonNegativeInteger(headers?.["x-ratelimit-remaining"]),
+    rateLimitReset: parseNonNegativeInteger(headers?.["x-ratelimit-reset"]),
     status,
   };
 }
 
 function isGitHubRateLimitError(errorDetails: GitHubErrorDetails) {
   if (errorDetails.status === 429) return true;
-  if (errorDetails.rateLimitRemaining === "0") return true;
+  if (errorDetails.rateLimitRemaining === 0) return true;
 
   return (
     errorDetails.status === 403 && /rate limit|too many requests/i.test(errorDetails.message ?? "")
@@ -342,7 +353,7 @@ export async function getCommits(username: string): Promise<CommitData> {
         event: "github_commit_search_timeout",
         fields: {
           status: typeof status === "number" ? status : undefined,
-          message: errorDetails.message,
+          errorKind: "timeout",
         },
       });
       return commitSearchError("GitHub took too long to respond. Please try again.", "timeout");
@@ -353,7 +364,7 @@ export async function getCommits(username: string): Promise<CommitData> {
         event: "github_commit_search_rate_limited",
         fields: {
           status: typeof status === "number" ? status : undefined,
-          message: errorDetails.message,
+          errorKind: "rate_limit",
           rateLimitRemaining: errorDetails.rateLimitRemaining,
           rateLimitReset: errorDetails.rateLimitReset,
         },
@@ -369,7 +380,7 @@ export async function getCommits(username: string): Promise<CommitData> {
         event: "github_commit_search_unavailable",
         fields: {
           status: typeof status === "number" ? status : undefined,
-          message: errorDetails.message,
+          errorKind: "unavailable",
         },
       });
       return commitSearchError(
@@ -378,11 +389,12 @@ export async function getCommits(username: string): Promise<CommitData> {
       );
     }
 
+    const errorKind: CommitErrorKind = status === 422 ? "validation" : "unknown";
     logger.error({
       event: "github_commit_search_failed",
       fields: {
         status: typeof status === "number" ? status : undefined,
-        message: errorDetails.message,
+        errorKind,
       },
     });
 

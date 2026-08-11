@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Fixed
 
+- GitHub search failure logs now exclude raw upstream messages and accept only validated numeric rate-limit metadata.
 - Vercel Analytics event URLs now remove shared-search usernames while preserving unrelated query parameters.
 - Forged Server Action requests with non-string usernames now return validation errors safely.
 - Commit results with missing or invalid dates no longer crash the result timeline.
