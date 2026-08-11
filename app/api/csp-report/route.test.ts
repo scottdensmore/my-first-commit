@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 import { logger } from "@/app/logger";
 import { POST } from "./route";
 
@@ -12,14 +12,14 @@ function postReport(body: unknown, contentType = "application/csp-report") {
   );
 }
 
-function violationCalls(warn: ReturnType<typeof vi.spyOn>) {
+function violationCalls(warn: MockInstance<typeof logger.warn>) {
   return warn.mock.calls
-    .map(([logEvent]) => logEvent as { event: string; fields?: Record<string, unknown> })
+    .map(([logEvent]) => logEvent)
     .filter((logEvent) => logEvent.event === "csp_violation");
 }
 
 describe("POST /api/csp-report", () => {
-  let warn: ReturnType<typeof vi.spyOn>;
+  let warn: MockInstance<typeof logger.warn>;
 
   beforeEach(() => {
     warn = vi.spyOn(logger, "warn").mockImplementation(() => {});
