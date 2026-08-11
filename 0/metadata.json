@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "01KZS1SFR9R4A0KW7GESGDF339",
+  "session_id": "019feec2-cd5f-79e1-86df-26f1aea24e7a",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-11T18:37:07.486178019Z",
+  "branch": "scottdensmore/fix/validate-action-input",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CHANGELOG.md",
+    "app/actions.test.ts",
+    "app/actions.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "571a113ac789",
+  "checkpoint_transcript_start": 4487,
+  "transcript_lines_at_start": 4487,
+  "compact_transcript_start": 661,
+  "token_usage": {
+    "input_tokens": 196141,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5373184,
+    "output_tokens": 8169,
+    "api_call_count": 31
+  },
+  "session_metrics": {
+    "turn_count": 16
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-11T18:37:05.726658151Z",
+    "agent_lines": 31,
+    "agent_removed": 1,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 31,
+    "total_lines_changed": 32,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
