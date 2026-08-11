@@ -12,7 +12,7 @@ describe("PrivacyPage", () => {
     expect(screen.getByText(/my-first-commit:recent-searches/i)).toBeInTheDocument();
     expect(screen.getByText(/short-lived memory cache/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/analytics events do not include the searched GitHub username/i),
+      screen.getByText(/removes the shared-search user query parameter before analytics events/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/never sent to the browser/i)).toBeInTheDocument();
   });

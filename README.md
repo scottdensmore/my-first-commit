@@ -60,7 +60,7 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 - Usernames entered into the search field are sent to GitHub to retrieve public commit data.
 - `GITHUB_TOKEN` is used only server-side and is never exposed to the browser.
 - Recent searches are stored only in the user's browser under `my-first-commit:recent-searches`.
-- Vercel Analytics records page views and privacy-safe product events; analytics events do not include searched usernames.
+- Before Vercel Analytics receives page views or product events, the app removes the shared-search `user` query parameter; event properties do not include searched usernames.
 - The app does not store searches on a server.
 
 ## Limitations
