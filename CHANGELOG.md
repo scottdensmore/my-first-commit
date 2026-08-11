@@ -12,6 +12,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Changed
 
+- Clarified that the main agent owns exact unit-test red/green loops while the verifier owns focused Playwright execution and the complete validation gate.
 - Removed the superseded specification and roadmap documents, along with their README links.
 - Upgraded the project from Node 22 to Node 24, the current Active LTS and Vercel's default runtime. `.nvmrc`, `package.json` engines, and the docs now all name 24. Node 26 is deliberately not used: Vercel offers only 20.x, 22.x, and 24.x, so pinning 26 would not deploy.
 
