@@ -57,4 +57,12 @@ describe("FirstCommitDisplay", () => {
     expect(container.firstElementChild).toHaveClass("max-w-xl");
     expect(screen.queryByText(/commit date/i)).not.toBeInTheDocument();
   });
+
+  it("renders a date-unavailable fallback instead of throwing for a malformed date", () => {
+    expect(() =>
+      render(<FirstCommitDisplay data={{ ...commit, date: "not-a-date" }} />),
+    ).not.toThrow();
+
+    expect(screen.getAllByText("Date unavailable")).not.toHaveLength(0);
+  });
 });
