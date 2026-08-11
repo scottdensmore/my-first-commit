@@ -79,11 +79,18 @@ npm audit && npm test && npm run test:e2e && npm run lint && npm run format:chec
    quick rollback.
 
 4. **Use test-driven development when behavior or structure is testable.**
-   - Add or update a focused test before implementation.
-   - Run it and confirm it fails for the expected reason.
+   - The main agent adds or updates a focused test before implementation.
+   - For unit coverage, the main agent runs only the exact test it authored or changed, filtered by
+     file and test name, and confirms that it fails for the expected reason.
+   - For user-journey coverage, the main agent authors the focused Playwright test and invokes the
+     `verifier` to run that exact journey and report the expected failure concisely.
    - Implement the smallest appropriate change.
-   - Run focused tests while iterating.
+   - Repeat the same focused unit test in the main agent and focused journey in the `verifier` until
+     each passes. Do not substitute focused checks for the complete verification gate in step 7.
    - Refactor only while the relevant tests remain green.
+   - The main agent must not run whole test files or suites, Playwright, dependency audits, lint,
+     formatting checks, agent-document or label checks, or production builds. Those commands belong
+     to the `verifier`, keeping routine command output out of the main implementation context.
 
 5. **Inspect the complete diff.** Review the branch diff plus all staged, unstaged, and untracked
    files. Remove accidental or unrelated changes while preserving work that belongs to the user.
@@ -94,16 +101,20 @@ npm audit && npm test && npm run test:e2e && npm run lint && npm run format:chec
    should say so and return without inventing findings.
 
 7. **Run `verifier` before code review.** Invoke the `verifier` sub-agent to run the dependency
-   audit, tests, static checks, production build, and journey coverage appropriate for the change.
-   The verifier must report failures, flakes, missing coverage, and environment issues. Fix or
-   explicitly resolve every actionable finding before starting code review. If a verifier finding
-   requires a code change, rerun the verifier after addressing it.
+   audit, complete unit and Playwright suites, static checks, production build, and journey coverage
+   appropriate for the change. Focused Playwright runs performed during TDD do not replace this
+   complete pass. The verifier must report successes concisely and include only the failure evidence
+   needed to diagnose failures, flakes, missing coverage, and environment issues. Fix or explicitly
+   resolve every actionable finding before starting code review. If a verifier finding requires a
+   code change, the main agent reruns only the exact affected unit regressions, the verifier reruns
+   affected focused journeys when needed, and then the verifier reruns the complete gate.
 
 8. **Run `code-review` before every commit.** Invoke the `code-review` sub-agent against the current
    branch diff and every staged, unstaged, and untracked file. The reviewer must act as an expert in
    TypeScript, React, Next.js App Router, Tailwind CSS, Vitest, and Playwright. Address every
-   actionable finding before committing. If review findings cause changes, rerun the appropriate
-   tests and the `verifier`, then obtain a fresh `code-review` approval for the changed state.
+   actionable finding before committing. If review findings cause changes, the main agent reruns
+   only the exact affected unit regressions, then the `verifier` reruns any affected focused journeys
+   and the complete gate before a fresh `code-review` approval for the changed state.
 
 9. **Commit after approval.** Commit only after verification and code review are complete. Use
    Conventional Commits:
@@ -144,7 +155,7 @@ Steps 6-8 use sub-agents defined in `.claude/agents/`:
 | Sub-agent | Role |
 | --- | --- |
 | `ui-review` | Web product design review: responsive layout, interaction, accessibility, and visual quality. |
-| `verifier` | Runs the repository validation gate and reports failures, flakes, and coverage gaps. |
+| `verifier` | Runs focused Playwright journeys during TDD, then the complete repository validation gate, and reports concise evidence. |
 | `code-review` | Expert review of the branch diff and all uncommitted files. |
 
 **Invoke the `code-review` sub-agent, so the loop does not stall.** An agent's own review command may
