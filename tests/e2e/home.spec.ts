@@ -345,6 +345,40 @@ test.describe("local mocked commit search states", () => {
     expect(renderErrors).toEqual([]);
   });
 
+  test("search shortcuts stay disabled while a request is pending", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "my-first-commit:recent-searches",
+        JSON.stringify(["e2e-slow-result", "e2e-result"]),
+      );
+    });
+    await page.goto("/");
+
+    const slowSearch = page.getByRole("button", { name: "Search e2e-slow-result again" });
+    const secondSearch = page.getByRole("button", { name: "Search e2e-result again" });
+    await slowSearch.click();
+
+    await expect(page.getByRole("button", { name: "Clear recent searches" })).toBeDisabled();
+    await expect(slowSearch).toBeDisabled();
+    await expect(secondSearch).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Search example username octocat" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Search example username torvalds" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Search example username gaearon" }),
+    ).toBeDisabled();
+
+    await secondSearch.evaluate((button: HTMLButtonElement) => button.click());
+    await expect(page).toHaveURL(/\?user=e2e-slow-result$/);
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+    await expect(
+      page.getByText(/earliest indexed public commit for @e2e-slow-result appears in/i),
+    ).toBeVisible();
+  });
+
   test("home page renders result sharing and source context", async ({ context, page }) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await searchForUsername(page, "e2e-result");

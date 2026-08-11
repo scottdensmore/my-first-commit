@@ -13,6 +13,7 @@ const octokit = new Octokit({
 
 const GITHUB_SEARCH_TIMEOUT_MS = 10_000;
 const E2E_COMMIT_SEARCH_MOCKS_ENABLED = process.env.E2E_COMMIT_SEARCH_MOCKS === "1";
+const E2E_SLOW_SEARCH_DELAY_MS = 750;
 const EMPTY_COMMIT_SEARCH_MESSAGE =
   "No public commits found for this user (or indexing is delayed).";
 
@@ -50,6 +51,7 @@ function getE2eCommitSearchResult(username: string): CommitData | null {
 
   switch (username) {
     case "e2e-result":
+    case "e2e-slow-result":
       return {
         found: true,
         commits: [
@@ -229,7 +231,12 @@ export async function getCommits(username: string): Promise<CommitData> {
   if (validationMessage) return commitSearchError(validationMessage, "validation");
 
   const e2eCommitSearchResult = getE2eCommitSearchResult(normalizedUsername);
-  if (e2eCommitSearchResult) return e2eCommitSearchResult;
+  if (e2eCommitSearchResult) {
+    if (normalizedUsername === "e2e-slow-result") {
+      await new Promise((resolve) => setTimeout(resolve, E2E_SLOW_SEARCH_DELAY_MS));
+    }
+    return e2eCommitSearchResult;
+  }
 
   const cacheKey = normalizedUsername.toLowerCase();
   const cachedCommitSearch = getCachedCommitSearch(cacheKey);

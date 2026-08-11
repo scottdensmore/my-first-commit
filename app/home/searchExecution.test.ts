@@ -26,12 +26,22 @@ const commit: CommitInfo = {
 
 const foundResult: CommitData = { found: true, commits: [commit] };
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+
+  return { promise, resolve };
+}
+
 // The real `startTransition` runs its callback in a React transition; the test
 // double runs it immediately and exposes the resulting promise so assertions
 // can await the async search work.
 function createHandlers() {
   let pending: Promise<unknown> | undefined;
   const handlers = {
+    isLatestSearch: vi.fn(() => true),
     startTransition: vi.fn((callback: () => unknown) => {
       pending = Promise.resolve(callback());
     }),
@@ -120,6 +130,62 @@ describe("runCommitSearch", () => {
       found: false,
       error_kind: "empty",
       commit_count: 0,
+    });
+  });
+
+  it("ignores an earlier search that resolves after the latest request", async () => {
+    const staleSearch = createDeferred<CommitData>();
+    const latestSearch = createDeferred<CommitData>();
+    const staleResult: CommitData = {
+      found: true,
+      commits: [{ ...commit, message: "Stale search result" }],
+    };
+    const latestResult: CommitData = {
+      found: true,
+      commits: [{ ...commit, message: "Latest search result" }],
+    };
+    vi.mocked(getCommits).mockImplementation((username) =>
+      username === "octocat" ? staleSearch.promise : latestSearch.promise,
+    );
+    const pendingSearches: Promise<unknown>[] = [];
+    const handlers = {
+      startTransition: vi.fn((callback: () => unknown) => {
+        pendingSearches.push(Promise.resolve(callback()));
+      }),
+      setLastSearchedUsername: vi.fn(),
+      setShareStatus: vi.fn(),
+      setResult: vi.fn(),
+      setRecentSearches: vi.fn(),
+    };
+    let latestSearchId = 0;
+    const startSearch = (username: string) => {
+      const searchId = ++latestSearchId;
+      runCommitSearch(
+        username,
+        {},
+        {
+          ...handlers,
+          isLatestSearch: () => searchId === latestSearchId,
+        },
+      );
+    };
+
+    startSearch("octocat");
+    startSearch("torvalds");
+    latestSearch.resolve(latestResult);
+    await pendingSearches[1];
+    staleSearch.resolve(staleResult);
+    await pendingSearches[0];
+
+    expect(handlers.setLastSearchedUsername).toHaveBeenLastCalledWith("torvalds");
+    expect(handlers.setResult).toHaveBeenCalledOnce();
+    expect(handlers.setResult).toHaveBeenCalledWith(latestResult);
+    expect(handlers.setRecentSearches).toHaveBeenCalledOnce();
+    expect(trackAppEvent).toHaveBeenCalledTimes(3);
+    expect(trackAppEvent).toHaveBeenLastCalledWith("search_completed", {
+      found: true,
+      error_kind: "none",
+      commit_count: 1,
     });
   });
 });

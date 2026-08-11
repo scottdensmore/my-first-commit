@@ -6,6 +6,10 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ## Unreleased
 
+### Fixed
+
+- Prevented older overlapping searches from replacing newer results, and disabled search shortcuts while a request is pending.
+
 ### Changed
 
 - Removed the superseded specification and roadmap documents, along with their README links.

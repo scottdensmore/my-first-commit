@@ -8,6 +8,7 @@ import { saveStoredRecentSearches } from "./recentSearches";
 import { updateSharedSearchUrl } from "./sharedSearch";
 
 type SearchHandlers = {
+  isLatestSearch: () => boolean;
   startTransition: TransitionStartFunction;
   setLastSearchedUsername: Dispatch<SetStateAction<string>>;
   setShareStatus: Dispatch<SetStateAction<string>>;
@@ -19,6 +20,7 @@ export function runCommitSearch(
   searchUsername: string,
   options: { updateUrl?: boolean } = {},
   {
+    isLatestSearch,
     startTransition,
     setLastSearchedUsername,
     setShareStatus,
@@ -38,6 +40,8 @@ export function runCommitSearch(
   setShareStatus("");
   startTransition(async () => {
     const data = await getCommits(trimmedUsername);
+    if (!isLatestSearch()) return;
+
     setResult(data);
     trackAppEvent("search_completed", {
       found: data.found,
