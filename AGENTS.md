@@ -14,6 +14,7 @@ is no database, no accounts, and no server-side storage of searches.
 
 ```bash
 npm run dev              # localhost:3000
+npm audit                # dependency vulnerability gate
 npm test                 # vitest run (jsdom)
 npm run test:watch
 npm run lint             # eslint
@@ -29,7 +30,7 @@ npm run test:e2e         # playwright; boots its own dev server on :3100
 Full pre-PR validation, matching the `CI / validate` job:
 
 ```bash
-npm test && npm run lint && npm run format:check && npm run check:agent-docs && npm run check:labels && npm run build && npm run test:e2e
+npm audit && npm test && npm run test:e2e && npm run lint && npm run format:check && npm run check:agent-docs && npm run check:labels && npm run build
 ```
 
 ## Layout
@@ -59,6 +60,101 @@ npm test && npm run lint && npm run format:check && npm run check:agent-docs && 
 - **`GITHUB_TOKEN` is server-only.** Never expose it as a `NEXT_PUBLIC_*` variable. The app works
   unauthenticated but hits GitHub search rate limits quickly.
 - **Recent searches live only in the browser**, under `my-first-commit:recent-searches`.
+
+## Development workflow (required)
+
+1. **Inspect before changing anything.** Inspect the repository, current Git state, and all
+   applicable instruction files before making changes. Preserve unrelated staged, unstaged, and
+   untracked work.
+
+2. **Create a branch first.** Create a dedicated feature, fix, refactor, chore, test, or
+   documentation branch before making code changes. Never commit directly to `main`, and create the
+   branch from the latest appropriate `main` state.
+
+3. **Choose a thin vertical slice.** Before implementing a tracked issue or feature, define the
+   smallest end-to-end slice that can be reviewed, tested, shipped, and merged independently.
+   Prefer one coherent user-visible or operational outcome over a broad horizontal layer. If the
+   next issue is too large for one pull request, split it into ordered slices and complete only the
+   current slice. Keep pull requests small enough for thorough review, reliable verification, and
+   quick rollback.
+
+4. **Use test-driven development when behavior or structure is testable.**
+   - Add or update a focused test before implementation.
+   - Run it and confirm it fails for the expected reason.
+   - Implement the smallest appropriate change.
+   - Run focused tests while iterating.
+   - Refactor only while the relevant tests remain green.
+
+5. **Inspect the complete diff.** Review the branch diff plus all staged, unstaged, and untracked
+   files. Remove accidental or unrelated changes while preserving work that belongs to the user.
+
+6. **Run `ui-review` before verification.** After the main agent completes an implementation pass,
+   invoke the `ui-review` sub-agent. The reviewer must act as an expert in responsive web apps,
+   accessibility, React, and modern product design. For changes with no user-visible surface, it
+   should say so and return without inventing findings.
+
+7. **Run `verifier` before code review.** Invoke the `verifier` sub-agent to run the dependency
+   audit, tests, static checks, production build, and journey coverage appropriate for the change.
+   The verifier must report failures, flakes, missing coverage, and environment issues. Fix or
+   explicitly resolve every actionable finding before starting code review. If a verifier finding
+   requires a code change, rerun the verifier after addressing it.
+
+8. **Run `code-review` before every commit.** Invoke the `code-review` sub-agent against the current
+   branch diff and every staged, unstaged, and untracked file. The reviewer must act as an expert in
+   TypeScript, React, Next.js App Router, Tailwind CSS, Vitest, and Playwright. Address every
+   actionable finding before committing. If review findings cause changes, rerun the appropriate
+   tests and the `verifier`, then obtain a fresh `code-review` approval for the changed state.
+
+9. **Commit after approval.** Commit only after verification and code review are complete. Use
+   Conventional Commits:
+
+   ```text
+   <type>(<scope>): <imperative summary>
+   ```
+
+   Keep the subject at 72 characters or fewer, describe why in the body when useful, and do not
+   combine unrelated work.
+
+10. **Create pull requests from the reviewed state.**
+    - Confirm that local verification remains valid.
+    - Rerun `code-review` only if the reviewed state changed after the pre-commit review.
+    - A changed state includes code, tests, documentation, generated files, conflict resolution,
+      or any other staged, unstaged, or untracked content.
+    - Do not repeat code review when the already-reviewed diff and worktree remain unchanged.
+    - Push and create the pull request only after local verification and any required code review
+      are complete.
+    - Open a normal, ready-for-review pull request by default. Do not open draft pull requests unless
+      the user explicitly asks for a draft.
+
+11. **Merge only clean, passing pull requests.** Merge only after GitHub reports a clean merge state
+    and every configured check passes. Never bypass a failing or pending required check. Use squash
+    merge for short-lived development branches to keep `main` linear, then delete the merged branch.
+    - **Check for an assigned reviewer before merging.** After opening the pull request, check whether
+      a reviewer or team was assigned by repository rules, automation, or a human. Use `gh pr view
+      <n> --json reviewRequests,reviews` to see both pending requests and submitted reviews.
+    - **If a reviewer is assigned, wait for the review.** Do not merge a pull request that has a
+      review pending, even when every check is green. Address the feedback, push the fixes, and let
+      the reviewer see the updated state.
+    - Self-merges are allowed only when no reviewer is assigned and the conditions above are met.
+
+### Sub-agents
+
+Steps 6-8 use sub-agents defined in `.claude/agents/`:
+
+| Sub-agent | Role |
+| --- | --- |
+| `ui-review` | Web product design review: responsive layout, interaction, accessibility, and visual quality. |
+| `verifier` | Runs the repository validation gate and reports failures, flakes, and coverage gaps. |
+| `code-review` | Expert review of the branch diff and all uncommitted files. |
+
+**Invoke the `code-review` sub-agent, so the loop does not stall.** An agent's own review command may
+need the user to trigger it, which stops a workflow that should otherwise run unattended. Use the
+sub-agent and keep going. Either way, cover the scope step 8 asks for: the branch diff plus every
+staged, unstaged, and untracked file. Plain `git status --short` can collapse a new untracked
+directory to one entry, so use `--untracked-files=all` to see the files inside it.
+
+Agents that cannot invoke sub-agents must perform the equivalent work themselves and say so
+explicitly rather than skipping the step.
 
 ## Conventions
 
