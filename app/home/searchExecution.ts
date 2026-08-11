@@ -16,6 +16,15 @@ type SearchHandlers = {
   setRecentSearches: Dispatch<SetStateAction<string[]>>;
 };
 
+function unexpectedSearchError(): CommitData {
+  return {
+    found: false,
+    error: "GitHub commit search failed. Please try again.",
+    errorKind: "unknown",
+    commits: [],
+  };
+}
+
 export function runCommitSearch(
   searchUsername: string,
   options: { updateUrl?: boolean } = {},
@@ -39,7 +48,12 @@ export function runCommitSearch(
   setLastSearchedUsername(trimmedUsername);
   setShareStatus("");
   startTransition(async () => {
-    const data = await getCommits(trimmedUsername);
+    let data: CommitData;
+    try {
+      data = await getCommits(trimmedUsername);
+    } catch {
+      data = unexpectedSearchError();
+    }
     if (!isLatestSearch()) return;
 
     setResult(data);
