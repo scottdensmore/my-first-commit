@@ -2,6 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearCommitSearchCache } from "./commitSearchCache";
 import { getCommits } from "./actions";
 
+const invokeGetCommits = getCommits as unknown as (
+  username: unknown,
+) => ReturnType<typeof getCommits>;
+
 const { searchCommits } = vi.hoisted(() => ({
   searchCommits: vi.fn(),
 }));
@@ -64,6 +68,26 @@ describe("getCommits", () => {
       commits: [],
     });
     expect(searchCommits).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["null", null],
+    ["array", []],
+    ["object", {}],
+    ["number", 42],
+    ["true boolean", true],
+    ["false boolean", false],
+    ["duck-typed object", { trim: () => "octo" }],
+  ])("returns a validation error for hostile %s Server Action input", async (_label, input) => {
+    await expect(invokeGetCommits(input)).resolves.toEqual({
+      found: false,
+      error: "Username is required",
+      errorKind: "validation",
+      commits: [],
+    });
+    expect(searchCommits).not.toHaveBeenCalled();
+    expect(console.warn).not.toHaveBeenCalled();
+    expect(console.error).not.toHaveBeenCalled();
   });
 
   it("queries GitHub for the earliest commits by author", async () => {

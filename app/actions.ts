@@ -255,7 +255,12 @@ function mapCommitItem(item: unknown, username: string): CommitInfo | null {
 }
 
 export async function getCommits(username: string): Promise<CommitData> {
-  const normalizedUsername = normalizeGitHubUsername(username);
+  const runtimeInput: unknown = username;
+  if (typeof runtimeInput !== "string") {
+    return commitSearchError("Username is required", "validation");
+  }
+
+  const normalizedUsername = normalizeGitHubUsername(runtimeInput);
   if (!normalizedUsername) return commitSearchError("Username is required", "validation");
 
   const validationMessage = getUsernameValidationMessage(normalizedUsername);
