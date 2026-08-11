@@ -166,6 +166,7 @@ export default function Home() {
           <SearchShortcutSection
             title="Recent searches"
             usernames={recentSearches}
+            isPending={isPending}
             onSearch={handleShortcutSearch}
             getButtonLabel={(recentUsername) => `@${recentUsername}`}
             buttonAriaLabel={(recentUsername) => `Search ${recentUsername} again`}
@@ -177,6 +178,7 @@ export default function Home() {
           <SearchShortcutSection
             title="Examples"
             usernames={EXAMPLE_USERNAMES}
+            isPending={isPending}
             onSearch={handleShortcutSearch}
             getButtonLabel={(exampleUsername) => `@${exampleUsername}`}
             buttonAriaLabel={(exampleUsername) => `Search example username ${exampleUsername}`}

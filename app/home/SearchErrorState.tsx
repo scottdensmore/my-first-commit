@@ -47,6 +47,7 @@ export default function SearchErrorState({
           <SearchShortcutSection
             title="Examples"
             usernames={exampleUsernames}
+            isPending={isPending}
             onSearch={onExampleSearch}
             getButtonLabel={(username) => `@${username}`}
             buttonAriaLabel={(username) => `Search example username ${username}`}
@@ -67,7 +68,8 @@ export default function SearchErrorState({
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex items-center justify-center rounded-md border border-[var(--github-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--github-gray-dark)] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2"
+          disabled={isPending}
+          className="inline-flex items-center justify-center rounded-md border border-[var(--github-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--github-gray-dark)] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Edit username
         </button>

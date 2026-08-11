@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "./page";
 import { getCommits } from "./actions";
+import type { CommitData } from "./commitTypes";
 import { track } from "@vercel/analytics";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,7 +17,7 @@ vi.mock("@vercel/analytics", () => ({
 const mockGetCommits = vi.mocked(getCommits);
 const mockTrack = vi.mocked(track);
 
-const commitResult = {
+const commitResult: CommitData = {
   found: true,
   commits: [
     {
@@ -37,6 +38,15 @@ const commitResult = {
     },
   ],
 };
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+
+  return { promise, resolve };
+}
 
 describe("Home", () => {
   beforeEach(() => {
@@ -444,6 +454,49 @@ describe("Home", () => {
     resolveSearch(commitResult);
 
     await screen.findByRole("link", { name: "Initial commit" });
+  });
+
+  it("disables every search shortcut while a request is pending", async () => {
+    window.localStorage.setItem("my-first-commit:recent-searches", JSON.stringify(["octocat"]));
+    const pendingSearch = createDeferred<CommitData>();
+    mockGetCommits.mockReturnValue(pendingSearch.promise);
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.click(await screen.findByRole("button", { name: /search octocat again/i }));
+
+    expect(screen.getByRole("button", { name: /clear recent searches/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /search octocat again/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /search example username octocat/i })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /search example username torvalds/i }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /search example username gaearon/i })).toBeDisabled();
+
+    await act(async () => pendingSearch.resolve(commitResult));
+  });
+
+  it("disables editing the username while a retry is pending", async () => {
+    const pendingRetry = createDeferred<CommitData>();
+    mockGetCommits
+      .mockResolvedValueOnce({
+        found: false,
+        errorKind: "unavailable",
+        error: "GitHub is temporarily unavailable. Please try again soon.",
+        commits: [],
+      })
+      .mockReturnValueOnce(pendingRetry.promise);
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octocat");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+    await user.click(await screen.findByRole("button", { name: /try again/i }));
+
+    expect(screen.getByRole("button", { name: /try again/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /edit username/i })).toBeDisabled();
+
+    await act(async () => pendingRetry.resolve(commitResult));
   });
 
   it("renders a helpful empty state when no public commits are found", async () => {

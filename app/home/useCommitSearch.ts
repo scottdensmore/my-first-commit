@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import type { CommitData } from "../commitTypes";
 import { clearStoredRecentSearches, getStoredRecentSearches } from "./recentSearches";
 import { runCommitSearch } from "./searchExecution";
@@ -17,6 +17,7 @@ export function useCommitSearch() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [shareStatus, setShareStatus] = useState("");
   const [isPending, startTransition] = useTransition();
+  const latestSearchIdRef = useRef(0);
 
   useEffect(() => {
     const loadRecentSearches = window.setTimeout(() => {
@@ -27,7 +28,10 @@ export function useCommitSearch() {
   }, []);
 
   const runSearch = useCallback((searchUsername: string, options: RunSearchOptions = {}) => {
+    const searchId = ++latestSearchIdRef.current;
+
     runCommitSearch(searchUsername, options, {
+      isLatestSearch: () => searchId === latestSearchIdRef.current,
       startTransition,
       setLastSearchedUsername,
       setShareStatus,
