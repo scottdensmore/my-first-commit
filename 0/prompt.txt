@@ -1,0 +1,9 @@
+Ok we should create a branch and pr for the changes and once all checks pass we can squash merge
+
+---
+
+what should we pick up first?
+
+---
+
+Ok lets pick up 96 first
