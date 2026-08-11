@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "01KZS3Y2J5NJCAWQ3WPRVBSTXC",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/fix/redact-analytics-urls",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CHANGELOG.md",
+    "README.md",
+    "app/PrivacySafeAnalytics.test.tsx",
+    "app/PrivacySafeAnalytics.tsx",
+    "app/home/analytics.test.ts",
+    "app/home/analytics.ts",
+    "app/layout.tsx",
+    "app/privacy/page.test.tsx",
+    "app/privacy/page.tsx",
+    "tests/e2e/home.spec.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 101365,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3070208,
+    "output_tokens": 9636,
+    "api_call_count": 49
+  }
+}
