@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "01KZRV7C7MKVVR1JCJ8H1REFY5",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/fix/validate-commit-dates",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "app/actions.test.ts",
+    "app/actions.ts",
+    "components/FirstCommitDisplay.test.tsx",
+    "components/FirstCommitDisplay.tsx",
+    "tests/e2e/home.spec.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 498365,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 18915328,
+    "output_tokens": 30456,
+    "api_call_count": 674
+  }
+}
