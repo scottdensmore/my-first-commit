@@ -203,14 +203,16 @@ describe("Home", () => {
     });
   });
 
-  it("does not auto-search an invalid username from the URL", () => {
+  it("does not auto-search an invalid username from the URL", async () => {
     window.history.replaceState(null, "", "/?user=octo_cat");
 
     render(<Home />);
 
-    expect(mockGetCommits).not.toHaveBeenCalled();
-    expect(screen.getByRole("searchbox", { name: /github username/i })).toHaveValue("octo_cat");
+    await waitFor(() => {
+      expect(screen.getByRole("searchbox", { name: /github username/i })).toHaveValue("octo_cat");
+    });
     expect(screen.getByRole("status")).toHaveTextContent(/only letters, numbers, and hyphens/i);
+    expect(mockGetCommits).not.toHaveBeenCalled();
   });
 
   it("clears the shared URL when searching another user", async () => {

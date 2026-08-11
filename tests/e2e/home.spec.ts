@@ -30,6 +30,22 @@ async function searchForUsername(page: Page, username: string) {
   await page.getByRole("button", { name: "Search", exact: true }).click();
 }
 
+function captureReactRenderErrors(page: Page) {
+  const renderErrors: string[] = [];
+  const recordIfRenderError = (message: string) => {
+    if (/hydrat|server rendered HTML|minified React error #418/i.test(message)) {
+      renderErrors.push(message);
+    }
+  };
+
+  page.on("console", (message) => {
+    if (message.type() === "error") recordIfRenderError(message.text());
+  });
+  page.on("pageerror", (error) => renderErrors.push(error.message));
+
+  return renderErrors;
+}
+
 test("home page search field is keyboard-ready and not treated as a credential field", async ({
   page,
 }) => {
@@ -185,6 +201,18 @@ test("home page blocks invalid usernames without leaving keyboard flow", async (
   await expect(searchBox).toBeFocused();
 });
 
+test("invalid shared URLs hydrate cleanly and show validation", async ({ page }) => {
+  const renderErrors = captureReactRenderErrors(page);
+
+  await page.goto("/?user=octo_cat");
+
+  const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+  await expect(searchBox).toHaveValue("octo_cat");
+  await expect(page.getByRole("status")).toContainText("Use only letters, numbers, and hyphens.");
+  await expect(searchBox).toBeFocused();
+  expect(renderErrors).toEqual([]);
+});
+
 test("home page renders recent searches stored in the browser", async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("my-first-commit:recent-searches", JSON.stringify(["octocat"]));
@@ -303,6 +331,19 @@ test.describe("local mocked commit search states", () => {
     isDeployedTarget,
     "mocked commit search states only run against the local Playwright server",
   );
+
+  test("valid shared URLs automatically render search results", async ({ page }) => {
+    const renderErrors = captureReactRenderErrors(page);
+
+    await page.goto("/?user=e2e-result");
+
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+    await expect(
+      page.getByText(/earliest indexed public commit for @e2e-result appears in/i),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\?user=e2e-result$/);
+    expect(renderErrors).toEqual([]);
+  });
 
   test("home page renders result sharing and source context", async ({ context, page }) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);

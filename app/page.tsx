@@ -21,8 +21,7 @@ const APP_RELEASE = process.env.NEXT_PUBLIC_APP_RELEASE ?? "local";
 const APP_RELEASE_URL = process.env.NEXT_PUBLIC_APP_RELEASE_URL ?? "";
 
 export default function Home() {
-  const [initialSharedUsername] = useState(getInitialSharedUsername);
-  const [username, setUsername] = useState(initialSharedUsername);
+  const [username, setUsername] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const {
     result,
@@ -48,14 +47,16 @@ export default function Home() {
   }, [result?.found]);
 
   useEffect(() => {
-    if (!initialSharedUsername) return;
+    const sharedUsername = getInitialSharedUsername();
+    if (!sharedUsername) return;
 
     const autoSearch = window.setTimeout(() => {
-      runSearch(initialSharedUsername);
+      setUsername(sharedUsername);
+      runSearch(sharedUsername);
     }, 0);
 
     return () => window.clearTimeout(autoSearch);
-  }, [initialSharedUsername, runSearch]);
+  }, [runSearch]);
 
   const handleClearRecentSearches = () => {
     clearRecentSearches();
