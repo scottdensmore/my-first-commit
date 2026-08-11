@@ -133,6 +133,31 @@ describe("runCommitSearch", () => {
     });
   });
 
+  it("normalizes unexpected Server Action rejections as retryable unknown errors", async () => {
+    vi.mocked(getCommits).mockRejectedValue(
+      new Error("Sensitive upstream detail: q=author:octocat&token=secret"),
+    );
+    const { handlers, settle } = createHandlers();
+
+    runCommitSearch("octocat", {}, handlers);
+
+    await expect(settle()).resolves.toBeUndefined();
+    expect(handlers.setResult).toHaveBeenCalledWith({
+      found: false,
+      error: "GitHub commit search failed. Please try again.",
+      errorKind: "unknown",
+      commits: [],
+    });
+    expect(handlers.setRecentSearches).not.toHaveBeenCalled();
+    expect(trackAppEvent).toHaveBeenLastCalledWith("search_completed", {
+      found: false,
+      error_kind: "unknown",
+      commit_count: 0,
+    });
+    expect(JSON.stringify(handlers.setResult.mock.calls)).not.toContain("octocat");
+    expect(JSON.stringify(handlers.setResult.mock.calls)).not.toContain("secret");
+  });
+
   it("ignores an earlier search that resolves after the latest request", async () => {
     const staleSearch = createDeferred<CommitData>();
     const latestSearch = createDeferred<CommitData>();

@@ -445,4 +445,39 @@ test.describe("local mocked commit search states", () => {
     await expect(page.getByText(/temporary service error/i)).toBeVisible();
     await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
   });
+
+  test("home page recovers from an unexpected Server Action rejection", async ({
+    page,
+  }, testInfo) => {
+    const rejectionUsername = `e2e-reject-once-${testInfo.workerIndex}-${Date.now().toString(36)}`;
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    await searchForUsername(page, rejectionUsername);
+
+    await expect(
+      page.getByRole("heading", { name: "We could not complete that search." }),
+    ).toBeVisible();
+    await expect(page.locator('main [role="alert"]')).toContainText(
+      "GitHub commit search failed. Please try again.",
+    );
+    await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          JSON.parse(window.localStorage.getItem("my-first-commit:recent-searches") ?? "[]"),
+        ),
+      )
+      .toEqual([]);
+
+    await page.getByRole("button", { name: "Try again" }).click();
+
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+    await expect(
+      page.getByText(
+        new RegExp(`earliest indexed public commit for @${rejectionUsername} appears in`, "i"),
+      ),
+    ).toBeVisible();
+    expect(pageErrors).toEqual([]);
+  });
 });

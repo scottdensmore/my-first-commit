@@ -14,6 +14,8 @@ const octokit = new Octokit({
 const GITHUB_SEARCH_TIMEOUT_MS = 10_000;
 const E2E_COMMIT_SEARCH_MOCKS_ENABLED = process.env.E2E_COMMIT_SEARCH_MOCKS === "1";
 const E2E_SLOW_SEARCH_DELAY_MS = 750;
+const E2E_REJECT_ONCE_USERNAME_PREFIX = "e2e-reject-once-";
+const e2eRejectedUsernames = new Set<string>();
 const EMPTY_COMMIT_SEARCH_MESSAGE =
   "No public commits found for this user (or indexing is delayed).";
 
@@ -49,26 +51,31 @@ function getE2eCommitSearchResult(username: string): CommitData | null {
     },
   };
 
-  switch (username) {
-    case "e2e-result":
-    case "e2e-slow-result":
-      return {
-        found: true,
-        commits: [
-          mockCommit,
-          {
-            ...mockCommit,
-            message: "Follow-up commit",
-            html_url: "https://github.com/e2e-user/next-repo/commit/bcdefa234567",
-            sha: "bcdefa234567",
-            repository: {
-              name: "next-repo",
-              owner: "e2e-user",
-              full_name: "e2e-user/next-repo",
-            },
+  if (
+    username === "e2e-result" ||
+    username === "e2e-slow-result" ||
+    username.startsWith(E2E_REJECT_ONCE_USERNAME_PREFIX)
+  ) {
+    return {
+      found: true,
+      commits: [
+        mockCommit,
+        {
+          ...mockCommit,
+          message: "Follow-up commit",
+          html_url: "https://github.com/e2e-user/next-repo/commit/bcdefa234567",
+          sha: "bcdefa234567",
+          repository: {
+            name: "next-repo",
+            owner: "e2e-user",
+            full_name: "e2e-user/next-repo",
           },
-        ],
-      };
+        },
+      ],
+    };
+  }
+
+  switch (username) {
     case "e2e-empty":
       return commitSearchError(EMPTY_COMMIT_SEARCH_MESSAGE, "empty");
     case "e2e-rate-limit":
@@ -229,6 +236,15 @@ export async function getCommits(username: string): Promise<CommitData> {
 
   const validationMessage = getUsernameValidationMessage(normalizedUsername);
   if (validationMessage) return commitSearchError(validationMessage, "validation");
+
+  if (
+    E2E_COMMIT_SEARCH_MOCKS_ENABLED &&
+    normalizedUsername.startsWith(E2E_REJECT_ONCE_USERNAME_PREFIX) &&
+    !e2eRejectedUsernames.has(normalizedUsername)
+  ) {
+    e2eRejectedUsernames.add(normalizedUsername);
+    throw new Error("Synthetic E2E Server Action rejection");
+  }
 
   const e2eCommitSearchResult = getE2eCommitSearchResult(normalizedUsername);
   if (e2eCommitSearchResult) {

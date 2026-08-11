@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Fixed
 
+- Unexpected Server Action rejections now use the inline retry experience instead of escaping to the global error screen.
 - Prevented older overlapping searches from replacing newer results, and disabled search shortcuts while a request is pending.
 
 ### Changed
