@@ -1,13 +1,1 @@
-7nns3295?<ANNA>
-
----
-
-Run a deep anaylsis for this codebase and make any recommendations on making it better. Make sure we are following good coding conventions and we have all the tests and user journy testing
-
----
-
-You can delete SPEC.MD and ROADMAP.md
-
----
-
-Lets file issues for all the things you found so we can fix it.
+Ok we should create a branch and pr for the changes and once all checks pass we can squash merge
