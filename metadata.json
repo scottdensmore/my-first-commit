@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "01KZQKXFD29F73RA3ZSNM1RS4R",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/fix/stale-search-results",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "app/actions.ts",
+    "app/home/SearchErrorState.tsx",
+    "app/home/SearchShortcutSection.tsx",
+    "app/home/searchExecution.test.ts",
+    "app/home/searchExecution.ts",
+    "app/home/useCommitSearch.ts",
+    "app/page.test.tsx",
+    "app/page.tsx",
+    "tests/e2e/home.spec.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 921177,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 36607232,
+    "output_tokens": 86961,
+    "api_call_count": 443
+  }
+}

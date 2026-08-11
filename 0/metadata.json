@@ -1,0 +1,72 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "01KZQKXFD29F73RA3ZSNM1RS4R",
+  "session_id": "019feec2-cd5f-79e1-86df-26f1aea24e7a",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-11T05:15:15.773436006Z",
+  "branch": "scottdensmore/fix/stale-search-results",
+  "checkpoints_count": 3,
+  "save_step_count": 1,
+  "files_touched": [
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "app/actions.ts",
+    "app/home/SearchErrorState.tsx",
+    "app/home/SearchShortcutSection.tsx",
+    "app/home/searchExecution.test.ts",
+    "app/home/searchExecution.ts",
+    "app/home/useCommitSearch.ts",
+    "app/page.test.tsx",
+    "app/page.tsx",
+    "tests/e2e/home.spec.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "af0f86181feb",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 921177,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 36607232,
+    "output_tokens": 86961,
+    "api_call_count": 443
+  },
+  "session_metrics": {
+    "turn_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-11T05:15:14.562558711Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 260,
+    "human_modified": 14,
+    "human_removed": 0,
+    "total_committed": 260,
+    "total_lines_changed": 274,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 83,
+      "user_lines_removed": 4,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/home/SearchErrorState.tsx": 1,
+        "app/home/SearchShortcutSection.tsx": 5,
+        "app/home/searchExecution.test.ts": 1,
+        "app/home/searchExecution.ts": 4,
+        "app/home/useCommitSearch.ts": 5,
+        "app/page.test.tsx": 65,
+        "app/page.tsx": 2
+      },
+      "user_removed_per_file": {
+        "app/home/SearchShortcutSection.tsx": 1,
+        "app/home/useCommitSearch.ts": 1,
+        "app/page.test.tsx": 2
+      }
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+Ok we should create a branch and pr for the changes and once all checks pass we can squash merge
+
+---
+
+what should we pick up first?
+
+---
+
+Ok lets pick up 96 first
+
+---
+
+Make sure that you only run the unit tests in the main agent. Run the entire battery in the verifier
+
+---
+
+ok what is next
+
+---
+
+Ok lets do 97
+
+---
+
+actually you can run any test you author in the main agent
+
+---
+
+actually undo that last comment
+
+---
+
+don't run anything but unit tests
+
+---
+
+sorry to be confusing
