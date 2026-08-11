@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "01KZQE1P0JYVCJ75735Z8294GY",
+  "session_id": "019feec2-cd5f-79e1-86df-26f1aea24e7a",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-11T03:32:24.933542006Z",
+  "branch": "scottdensmore/chore/agent-workflow",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "AGENTS.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "98f1c6b6ef00",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 182072,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6373888,
+    "output_tokens": 27049,
+    "api_call_count": 102
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-11T03:32:24.689708782Z",
+    "agent_lines": 97,
+    "agent_removed": 1,
+    "human_added": 130,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 227,
+    "total_lines_changed": 228,
+    "agent_percentage": 42.98245614035088,
+    "metric_version": 2
+  }
+}
