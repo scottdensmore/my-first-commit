@@ -105,7 +105,10 @@ test("privacy page documents search and analytics handling", async ({ page }) =>
     page.getByText(/usernames entered into the search form are sent to GitHub/i),
   ).toBeVisible();
   await expect(
-    page.getByText(/analytics events do not include the searched GitHub username/i),
+    page.getByText(/removes the shared-search user query parameter before analytics events/i),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/event properties do not include the searched GitHub username/i),
   ).toBeVisible();
   await expect(page.getByText(/never sent to the browser/i)).toBeVisible();
 });

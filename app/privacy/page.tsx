@@ -50,8 +50,9 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-semibold">Analytics</h2>
           <p className="mt-3 leading-7 text-[var(--github-gray-text)]">
             The app uses Vercel Analytics for basic product health signals, such as page views,
-            search completions, result counts, and error categories. Analytics events do not include
-            the searched GitHub username.
+            search completions, result counts, and error categories. The app removes the
+            shared-search user query parameter before analytics events are sent, and event
+            properties do not include the searched GitHub username.
           </p>
         </section>
 

@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Fixed
 
+- Vercel Analytics event URLs now remove shared-search usernames while preserving unrelated query parameters.
 - Forged Server Action requests with non-string usernames now return validation errors safely.
 - Commit results with missing or invalid dates no longer crash the result timeline.
 - Unexpected Server Action rejections now use the inline retry experience instead of escaping to the global error screen.
