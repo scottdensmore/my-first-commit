@@ -405,6 +405,19 @@ test.describe("local mocked commit search states", () => {
     await expect(page.getByRole("status")).toContainText("Result copied.");
   });
 
+  test("mixed valid and malformed commit dates render without crashing", async ({ page }) => {
+    const renderErrors = captureReactRenderErrors(page);
+
+    await searchForUsername(page, "e2e-malformed-dates");
+
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Initial public commit" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Commit with malformed date" })).toBeVisible();
+    await expect(page.getByText("Date unavailable")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Something went wrong." })).toHaveCount(0);
+    expect(renderErrors).toEqual([]);
+  });
+
   test("home page renders a helpful empty search state", async ({ page }) => {
     await searchForUsername(page, "e2e-empty");
 

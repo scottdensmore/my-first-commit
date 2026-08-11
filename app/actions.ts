@@ -75,6 +75,27 @@ function getE2eCommitSearchResult(username: string): CommitData | null {
     };
   }
 
+  if (username === "e2e-malformed-dates") {
+    return {
+      found: true,
+      commits: [
+        mockCommit,
+        {
+          ...mockCommit,
+          message: "Commit with malformed date",
+          date: "not-a-date",
+          html_url: "https://github.com/e2e-user/next-repo/commit/bcdefa234567",
+          sha: "bcdefa234567",
+          repository: {
+            name: "next-repo",
+            owner: "e2e-user",
+            full_name: "e2e-user/next-repo",
+          },
+        },
+      ],
+    };
+  }
+
   switch (username) {
     case "e2e-empty":
       return commitSearchError(EMPTY_COMMIT_SEARCH_MESSAGE, "empty");
@@ -158,6 +179,11 @@ function withTimeoutSignal<T>(callback: (signal: AbortSignal) => Promise<T>) {
     .finally(() => clearTimeout(timeout));
 }
 
+function parseableDate(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  return Number.isNaN(Date.parse(value)) ? null : value;
+}
+
 function mapCommitItem(item: unknown, username: string): CommitInfo | null {
   if (typeof item !== "object" || item === null) return null;
 
@@ -202,18 +228,16 @@ function mapCommitItem(item: unknown, username: string): CommitInfo | null {
 
   const authorDate = candidate.commit?.author?.date;
   const committerDate = candidate.commit?.committer?.date;
+  const date = parseableDate(committerDate) ?? parseableDate(authorDate);
   const authorLogin = candidate.author?.login;
   const authorAvatarUrl = candidate.author?.avatar_url;
   const authorHtmlUrl = candidate.author?.html_url;
 
+  if (!date) return null;
+
   return {
     message,
-    date:
-      typeof committerDate === "string"
-        ? committerDate
-        : typeof authorDate === "string"
-          ? authorDate
-          : "",
+    date,
     html_url: htmlUrl,
     sha,
     repository: {

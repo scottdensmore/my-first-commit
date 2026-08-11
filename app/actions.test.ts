@@ -185,6 +185,89 @@ describe("getCommits", () => {
     });
   });
 
+  it("falls back to a parseable author date when the committer date is invalid", async () => {
+    searchCommits.mockResolvedValue({
+      data: {
+        items: [
+          {
+            ...commitItem,
+            commit: {
+              ...commitItem.commit,
+              committer: {
+                date: "not-a-date",
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    const result = await getCommits("octo");
+
+    expect(result.commits[0].date).toBe("2024-01-01T00:00:00Z");
+  });
+
+  it("skips commit items without a parseable date while keeping valid results", async () => {
+    searchCommits.mockResolvedValue({
+      data: {
+        items: [
+          {
+            ...commitItem,
+            commit: {
+              ...commitItem.commit,
+              author: null,
+              committer: null,
+            },
+          },
+          commitItem,
+        ],
+      },
+    });
+
+    const result = await getCommits("octo");
+
+    expect(result.found).toBe(true);
+    expect(result.commits).toHaveLength(1);
+    expect(result.commits[0].sha).toBe("abcdef123456");
+    expect(console.warn).toHaveBeenCalledWith({
+      event: "github_commit_search_malformed_item",
+      itemIndex: 0,
+    });
+  });
+
+  it("returns an empty state when every commit date is missing, empty, or invalid", async () => {
+    searchCommits.mockResolvedValue({
+      data: {
+        items: [
+          {
+            ...commitItem,
+            commit: {
+              ...commitItem.commit,
+              author: null,
+              committer: null,
+            },
+          },
+          {
+            ...commitItem,
+            commit: {
+              ...commitItem.commit,
+              author: { date: "" },
+              committer: { date: "not-a-date" },
+            },
+          },
+        ],
+      },
+    });
+
+    await expect(getCommits("octo")).resolves.toEqual({
+      found: false,
+      error: "No public commits found for this user (or indexing is delayed).",
+      errorKind: "empty",
+      commits: [],
+    });
+    expect(console.warn).toHaveBeenCalledTimes(2);
+  });
+
   it("returns a friendly empty state when no indexed commits are found", async () => {
     searchCommits.mockResolvedValue({
       data: {

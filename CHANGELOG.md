@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Fixed
 
+- Commit results with missing or invalid dates no longer crash the result timeline.
 - Unexpected Server Action rejections now use the inline retry experience instead of escaping to the global error screen.
 - Prevented older overlapping searches from replacing newer results, and disabled search shortcuts while a request is pending.
 

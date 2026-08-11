@@ -27,7 +27,8 @@ function formatCommitDateTime(date: Date) {
 }
 
 export default function FirstCommitDisplay({ data, isMain = true }: FirstCommitDisplayProps) {
-  const dateObj = new Date(data.date);
+  const parsedDate = new Date(data.date);
+  const dateObj = Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
   const widthClass = isMain ? "max-w-2xl" : "max-w-xl";
   const shortSha = data.sha.substring(0, 7);
   const [commitSubject, ...commitBodyLines] = data.message.split("\n");
@@ -100,21 +101,31 @@ export default function FirstCommitDisplay({ data, isMain = true }: FirstCommitD
                 {data.author.login}
               </a>
               <span>committed</span>
-              <time dateTime={data.date} title={formatCommitDateTime(dateObj)}>
-                {formatDistanceToNow(dateObj, { addSuffix: true })}
-              </time>
+              {dateObj ? (
+                <time dateTime={data.date} title={formatCommitDateTime(dateObj)}>
+                  {formatDistanceToNow(dateObj, { addSuffix: true })}
+                </time>
+              ) : (
+                <span>Date unavailable</span>
+              )}
             </div>
             {isMain && (
               <dl className="mt-4 grid gap-2 text-xs text-[var(--github-gray-text)] sm:grid-cols-3">
                 <div className="rounded-md border border-[var(--github-border)] bg-[var(--github-gray-light)] px-3 py-2">
                   <dt className="font-semibold text-[var(--github-gray-dark)]">Commit date</dt>
                   <dd className="mt-1">
-                    <time dateTime={data.date}>{formatCommitDate(dateObj)}</time>
+                    {dateObj ? (
+                      <time dateTime={data.date}>{formatCommitDate(dateObj)}</time>
+                    ) : (
+                      "Date unavailable"
+                    )}
                   </dd>
                 </div>
                 <div className="rounded-md border border-[var(--github-border)] bg-[var(--github-gray-light)] px-3 py-2">
                   <dt className="font-semibold text-[var(--github-gray-dark)]">Commit age</dt>
-                  <dd className="mt-1">{formatDistanceToNow(dateObj, { addSuffix: false })}</dd>
+                  <dd className="mt-1">
+                    {dateObj ? formatDistanceToNow(dateObj, { addSuffix: false }) : "Unavailable"}
+                  </dd>
                 </div>
                 <div className="rounded-md border border-[var(--github-border)] bg-[var(--github-gray-light)] px-3 py-2">
                   <dt className="font-semibold text-[var(--github-gray-dark)]">
