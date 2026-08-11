@@ -328,9 +328,9 @@ describe("getCommits", () => {
     expect(console.warn).toHaveBeenCalledWith({
       event: "github_commit_search_rate_limited",
       status: 403,
-      message: "API rate limit exceeded for user.",
-      rateLimitRemaining: "0",
-      rateLimitReset: "1710000000",
+      errorKind: "rate_limit",
+      rateLimitRemaining: 0,
+      rateLimitReset: 1710000000,
     });
   });
 
@@ -349,10 +349,45 @@ describe("getCommits", () => {
     expect(console.warn).toHaveBeenCalledWith({
       event: "github_commit_search_rate_limited",
       status: 429,
-      message: "Too many requests",
+      errorKind: "rate_limit",
       rateLimitRemaining: undefined,
       rateLimitReset: undefined,
     });
+  });
+
+  it("logs only allowlisted numeric rate-limit metadata", async () => {
+    const rawMessage =
+      "Request failed: https://api.github.com/search/commits?q=author%3Aoctocat with token ghp_exampleSecret123";
+    searchCommits.mockRejectedValue({
+      status: 403,
+      message: rawMessage,
+      response: {
+        headers: {
+          "x-ratelimit-remaining": "0",
+          "x-ratelimit-reset": "1710000000 ghp_headerSecret456",
+        },
+      },
+    });
+
+    await expect(getCommits("octocat")).resolves.toEqual({
+      found: false,
+      error: "GitHub rate limit reached. Please try again in a few minutes.",
+      errorKind: "rate_limit",
+      commits: [],
+    });
+    expect(console.warn).toHaveBeenCalledWith({
+      event: "github_commit_search_rate_limited",
+      status: 403,
+      errorKind: "rate_limit",
+      rateLimitRemaining: 0,
+      rateLimitReset: undefined,
+    });
+    const serializedLogs = JSON.stringify(vi.mocked(console.warn).mock.calls);
+    expect(serializedLogs).not.toContain("octocat");
+    expect(serializedLogs).not.toContain("api.github.com");
+    expect(serializedLogs).not.toContain("q=author");
+    expect(serializedLogs).not.toContain("ghp_exampleSecret123");
+    expect(serializedLogs).not.toContain("ghp_headerSecret456");
   });
 
   it("returns a friendly timeout message when GitHub does not respond in time", async () => {
@@ -369,14 +404,16 @@ describe("getCommits", () => {
     expect(console.warn).toHaveBeenCalledWith({
       event: "github_commit_search_timeout",
       status: undefined,
-      message: "The operation was aborted",
+      errorKind: "timeout",
     });
   });
 
-  it("returns a friendly unavailable message for GitHub 5xx errors", async () => {
+  it("returns a friendly unavailable message without logging raw GitHub error details", async () => {
+    const rawMessage =
+      "Request failed: https://api.github.com/search/commits?q=author%3Aoctocat with token ghp_exampleSecret123";
     const error = {
       status: 503,
-      message: "Service Unavailable",
+      message: rawMessage,
     };
     searchCommits.mockRejectedValue(error);
 
@@ -389,8 +426,13 @@ describe("getCommits", () => {
     expect(console.error).toHaveBeenCalledWith({
       event: "github_commit_search_unavailable",
       status: 503,
-      message: "Service Unavailable",
+      errorKind: "unavailable",
     });
+    const serializedLogs = JSON.stringify(vi.mocked(console.error).mock.calls);
+    expect(serializedLogs).not.toContain("octocat");
+    expect(serializedLogs).not.toContain("api.github.com");
+    expect(serializedLogs).not.toContain("q=author");
+    expect(serializedLogs).not.toContain("ghp_exampleSecret123");
   });
 
   it("does not classify non-rate-limit GitHub 403 errors as rate limits", async () => {
@@ -410,7 +452,7 @@ describe("getCommits", () => {
     expect(console.error).toHaveBeenCalledWith({
       event: "github_commit_search_failed",
       status: 403,
-      message: "Resource not accessible by integration",
+      errorKind: "unknown",
     });
   });
 
@@ -471,7 +513,7 @@ describe("getCommits", () => {
     expect(console.error).toHaveBeenCalledWith({
       event: "github_commit_search_failed",
       status: 422,
-      message: undefined,
+      errorKind: "validation",
     });
   });
 
@@ -488,7 +530,7 @@ describe("getCommits", () => {
     expect(console.error).toHaveBeenCalledWith({
       event: "github_commit_search_failed",
       status: undefined,
-      message: "GitHub is unavailable",
+      errorKind: "unknown",
     });
   });
 });
