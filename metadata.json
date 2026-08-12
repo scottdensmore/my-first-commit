@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "01KZTAR5BHG6Q4JANG7PSEJBHD",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/chore/widen-verification-exemption",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "eslint.config.mjs",
+    "scripts/check-agent-docs.mjs",
+    "scripts/ignore-entries.mjs",
+    "scripts/ignore-entries.test.mjs",
+    "vitest.config.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 453,
+    "cache_creation_tokens": 331376,
+    "cache_read_tokens": 50279466,
+    "output_tokens": 156636,
+    "api_call_count": 243
+  }
+}
