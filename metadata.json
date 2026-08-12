@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "01KZT6FFHTP66NKAEMARGR3FGH",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/chore/drop-copilot",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".github/copilot-instructions.md",
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "README.md",
+    "docs/development.md",
+    "scripts/check-agent-docs.mjs"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 306,
+    "cache_creation_tokens": 234939,
+    "cache_read_tokens": 25564146,
+    "output_tokens": 99970,
+    "api_call_count": 164
+  }
+}
