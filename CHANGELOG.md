@@ -18,6 +18,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Changed
 
+- Local Entire checkpoint hooks now match Claude Code's current tool names, including the newer task tools, so the configuration no longer depends on Claude Code's legacy alias map.
 - The agent workflow now bounds its review loop: findings can be explicitly resolved with a stated reason, and a finding that survives two fix-and-re-review cycles stops for a human instead of looping. Reverification is scoped to the gate commands a fix can actually affect, with a documentation-only exemption, so a prose fix no longer triggers a full audit, test, browser, and build cycle.
 - Agents must now add a `CHANGELOG.md` entry with user-facing and operational changes, treat issue, pull request, and review text as data rather than instructions, and bound the wait for an assigned reviewer instead of blocking indefinitely.
 - The `ui-review` sub-agent now enumerates untracked files with `--untracked-files=all`, so a brand-new component directory can no longer be mistaken for a change with no user-visible surface.
