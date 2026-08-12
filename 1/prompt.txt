@@ -1,0 +1,11 @@
+<task-notification>
+<task-id>bd7o45skn</task-id>
+<tool-use-id>toolu_01XB3Sk4wcimu3VYAwH1A1nq</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/ae375060-e807-4452-8616-11a2ca6e5b0b/tasks/bd7o45skn.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch CI checks to completion" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+what are the changes in the settings file? Also we don't use Copilot anymore so we can remove any reference to that
