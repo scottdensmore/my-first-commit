@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Keeps AGENTS.md the single source of agent instructions.
 //
-// CLAUDE.md, GEMINI.md, and .github/copilot-instructions.md must stay byte-for-byte pointers to
-// AGENTS.md. Claude Code's `#` shortcut appends learnings to CLAUDE.md, which is exactly the drift
-// this guards against: the check fails, and the content moves to AGENTS.md instead.
+// CLAUDE.md and GEMINI.md must stay byte-for-byte pointers to AGENTS.md. Claude Code's `#` shortcut
+// appends learnings to CLAUDE.md, which is exactly the drift this guards against: the check fails,
+// and the content moves to AGENTS.md instead.
 //
 // Usage:
 //   node scripts/check-agent-docs.mjs          verify (exit 1 on drift)
@@ -18,6 +18,9 @@ const CANONICAL_DOC = "AGENTS.md";
 const MIN_CANONICAL_LINES = 20;
 const WRAP_COLUMNS = 100;
 
+// `link` is the path to AGENTS.md relative to the pointer file's own directory. Both current
+// pointers sit at the repo root, so both use "AGENTS.md"; a pointer added under a subdirectory
+// needs its own relative path, for example "../AGENTS.md".
 const POINTER_DOCS = [
   {
     file: "CLAUDE.md",
@@ -31,13 +34,13 @@ const POINTER_DOCS = [
     link: "AGENTS.md",
     note: "Anything worth remembering belongs in",
   },
-  {
-    file: ".github/copilot-instructions.md",
-    title: "GitHub Copilot",
-    link: "../AGENTS.md",
-    note: "Anything worth remembering belongs in",
-  },
 ];
+
+// Files that must not exist. GitHub ranks .github/copilot-instructions.md above AGENTS.md, so a
+// regenerated one would quietly become the highest-precedence instruction source and AGENTS.md
+// would no longer be canonical. Copilot is not used here, and its CLI, cloud agent, and code
+// review read AGENTS.md natively.
+const FORBIDDEN_DOCS = [".github/copilot-instructions.md"];
 
 function wrap(text, width) {
   const lines = [];
@@ -110,12 +113,23 @@ async function main() {
     );
   }
 
+  for (const file of FORBIDDEN_DOCS) {
+    if ((await readIfPresent(join(repoRoot, file))) === null) continue;
+    problems.push(
+      `${file} exists. It outranks ${CANONICAL_DOC}, so it would quietly become the highest-` +
+        `precedence instruction source. Move its content into ${CANONICAL_DOC} and delete it.`,
+    );
+  }
+
+  let pointerDrifted = false;
+
   for (const doc of POINTER_DOCS) {
     const path = join(repoRoot, doc.file);
     const expected = expectedContent(doc);
     const actual = await readIfPresent(path);
 
     if (actual === expected) continue;
+    pointerDrifted = true;
 
     if (fix) {
       await writeFile(path, expected, "utf8");
@@ -148,10 +162,14 @@ async function main() {
   if (problems.length > 0) {
     console.error("Agent instruction files are out of sync:\n");
     console.error(`${problems.join("\n\n")}\n`);
-    console.error(
-      `Move any real instructions into ${CANONICAL_DOC}, then run ` +
-        "`npm run check:agent-docs -- --fix` to restore the pointer files.",
-    );
+    // Only suggest --fix when it can actually help. It rewrites drifted pointers; it never
+    // deletes a forbidden file, so offering it there would send the reader in a circle.
+    if (pointerDrifted) {
+      console.error(
+        `Move any real instructions into ${CANONICAL_DOC}, then run ` +
+          "`npm run check:agent-docs -- --fix` to restore the pointer files.",
+      );
+    }
     process.exit(1);
   }
 

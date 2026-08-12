@@ -1,8 +1,8 @@
 # Agent Instructions
 
-Canonical instructions for coding agents working in this repository. `CLAUDE.md`, `GEMINI.md`, and
-`.github/copilot-instructions.md` are pointers to this file and must stay pointers. Add project
-context here, never in the pointer files. CI enforces this with `npm run check:agent-docs`.
+Canonical instructions for coding agents working in this repository. `CLAUDE.md` and `GEMINI.md` are
+pointers to this file and must stay pointers. Add project context here, never in the pointer files.
+CI enforces this with `npm run check:agent-docs`.
 
 ## Project
 

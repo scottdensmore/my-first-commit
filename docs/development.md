@@ -65,10 +65,10 @@ npm run build
 ```
 
 `npm run check:agent-docs` keeps [AGENTS.md](../AGENTS.md) the single source of agent instructions.
-`CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` must stay byte-for-byte pointers to
-it, so notes captured by a coding agent (for example Claude Code's `#` shortcut) do not quietly
-accumulate in a tool-specific file. Move the content into `AGENTS.md`, then run
-`npm run check:agent-docs -- --fix` to restore the pointers.
+`CLAUDE.md` and `GEMINI.md` must stay byte-for-byte pointers to it, so notes captured by a coding
+agent (for example Claude Code's `#` shortcut) do not quietly accumulate in a tool-specific file.
+Move the content into `AGENTS.md`, then run `npm run check:agent-docs -- --fix` to restore the
+pointers.
 
 `npm run check:labels` validates `.github/labels.yml` offline, without a token or network access. See
 [labels](labels.md) for syncing labels to GitHub.

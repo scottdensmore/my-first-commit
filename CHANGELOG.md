@@ -28,6 +28,10 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 - Removed the superseded specification and roadmap documents, along with their README links.
 - Upgraded the project from Node 22 to Node 24, the current Active LTS and Vercel's default runtime. `.nvmrc`, `package.json` engines, and the docs now all name 24. Node 26 is deliberately not used: Vercel offers only 20.x, 22.x, and 24.x, so pinning 26 would not deploy.
 
+### Removed
+
+- Copilot-specific instruction file. `.github/copilot-instructions.md` is deleted and deregistered from `npm run check:agent-docs`, which now keeps only `CLAUDE.md` and `GEMINI.md` as pointers to `AGENTS.md`. Copilot CLI, the Copilot cloud agent, Copilot code review, and Copilot Chat in VS Code read `AGENTS.md` natively, so those surfaces keep the same instructions; Copilot Chat on GitHub.com and in Visual Studio, JetBrains, Eclipse, and Xcode do not read `AGENTS.md` and no longer receive repository instructions. The check now also fails if the file reappears, since it would outrank `AGENTS.md`. The Copilot CLI hook file `.github/hooks/entire.json` is unaffected and stays.
+
 ## 0.3.0 - 2026-08-01
 
 ### Added
