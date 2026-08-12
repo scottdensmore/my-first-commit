@@ -1,4 +1,4 @@
-import { expect, test, type APIResponse, type Page } from "@playwright/test";
+import { expect, test, type APIResponse, type Locator, type Page } from "@playwright/test";
 
 const isDeployedTarget = Boolean(process.env.PLAYWRIGHT_BASE_URL);
 
@@ -44,6 +44,30 @@ function captureReactRenderErrors(page: Page) {
   page.on("pageerror", (error) => renderErrors.push(error.message));
 
   return renderErrors;
+}
+
+async function getTextContrastRatio(locator: Locator) {
+  return locator.evaluate((element) => {
+    const parseRgb = (color: string) =>
+      color
+        .match(/[\d.]+/g)!
+        .slice(0, 3)
+        .map(Number);
+    const relativeLuminance = (color: string) => {
+      const channels = parseRgb(color).map((channel) => {
+        const normalized = channel / 255;
+        return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
+    };
+    const styles = getComputedStyle(element);
+    const foreground = relativeLuminance(styles.color);
+    const background = relativeLuminance(styles.backgroundColor);
+    const lighter = Math.max(foreground, background);
+    const darker = Math.min(foreground, background);
+
+    return (lighter + 0.05) / (darker + 0.05);
+  });
 }
 
 test("home page search field is keyboard-ready and not treated as a credential field", async ({
@@ -346,6 +370,28 @@ test.describe("local mocked commit search states", () => {
     ).toBeVisible();
     await expect(page).toHaveURL(/\?user=e2e-result$/);
     expect(renderErrors).toEqual([]);
+  });
+
+  test("successful search focuses its heading and action colors meet AA contrast", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    await page.getByRole("searchbox", { name: "GitHub username" }).fill("e2e-result");
+    const searchButton = page.getByRole("button", { name: "Search", exact: true });
+    await expect(searchButton).toBeEnabled();
+    expect(await getTextContrastRatio(searchButton)).toBeGreaterThanOrEqual(4.5);
+
+    await searchButton.hover();
+    await expect.poll(() => getTextContrastRatio(searchButton)).toBeGreaterThanOrEqual(4.5);
+    await searchButton.click();
+
+    const resultHeading = page.getByRole("heading", { name: "First public commit found" });
+    await expect(resultHeading).toBeFocused();
+
+    await page.getByRole("button", { name: "Search another user" }).click();
+    await expect(page.getByRole("searchbox", { name: "GitHub username" })).toBeFocused();
   });
 
   test("search shortcuts stay disabled while a request is pending", async ({ page }) => {

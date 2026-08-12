@@ -89,6 +89,9 @@ describe("Home", () => {
     expect(
       await screen.findByRole("heading", { name: /first public commit found/i }),
     ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /first public commit found/i })).toHaveFocus();
+    });
     expect(screen.getByText(/github search may miss older commits/i)).toBeInTheDocument();
     expect(
       screen.getByText(/earliest indexed public commit for @octo appears in/i),
