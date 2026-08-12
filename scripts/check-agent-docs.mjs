@@ -13,6 +13,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { hasGitignoreEntry, hasQuotedEntry } from "./ignore-entries.mjs";
+
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CANONICAL_DOC = "AGENTS.md";
 const MIN_CANONICAL_LINES = 20;
@@ -41,6 +43,16 @@ const POINTER_DOCS = [
 // would no longer be canonical. Copilot is not used here, and its CLI, cloud agent, and code
 // review read AGENTS.md natively.
 const FORBIDDEN_DOCS = [".github/copilot-instructions.md"];
+
+// Tooling state managed by external agent tools. AGENTS.md exempts changes confined to these
+// directories from local verification, which is only sound while every gate that reads source
+// ignores them. Three files must agree, so drift in one is a real failure rather than a nit.
+const TOOLING_DIRS = [".claude", ".codex", ".entire", ".vercel"];
+const IGNORE_LISTS = [
+  { file: ".prettierignore", has: (contents, dir) => hasGitignoreEntry(contents, dir) },
+  { file: "eslint.config.mjs", has: (contents, dir) => hasQuotedEntry(contents, `${dir}/**`) },
+  { file: "vitest.config.ts", has: (contents, dir) => hasQuotedEntry(contents, `${dir}/**`) },
+];
 
 function wrap(text, width) {
   const lines = [];
@@ -122,6 +134,25 @@ async function main() {
   }
 
   let pointerDrifted = false;
+
+  for (const list of IGNORE_LISTS) {
+    const contents = await readIfPresent(join(repoRoot, list.file));
+
+    if (contents === null) {
+      problems.push(`${list.file} is missing. It must ignore the tooling-state directories.`);
+      continue;
+    }
+
+    const missing = TOOLING_DIRS.filter((dir) => !list.has(contents, dir));
+
+    if (missing.length > 0) {
+      problems.push(
+        `${list.file} no longer ignores ${missing.join(", ")}. The verification exemption in ` +
+          `${CANONICAL_DOC} assumes .prettierignore, eslint.config.mjs, and vitest.config.ts all ` +
+          "ignore the same tooling-state directories. Restore the entry, or update the exemption.",
+      );
+    }
+  }
 
   for (const doc of POINTER_DOCS) {
     const path = join(repoRoot, doc.file);

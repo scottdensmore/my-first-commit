@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Tooling state managed by external agent tools, matching .prettierignore. Flat config does
+    // not skip dot-directories on its own, so without these an agent hook or script dropped here
+    // would be linted as project source.
+    ".claude/**",
+    ".codex/**",
+    ".entire/**",
+    ".vercel/**",
   ]),
 ]);
 
