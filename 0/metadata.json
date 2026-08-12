@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "01KZSTZ1R15PK1W68EEPTS1VWW",
+  "session_id": "019feec2-cd5f-79e1-86df-26f1aea24e7a",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-12T01:57:10.273186749Z",
+  "branch": "scottdensmore/fix/improve-result-accessibility",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CHANGELOG.md",
+    "app/globals.css",
+    "app/home/SearchResults.tsx",
+    "app/page.test.tsx",
+    "tests/e2e/home.spec.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "1ffba18f377e",
+  "checkpoint_transcript_start": 5536,
+  "transcript_lines_at_start": 5536,
+  "compact_transcript_start": 815,
+  "token_usage": {
+    "input_tokens": 215726,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 8856064,
+    "output_tokens": 12881,
+    "api_call_count": 58
+  },
+  "session_metrics": {
+    "turn_count": 17
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-12T01:57:08.07420284Z",
+    "agent_lines": 65,
+    "agent_removed": 4,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 65,
+    "total_lines_changed": 69,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 3,
+      "user_lines_removed": 3,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.json": 3
+      },
+      "user_removed_per_file": {
+        ".claude/settings.json": 3
+      }
+    }
+  ]
+}
