@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Fixed
 
+- Primary green actions now meet WCAG AA text contrast, and successful searches move focus to the result heading for a clear assistive-technology transition.
 - GitHub search failure logs now exclude raw upstream messages and accept only validated numeric rate-limit metadata.
 - Vercel Analytics event URLs now remove shared-search usernames while preserving unrelated query parameters.
 - Forged Server Action requests with non-string usernames now return validation errors safely.

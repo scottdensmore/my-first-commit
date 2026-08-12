@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { GoCopy } from "react-icons/go";
 import FirstCommitDisplay from "@/components/FirstCommitDisplay";
 import { githubRepositoryUrl } from "../githubUrls";
@@ -16,7 +17,13 @@ export default function SearchResults({
   shareStatus,
   onCopy,
 }: SearchResultsProps) {
+  const resultHeadingRef = useRef<HTMLHeadingElement>(null);
   const firstCommit = commits[0];
+
+  useEffect(() => {
+    if (firstCommit) resultHeadingRef.current?.focus();
+  }, [firstCommit, lastSearchedUsername]);
+
   if (!firstCommit) return null;
 
   const uniqueRepositoryCount = new Set(commits.map((commit) => commit.repository.full_name)).size;
@@ -24,7 +31,11 @@ export default function SearchResults({
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full flex flex-col items-center pb-12 pt-8">
       <div className="mb-6 w-full max-w-2xl text-left">
-        <h1 className="text-2xl font-bold text-[var(--github-gray-dark)]">
+        <h1
+          ref={resultHeadingRef}
+          tabIndex={-1}
+          className="rounded-sm text-2xl font-bold text-[var(--github-gray-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2"
+        >
           First public commit found
         </h1>
         <p className="mt-2 text-sm text-[var(--github-gray-dark)]">
