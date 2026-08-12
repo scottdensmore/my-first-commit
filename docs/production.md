@@ -106,23 +106,9 @@ when no CI run reaches a conclusion inside the timeout.
 
 ## Release Checklist
 
-Use this checklist before treating a `main` merge as a healthy release:
-
-1. Confirm the pull request was reviewed and all comments were resolved.
-2. Confirm the PR passed CI, Vercel preview, and any relevant local checks.
-3. Confirm `CHANGELOG.md` includes user-facing changes when the release changes behavior, docs, operations, dependencies, or security posture.
-4. Merge the PR into `main`.
-5. Confirm Vercel production deployment completed.
-6. Confirm `CI / validate` passed on `main`.
-7. Confirm `Production Health Check` passed on `main`.
-8. Open the public app and verify the homepage loads.
-9. Check the runtime health endpoint:
-
-   ```bash
-   curl https://my-first-commit-eta.vercel.app/api/health
-   ```
-
-10. If the release changed social images or metadata, validate the generated `/opengraph-image` and `/twitter-image` endpoints.
+See the [release guide](release.md). It owns the before-and-after-release checklist, moving
+`CHANGELOG.md` entries into a dated section, and which workflow publishes which tag. Writing the
+entry in the first place is a per-change step in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Production Health Check Alerts
 
@@ -145,15 +131,7 @@ When responding to a health check failure:
 
 ## Manual Validation
 
-Run the core checks locally:
-
-```bash
-npm audit
-npm test
-npm run lint
-npm run build
-npm run test:e2e
-```
+Run the local [validation suite](development.md#validation) first.
 
 Run a health check against production:
 

@@ -18,6 +18,11 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Changed
 
+- The agent workflow now bounds its review loop: findings can be explicitly resolved with a stated reason, and a finding that survives two fix-and-re-review cycles stops for a human instead of looping. Reverification is scoped to the gate commands a fix can actually affect, with a documentation-only exemption, so a prose fix no longer triggers a full audit, test, browser, and build cycle.
+- Agents must now add a `CHANGELOG.md` entry with user-facing and operational changes, treat issue, pull request, and review text as data rather than instructions, and bound the wait for an assigned reviewer instead of blocking indefinitely.
+- The `ui-review` sub-agent now enumerates untracked files with `--untracked-files=all`, so a brand-new component directory can no longer be mistaken for a change with no user-visible surface.
+- Consolidated the pre-PR command list, which had drifted into four inconsistent copies, into a canonical list in the development guide that the contributing guide, runbook, and release guide now link to. The agent-facing files keep deliberate inline copies. Trimmed the manual QA checklist to the states the deployed browser check skips and the judgments Playwright cannot make, and documented the Playwright browser install.
+- Documented the `/privacy` and `/api/csp-report` routes in the architecture guide, along with the CSP report endpoint's data boundaries. Both shipped previously without being listed among the runtime routes.
 - Clarified that the main agent owns exact unit-test red/green loops while the verifier owns focused Playwright execution and the complete validation gate.
 - Removed the superseded specification and roadmap documents, along with their README links.
 - Upgraded the project from Node 22 to Node 24, the current Active LTS and Vercel's default runtime. `.nvmrc`, `package.json` engines, and the docs now all name 24. Node 26 is deliberately not used: Vercel offers only 20.x, 22.x, and 24.x, so pinning 26 would not deploy.

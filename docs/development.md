@@ -47,11 +47,16 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Validation
 
-Run the same core checks used by CI:
+This is the canonical pre-PR command list. It matches the `CI / validate` job in
+`.github/workflows/ci.yml`. The contributing guide, runbook, and release guide link here rather than
+keeping their own copies. Two agent-facing files keep deliberate inline copies, because agents follow
+instructions better than links: [AGENTS.md](../AGENTS.md#commands) and the `verifier` sub-agent
+definition in `.claude/agents/`. Keep all three in step when CI changes.
 
 ```bash
 npm audit
 npm test
+npm run test:e2e
 npm run lint
 npm run format:check
 npm run check:agent-docs
@@ -68,13 +73,23 @@ accumulate in a tool-specific file. Move the content into `AGENTS.md`, then run
 `npm run check:labels` validates `.github/labels.yml` offline, without a token or network access. See
 [labels](labels.md) for syncing labels to GitHub.
 
+Playwright needs its browser binaries once per machine, and again after a Playwright version bump.
+These are the same browsers CI installs:
+
+```bash
+npx playwright install --with-deps chromium
+```
+
+If that download is blocked by network policy, `npm run test:e2e` cannot run locally. Report which
+gate commands could not run rather than treating the gate as passed.
+
 Run the local browser health check:
 
 ```bash
 npm run test:e2e
 ```
 
-Local Playwright runs start the app with `E2E_COMMIT_SEARCH_MOCKS=1` so result and error-state coverage is deterministic and does not depend on GitHub search availability.
+Local Playwright runs start the app with `E2E_COMMIT_SEARCH_MOCKS=1` so result and error-state coverage is deterministic and does not depend on GitHub search availability. They use port 3100, not 3000, so the check does not collide with `npm run dev`.
 
 Run the browser health check against production:
 
@@ -123,7 +138,7 @@ See the [release guide](release.md) for the release checklist, tag, and GitHub r
 ## Maintenance Workflow
 
 - Open feature, fix, and maintenance work as pull requests.
-- Keep PRs focused and wait for CI, Vercel preview, and Copilot review.
+- Keep PRs focused and wait for CI, the Vercel preview, and any review requested on the pull request.
 - Use the issue templates for bugs, feature ideas, and maintenance tasks.
 - Merge dependency updates one at a time when possible.
 
@@ -143,5 +158,5 @@ For major upgrades:
 1. Open a dedicated maintenance issue or PR.
 2. Read the migration guide or release notes first.
 3. Upgrade the package and lockfile together.
-4. Run `npm test`, `npm run lint`, `npm run build`, and `npm run test:e2e`.
+4. Run the full [validation suite](#validation).
 5. Update docs, runbook notes, or the changelog when behavior, commands, Node requirements, or deployment assumptions change.

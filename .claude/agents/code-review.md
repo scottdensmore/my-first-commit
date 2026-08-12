@@ -36,6 +36,23 @@ review.
 - Duplication, dead code, debug leftovers, unrelated formatting churn, and comments or docs that no
   longer match behavior.
 
+## Re-review
+
+On a re-review the main agent supplies its previous report, the changes it made, and any finding it
+declined to change with a stated reason. Keep the full scope above — a re-review is not a diff
+against your last report.
+
+For each finding the author reports as fixed, verify the fix against the current file and say whether
+it resolves the defect or only reworks the wording around it.
+
+Judge each declined finding on its reasoning. Accept it and do not re-raise it when the reasoning
+holds; re-raise it when the reasoning is wrong, and say why. A `blocker` cannot be resolved this way:
+if you still believe a finding is a blocker after reading the author's reason, it stays a blocker and
+the change is not approved. Approval is yours to give, never the author's to declare.
+
+The fixes themselves are new code or prose and can carry new defects. Review them on their own merits
+as part of the full scope above.
+
 ## How to report
 
 Rank findings by severity. For each give **severity** (`blocker`, `should-fix`, or `nit`),

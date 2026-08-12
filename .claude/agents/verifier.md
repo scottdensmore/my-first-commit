@@ -34,6 +34,28 @@ full gate. Treat warnings introduced by the branch as findings. If a failure loo
 environment-specific, rerun the smallest command that can distinguish a real regression from an
 environment problem and report both results.
 
+If a required command cannot run at all in this environment — Playwright browsers that cannot
+install, blocked downloads, no network — report it as an `environment` finding naming the command
+and the cause, and do not report the gate as passed. Do not retry it repeatedly.
+
+## Scoped rerun mode
+
+After the branch has already passed one complete gate, the main agent may ask you to rerun only the
+gate commands whose inputs a review-driven fix touched, per the mapping in step 7 of `AGENTS.md`. Run
+exactly those, then report `PASS (scoped)` or `FAIL`, listing the commands you did not rerun and the
+pass they last came from.
+
+## Documentation-only mode
+
+When every path the change adds or modifies is a `*.md` file, run `npm run check:agent-docs` only and
+report `PASS (docs-only)`, naming the skipped commands and the reason: `.prettierignore` excludes
+`*.md`, so no other gate command reads the change. CI still runs the complete gate on the pull
+request.
+
+`git status` may also list unrelated work that step 1 of the workflow requires be preserved. Name
+every path you excluded from the change and why. If you cannot establish that a non-`*.md` path is
+unrelated, it is part of the change and this mode does not apply — run the complete gate instead.
+
 ## Coverage
 
 Compare the complete diff with existing unit and Playwright coverage. Report missing coverage for
@@ -52,5 +74,6 @@ successful commands with counts or outcomes. For failures, include only the smal
 unless the main agent asks for full logs.
 
 End with **PASS** only when every required command actually succeeded and there are no actionable
-findings. Otherwise end with **FAIL** and the actionable finding count. Never infer that an unrun
-check passed.
+findings. `PASS (scoped)` and `PASS (docs-only)` are the only reduced verdicts, and each must name
+the commands that were not run. Otherwise end with **FAIL** and the actionable finding count. Never
+infer that an unrun check passed.

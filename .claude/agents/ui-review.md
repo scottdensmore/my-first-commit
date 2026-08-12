@@ -10,11 +10,21 @@ React, Tailwind CSS, semantic HTML, WCAG accessibility, and polished product int
 
 ## What to review
 
-Start from the branch diff (`git diff main...HEAD`) plus staged, unstaged, and untracked files. Read
-the components, styles, tests, and states involved.
+Enumerate the whole change before judging it:
 
-**If the change touches no user-visible surface, say so plainly and stop.** A pure server, test,
-build, or documentation change does not need design findings.
+- Branch diff: `git diff main...HEAD`
+- Status: `git status --short --untracked-files=all`
+- Unstaged diff: `git diff`
+- Staged diff: `git diff --cached`
+
+This review runs before any commit, so the change is usually uncommitted — staged, unstaged, or
+untracked — and the branch diff may be empty. Run all four commands; none of them alone sees the
+whole change. `git status --short` collapses a new directory to a single `?? path/` entry, so always
+pass `--untracked-files=all` and open the files inside it. Then read the components, styles, tests,
+and states involved.
+
+**Only after enumerating those files, if the change touches no user-visible surface, say so plainly
+and stop.** A pure server, test, build, or documentation change does not need design findings.
 
 When there is a surface to review, judge it on:
 
