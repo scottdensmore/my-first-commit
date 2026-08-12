@@ -2,7 +2,7 @@
   "cli_version": "0.9.0",
   "checkpoint_id": "01KZT4K492SSNSP27KGTYKG1W9",
   "strategy": "manual-commit",
-  "branch": "scottdensmore/fix/hook-matchers",
+  "branch": "scottdensmore/chore/hook-matchers",
   "checkpoints_count": 2,
   "files_touched": [
     "CHANGELOG.md"
@@ -17,10 +17,10 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 19,
-    "cache_creation_tokens": 13464,
-    "cache_read_tokens": 2090278,
-    "output_tokens": 6522,
-    "api_call_count": 10
+    "input_tokens": 250,
+    "cache_creation_tokens": 194351,
+    "cache_read_tokens": 18310711,
+    "output_tokens": 83604,
+    "api_call_count": 134
   }
 }
