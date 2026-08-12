@@ -80,7 +80,7 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 - Use the [manual QA checklist](docs/manual-qa.md) for release and Open Graph preview validation.
 - Use the [release guide](docs/release.md) to cut tags and GitHub releases.
 - Use the [contributing guide](CONTRIBUTING.md) for branch, PR, review, and validation workflow.
-- Use [AGENTS.md](AGENTS.md) for coding agent instructions. It is the single canonical file; `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` are pointers to it, enforced by `npm run check:agent-docs`.
+- Use [AGENTS.md](AGENTS.md) for coding agent instructions. It is the single canonical file; `CLAUDE.md` and `GEMINI.md` are pointers to it, enforced by `npm run check:agent-docs`.
 - Use the [label guide](docs/labels.md) for issue and pull request labels.
 - Use the [changelog](CHANGELOG.md) to track user-facing changes and release notes.
 
