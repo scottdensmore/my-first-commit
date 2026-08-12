@@ -1,67 +1,21 @@
 # Manual QA Checklist
 
-Use this checklist for larger UI changes, production verification, or any release that changes search behavior, metadata, health checks, or generated assets.
+**In the local mocked run**, existing unit and Playwright coverage already asserts search,
+validation, empty and error states, landmarks, tab order, focus behavior, security headers, the
+branded 404 page, and `/api/health` in `tests/e2e/home.spec.ts`, plus rerunning and clearing recent
+searches in `app/page.test.tsx`. Do not re-test those by hand locally; if one of them can regress
+unnoticed, add coverage instead of a checklist item.
 
-## Core Search
-
-1. Open the app.
-2. Confirm the search input receives focus.
-3. Search for a known public GitHub username.
-4. Confirm the first public commit result appears.
-5. Confirm the URL includes `?user=<username>`.
-6. Click `Search another user`.
-7. Confirm the search field is focused again.
-
-## Validation And Empty States
-
-1. Enter an invalid username such as `octo_cat`.
-2. Confirm the inline validation message appears.
-3. Confirm the search button is disabled.
-4. Search for a username with no indexed public commits.
-5. Confirm the empty state explains that GitHub indexing can lag.
-6. Confirm `Edit username` returns focus to the search input.
-
-## Recent Searches And Privacy
-
-1. Complete a successful search.
-2. Return to the search form.
-3. Confirm the recent-search shortcut appears.
-4. Click the shortcut and confirm the search runs again.
-5. Click `Clear` and confirm recent searches disappear.
-6. Confirm the footer says recent searches stay in this browser only.
-
-## Error Recovery
-
-When testing mocked or local failure states, confirm:
-
-1. Rate-limit, timeout, unavailable, and unknown errors show a `Try again` action.
-2. Validation errors do not show a retry action.
-3. Error states use recovery-focused language.
-4. Keyboard users can reach retry and edit actions.
-
-## Accessibility
-
-1. Confirm the page exposes header, main, search, and footer landmarks.
-2. Tab from the search field to the search button.
-3. With recent searches visible, tab to `Clear` and the recent-search shortcut.
-4. Confirm validation messages are announced as status updates.
-5. Confirm empty states use `status` and error states use `alert`.
-
-## Production Health
-
-1. Confirm `CI / validate` passed on `main`.
-2. Confirm Vercel production deployment completed.
-3. Confirm `Production Health Check` passed.
-4. Open the production app.
-5. Check the runtime endpoint:
-
-   ```bash
-   curl https://my-first-commit-eta.vercel.app/api/health
-   ```
+**Against a deployed target the commit-search states are not covered.** They live in one
+`test.describe` block that calls `test.skip(isDeployedTarget, …)`, so the `Production Health Check`
+workflow never exercises a result, empty, or error state in production, though it does still cover
+landmarks, tab order, focus, security headers, the 404 page, and `/api/health` there. The CSP report
+POST is also skipped against a deployed target, deliberately, so production logs stay clean. Use this
+checklist for the commit-search states and for the judgments automation cannot make.
 
 ## Open Graph Preview
 
-Validate social preview assets after changing metadata, branding, generated image routes, or homepage positioning.
+Validate after changing metadata, branding, generated image routes, or homepage positioning.
 
 1. Open these URLs directly:
 
@@ -70,17 +24,32 @@ Validate social preview assets after changing metadata, branding, generated imag
    https://my-first-commit-eta.vercel.app/twitter-image
    ```
 
-2. Confirm each response renders a PNG image.
-3. Confirm the image says `My First Commit` and `Discover your origin.`
-4. Confirm the image is not cropped, blank, or visually stale.
-5. Confirm page metadata points at the generated routes:
+2. Confirm each image says `My First Commit` and `Discover your origin.`
+3. Confirm the image is not cropped, blank, or visually stale. Playwright checks that the routes
+   return a PNG; only a person can tell whether it still looks right.
+4. Check the rendered card in a social preview debugger — LinkedIn Post Inspector, Facebook Sharing
+   Debugger, or the X Card Validator — since each service caches and crops differently.
 
-   ```bash
-   curl -s https://my-first-commit-eta.vercel.app | grep -E 'og:image|twitter:image'
-   ```
+## Visual And Responsive Spot Check
 
-6. Use a social preview debugger when needed:
+For larger UI changes, on real devices rather than an emulated viewport:
 
-   - LinkedIn Post Inspector
-   - Facebook Sharing Debugger
-   - X Card Validator, if available for your account
+1. Confirm the layout holds from a narrow phone through a wide desktop window.
+2. Confirm long usernames, long commit messages, and browser zoom to 200% do not break the timeline.
+3. The app is light-only, with no `dark:` variants and a single `:root` palette. Confirm it stays
+   legible when the operating system is in dark mode and under forced-colors mode.
+
+## Production Spot Check
+
+The deployed browser health check skips every commit-search state, so these are unverified in
+production until a person looks. After a release:
+
+1. Run one real search against a live GitHub account. This is the only check that exercises the real
+   GitHub Search API with the production `GITHUB_TOKEN`.
+2. Search a username with no indexed public commits and confirm the empty state explains that GitHub
+   indexing can lag.
+3. Rate-limit and outage states cannot be triggered on demand in production; they depend on GitHub.
+   Local coverage already asserts their retry actions and recovery copy through the `e2e-rate-limit`
+   and `e2e-unavailable` fixtures, so do not retest them by hand. Confirm real behavior from Vercel
+   logs after the next live failure.
+4. Confirm the result timeline renders a real commit with its message, date, and repository link.

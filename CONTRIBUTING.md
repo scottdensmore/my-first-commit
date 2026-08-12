@@ -15,21 +15,11 @@ Thanks for helping improve My First Commit. Keep changes small, tested, and easy
 
 3. Make one logical change per pull request.
 4. Add or update tests with the change. New behavior should include unit coverage, and user-visible flows should include Playwright coverage when practical.
-5. Run validation before opening a PR:
-
-   ```bash
-   npm test
-   npm run lint
-   npm run format:check
-   npm run check:agent-docs
-   npm run check:labels
-   npm run build
-   npm run test:e2e
-   ```
-
-6. Open a pull request into `main`.
-7. Wait for CI, Vercel preview, and Copilot review.
-8. Address review comments before merging.
+5. Add a `CHANGELOG.md` entry under `## Unreleased` when the change affects behavior, docs, operations, dependencies, or security posture. Write it for a reader of the release notes and format it by hand, since Prettier ignores markdown. No CI check enforces this, but a version release fails without the section.
+6. Run validation before opening a PR. The command list lives in the [development guide](docs/development.md#validation) and matches the `CI / validate` job.
+7. Open a pull request into `main`.
+8. Wait for CI and the Vercel preview, plus any review that is requested on the pull request.
+9. Address review comments before merging.
 
 ## Pull Requests
 
