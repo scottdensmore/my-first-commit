@@ -18,7 +18,8 @@
     "test:e2e": "playwright test",
     "test:e2e:deployed": "PLAYWRIGHT_BASE_URL=https://my-first-commit-eta.vercel.app playwright test",
     "check:labels": "node scripts/sync-labels.mjs --check",
-    "sync:labels": "node scripts/sync-labels.mjs"
+    "sync:labels": "node scripts/sync-labels.mjs",
+    "validate": "npm audit && npm test && npm run test:e2e && npm run lint && npm run format:check && npm run check:agent-docs && npm run check:labels && npm run build"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

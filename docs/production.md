@@ -131,7 +131,7 @@ When responding to a health check failure:
 
 ## Manual Validation
 
-Run the local [validation suite](development.md#validation) first.
+Run `npm run validate`, the local [validation suite](development.md#validation), first.
 
 Run a health check against production:
 

@@ -7,7 +7,7 @@ Use this checklist when cutting a new My First Commit release.
 1. Confirm `main` is current and clean.
 2. Move relevant `CHANGELOG.md` entries from `Unreleased` into a dated version section.
 3. Confirm any user-facing docs, screenshots, or runbook notes are current.
-4. Run the local [validation suite](development.md#validation).
+4. Run `npm run validate`, the local [validation suite](development.md#validation).
 
 ## Publish Release
 

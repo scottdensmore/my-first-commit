@@ -16,7 +16,14 @@ tests that belong to the main agent. Focused journey results never replace final
 
 ## Final verification mode
 
-Run the complete CI-equivalent gate from the repository root:
+Run the complete gate from the repository root:
+
+```bash
+npm run validate
+```
+
+`CI / validate` runs this same script. It chains the following in order and stops at the first
+failure, so a later command reporting nothing means it never ran, not that it passed:
 
 ```bash
 npm audit
@@ -28,6 +35,9 @@ npm run check:agent-docs
 npm run check:labels
 npm run build
 ```
+
+When a failure is easier to read on its own, rerun that one command directly. Report which commands
+in the chain ran and which the early exit skipped.
 
 Use focused tests when they make a failure easier to diagnose, but do not substitute them for the
 full gate. Treat warnings introduced by the branch as findings. If a failure looks flaky or
@@ -47,9 +57,10 @@ pass they last came from.
 
 ## Unread-path mode
 
-When every path the change adds or modifies is one no gate command reads, run
-`npm run check:agent-docs` only and report `PASS (unread-paths)`, naming the skipped commands and the
-reason. CI still runs the complete gate on the pull request. That set is exactly:
+When every path the change adds or modifies is one that no gate command other than
+`npm run check:agent-docs` reads, run that command only and report `PASS (unread-paths)`, naming the
+skipped commands and the reason. CI still runs the complete gate on the pull request. That set is
+exactly:
 
 - Any `*.md` file.
 - Anything under the repository-root `.claude/`, `.codex/`, `.entire/`, `.vercel/`. Root-level only —

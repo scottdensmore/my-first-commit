@@ -23,29 +23,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Audit dependencies
-        run: npm audit
-
-      - name: Run unit tests
-        run: npm test
-
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run browser health checks
-        run: npm run test:e2e
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Check formatting
-        run: npm run format:check
-
-      - name: Check agent instruction files
-        run: npm run check:agent-docs
-
-      - name: Check label definitions
-        run: npm run check:labels
-
-      - name: Build
-        run: npm run build
+      # One step on purpose. `npm run validate` is the same gate contributors and agents run
+      # locally, so the gate has one definition rather than a local list and a CI list. The two
+      # documented copies of the chain, and this step's use of the script, are all checked by
+      # `npm run check:agent-docs`, which the chain itself runs.
+      #
+      # Two costs come with collapsing the steps, both accepted: the Actions UI names the failing
+      # step only as "Validate", so the failing command has to be read from the log, where each
+      # `npm run` prints its own banner; and the browser install above now runs before the fast
+      # checks, so a job that fails on lint still paid for it.
+      - name: Validate
+        run: npm run validate

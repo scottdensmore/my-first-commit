@@ -1,9 +1,19 @@
 #!/usr/bin/env node
-// Keeps AGENTS.md the single source of agent instructions.
+// Guards the three repository-level claims that nothing else can check, and that are wrong quietly
+// rather than loudly when they break:
 //
-// CLAUDE.md and GEMINI.md must stay byte-for-byte pointers to AGENTS.md. Claude Code's `#` shortcut
-// appends learnings to CLAUDE.md, which is exactly the drift this guards against: the check fails,
-// and the content moves to AGENTS.md instead.
+//   1. AGENTS.md is the single source of agent instructions. CLAUDE.md and GEMINI.md must stay
+//      byte-for-byte pointers to it. Claude Code's `#` shortcut appends learnings to CLAUDE.md,
+//      which is exactly the drift this guards against: the check fails, and the content moves to
+//      AGENTS.md instead. .github/copilot-instructions.md must not exist, since it would outrank it.
+//   2. The tooling-state directories are ignored by every gate that reads source, which is what
+//      makes the unread-path verification exemption in AGENTS.md sound.
+//   3. `npm run validate` is the one definition of the validation gate: CI invokes that script, and
+//      the two places that write the chain out in order still match it.
+//
+// Inputs are therefore wider than the name suggests: AGENTS.md and the pointer files, .prettierignore,
+// eslint.config.mjs, vitest.config.ts, package.json, .github/workflows/ci.yml, docs/development.md,
+// and .claude/agents/verifier.md. Step 7 of AGENTS.md maps each of those to this command.
 //
 // Usage:
 //   node scripts/check-agent-docs.mjs          verify (exit 1 on drift)
@@ -13,6 +23,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { chainedCommands, gateBlock, workflowRunsScript } from "./gate-commands.mjs";
 import { hasGitignoreEntry, hasQuotedEntry } from "./ignore-entries.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -53,6 +64,14 @@ const IGNORE_LISTS = [
   { file: "eslint.config.mjs", has: (contents, dir) => hasQuotedEntry(contents, `${dir}/**`) },
   { file: "vitest.config.ts", has: (contents, dir) => hasQuotedEntry(contents, `${dir}/**`) },
 ];
+
+// `npm run validate` is the gate. Two things have to hold for that to stay true. CI must invoke the
+// script rather than inlining its own step list, or the local gate and the CI gate become two lists
+// again. And the two files that write the chain out in order — readers need to know what the gate
+// covers, and the verifier needs the individual commands for scoped reruns — must still match it.
+const GATE_SCRIPT = "validate";
+const GATE_DOCS = ["docs/development.md", ".claude/agents/verifier.md"];
+const GATE_WORKFLOW = ".github/workflows/ci.yml";
 
 function wrap(text, width) {
   const lines = [];
@@ -134,6 +153,92 @@ async function main() {
   }
 
   let pointerDrifted = false;
+
+  const packageJson = await readIfPresent(join(repoRoot, "package.json"));
+  let gateScript;
+
+  if (packageJson === null) {
+    problems.push("package.json is missing. It defines the validation gate.");
+  } else {
+    let parsed;
+    let parseFailed = false;
+
+    try {
+      parsed = JSON.parse(packageJson);
+    } catch (error) {
+      parseFailed = true;
+      problems.push(`package.json is not valid JSON, so the gate cannot be read: ${error.message}`);
+    }
+
+    if (parseFailed) {
+      // Already reported; fall through without a second, vaguer message.
+    } else if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      problems.push("package.json does not contain a JSON object, so the gate cannot be read.");
+    } else {
+      gateScript = parsed.scripts?.[GATE_SCRIPT];
+
+      if (typeof gateScript !== "string") {
+        problems.push(
+          gateScript === undefined
+            ? `package.json has no \`${GATE_SCRIPT}\` script. It defines the validation gate.`
+            : `The \`${GATE_SCRIPT}\` script in package.json is not a string, so the gate cannot ` +
+                "be read. It must be the gate commands chained with `&&`.",
+        );
+        gateScript = undefined;
+      }
+    }
+  }
+
+  const gate = gateScript === undefined ? [] : chainedCommands(gateScript);
+
+  if (gateScript !== undefined && gate.length === 0) {
+    problems.push(`The \`${GATE_SCRIPT}\` script in package.json is empty. It defines the gate.`);
+  }
+
+  if (gate.length > 0) {
+    const workflow = await readIfPresent(join(repoRoot, GATE_WORKFLOW));
+
+    // The "CI cannot drift from the documented gate" claim rests entirely on CI invoking the
+    // script. Inlining the commands here again would make that claim silently false everywhere it
+    // is written down, and nothing else would notice.
+    if (workflow === null) {
+      problems.push(`${GATE_WORKFLOW} is missing. It runs the validation gate.`);
+    } else if (!workflowRunsScript(workflow, GATE_SCRIPT)) {
+      problems.push(
+        `${GATE_WORKFLOW} does not run \`npm run ${GATE_SCRIPT}\`. CI must invoke the gate script ` +
+          "rather than listing its commands, so that the local gate and the CI gate stay one " +
+          "definition.",
+      );
+    }
+
+    for (const file of GATE_DOCS) {
+      const contents = await readIfPresent(join(repoRoot, file));
+
+      if (contents === null) {
+        problems.push(`${file} is missing. It documents the \`${GATE_SCRIPT}\` command list.`);
+        continue;
+      }
+
+      const documented = gateBlock(contents, gate[0]);
+
+      if (documented === null) {
+        problems.push(
+          `${file} has no command block starting with \`${gate[0]}\`, so its copy of the ` +
+            `\`${GATE_SCRIPT}\` gate cannot be checked. Restore the block, or drop ${file} from ` +
+            "GATE_DOCS if it no longer lists the gate.",
+        );
+        continue;
+      }
+
+      if (documented.join("\n") !== gate.join("\n")) {
+        problems.push(
+          `${file} lists a different \`${GATE_SCRIPT}\` gate than package.json.\n` +
+            `    package.json: ${gate.join(", ")}\n` +
+            `    ${file}: ${documented.join(", ")}`,
+        );
+      }
+    }
+  }
 
   for (const list of IGNORE_LISTS) {
     const contents = await readIfPresent(join(repoRoot, list.file));
