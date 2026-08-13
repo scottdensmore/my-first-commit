@@ -45,16 +45,31 @@ gate commands whose inputs a review-driven fix touched, per the mapping in step 
 exactly those, then report `PASS (scoped)` or `FAIL`, listing the commands you did not rerun and the
 pass they last came from.
 
-## Documentation-only mode
+## Unread-path mode
 
-When every path the change adds or modifies is a `*.md` file, run `npm run check:agent-docs` only and
-report `PASS (docs-only)`, naming the skipped commands and the reason: `.prettierignore` excludes
-`*.md`, so no other gate command reads the change. CI still runs the complete gate on the pull
-request.
+When every path the change adds or modifies is one no gate command reads, run
+`npm run check:agent-docs` only and report `PASS (unread-paths)`, naming the skipped commands and the
+reason. CI still runs the complete gate on the pull request. That set is exactly:
+
+- Any `*.md` file.
+- Anything under the repository-root `.claude/`, `.codex/`, `.entire/`, `.vercel/`. Root-level only —
+  a nested `app/.claude/` is still linted and collected, so it gets no exemption.
+
+Those paths are ignored by configuration, not by convention: `.prettierignore` excludes them,
+`eslint.config.mjs` lists them in `globalIgnores`, and `vitest.config.ts` lists them in `exclude`.
+Lint and tests cover product code only, and `npm run check:agent-docs` fails if the three lists
+drift apart.
+
+Membership is the list above, not a tool result. `npx prettier --file-info <path>` reporting
+`"ignored": true` is a signal, not proof — `.prettierignore` also excludes `package-lock.json`,
+`next-env.d.ts`, and `public/*.svg`, which `npm audit`, `npm run build`, and the browser suite do
+read. Agent configuration is not the criterion either: `.github/hooks/` is agent tooling but appears
+in none of the three ignore lists, so this mode does not apply to it.
 
 `git status` may also list unrelated work that step 1 of the workflow requires be preserved. Name
-every path you excluded from the change and why. If you cannot establish that a non-`*.md` path is
-unrelated, it is part of the change and this mode does not apply — run the complete gate instead.
+every path you excluded from the change and why. If you cannot establish that a path outside the set
+above is unrelated, it is part of the change and this mode does not apply — run the complete gate
+instead.
 
 ## Coverage
 
@@ -74,6 +89,6 @@ successful commands with counts or outcomes. For failures, include only the smal
 unless the main agent asks for full logs.
 
 End with **PASS** only when every required command actually succeeded and there are no actionable
-findings. `PASS (scoped)` and `PASS (docs-only)` are the only reduced verdicts, and each must name
+findings. `PASS (scoped)` and `PASS (unread-paths)` are the only reduced verdicts, and each must name
 the commands that were not run. Otherwise end with **FAIL** and the actionable finding count. Never
 infer that an unrun check passed.

@@ -123,21 +123,42 @@ npm audit && npm test && npm run test:e2e && npm run lint && npm run format:chec
    | `package.json` or `package-lock.json` | `npm audit`, plus everything in the first row |
    | `AGENTS.md` or a pointer file | `npm run check:agent-docs` |
    | `.github/labels.yml` | `npm run check:labels` and `npm run format:check`, which does read YAML |
-   | any other `*.md` file | nothing; no gate command reads it |
+   | any other `*.md` file, or anything under the repository-root `.claude/`, `.codex/`, `.entire/`, `.vercel/` | nothing; no gate command reads it |
    | anything else | the complete gate |
 
-   Outside the documentation-only exemption below, the complete gate must run in full at least once
-   on the state that enters code review.
+   Outside the unread-path exemption below, the complete gate must run in full at least once on the
+   state that enters code review.
 
-   - **Documentation-only exemption.** When every path this change adds or modifies is a `*.md`
-     file, the verifier runs `npm run check:agent-docs` only and reports `PASS (docs-only)`, naming
-     the commands it skipped and why: `.prettierignore` excludes `*.md`, so no other gate command
-     can read the change. Enumerate with the branch diff plus `git status --short
-     --untracked-files=all`. Step 1 preserves unrelated work, so status may also list paths that
-     belong to the user rather than to this change; the verifier must name every such path it
-     excluded and why it is not part of the change. A single non-`*.md` path in the change itself
-     disqualifies the exemption. CI still runs the complete gate on the pull request; this shortens
-     the local loop only.
+   - **Unread-path exemption.** When every path this change adds or modifies is one no gate command
+     reads, the verifier runs `npm run check:agent-docs` only and reports `PASS (unread-paths)`,
+     naming the commands it skipped and why. That set is exactly:
+
+     - Any `*.md` file.
+     - Anything under the **repository-root** tooling-state directories `.claude/`, `.codex/`,
+       `.entire/`, `.vercel/`. Root-level only: `eslint.config.mjs` and `vitest.config.ts` anchor
+       their patterns to the root, so a nested `app/.claude/` is still linted and still collected,
+       and gets no exemption even though Prettier ignores it at any depth.
+
+     The gate ignores those paths by configuration rather than by convention, which is what makes
+     the exemption safe: `.prettierignore` excludes them, `eslint.config.mjs` lists them in
+     `globalIgnores`, and `vitest.config.ts` lists them in `exclude`. Tests and lint cover product
+     code only. Those three lists must stay in step; `npm run check:agent-docs` fails if they drift
+     apart, because this exemption is only as true as their agreement.
+
+     Membership is the list above, not a tool result. `npx prettier --file-info <path>` reporting
+     `"ignored": true` is a useful signal but is **not** sufficient alone — `.prettierignore` also
+     excludes `package-lock.json`, `next-env.d.ts`, and `public/*.svg`, each of which some gate
+     command does read. Agent configuration is likewise not the criterion: `.github/hooks/`
+     is agent tooling but appears in none of the three ignore lists, so a change touching it gets
+     no exemption.
+
+     Enumerate with the branch diff plus `git status --short --untracked-files=all`. Step 1
+     preserves unrelated work, so status may also list paths that belong to the user rather than to
+     this change; the verifier must name every such path it excluded and why it is not part of the
+     change. A single path outside the set disqualifies the exemption. When the change touches none
+     of `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md`, `npm run check:agent-docs` is a repository-state
+     check rather than verification of the change; run it anyway and say so. CI still runs the
+     complete gate on the pull request; this shortens the local loop only.
 
    - **Unfixable environment findings.** When the verifier reports an `environment` finding that no
      code change can resolve — Playwright browsers that cannot install, blocked downloads, no

@@ -8,7 +8,18 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    exclude: ["**/node_modules/**", "**/.next/**", "tests/e2e/**"],
+    // Unit tests cover product code only. The tooling-state directories hold external agent
+    // configuration, and Vitest does not skip dot-directories on its own, so a stray test file
+    // dropped there would otherwise be collected and run.
+    exclude: [
+      "**/node_modules/**",
+      "**/.next/**",
+      "tests/e2e/**",
+      ".claude/**",
+      ".codex/**",
+      ".entire/**",
+      ".vercel/**",
+    ],
     setupFiles: ["./vitest.setup.ts"],
   },
 });
