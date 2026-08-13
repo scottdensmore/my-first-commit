@@ -438,3 +438,65 @@ Not a finding: the `configLoader: 'native'` warning from `vitest.config.ts` is p
 **FAIL** — 1 actionable finding (vacuous test at `scripts/gate-commands.test.mjs:169`).</result>
 <usage><subagent_tokens>49183</subagent_tokens><tool_uses>24</tool_uses><duration_ms>424531</duration_ms></usage>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>aacba1045e9dbb6ce</task-id>
+<tool-use-id>toolu_018Cz4Bov51YLP1d4awMUoVT</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/8b32d28e-e529-4809-a03c-12f8ff7ad581/tasks/aacba1045e9dbb6ce.output</output-file>
+<status>completed</status>
+<summary>Agent "Final scoped rerun" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Independent verification complete. Working tree is unchanged from where you left it — my mutation experiment used only scratchpad copies and a checksum-verified restore.
+
+## Mutation test — reproduced and probed
+
+Backup sha256 `f13695…e2570`; identical after restore, confirmed twice.
+
+Running the real suite with the in-loop `blockIndent = null;` (line 81 of `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/gate-commands.mjs`) deleted:
+
+```
+FAIL scripts/gate-commands.test.mjs &gt; workflowRunsScript &gt; does not treat a later step as part of an earlier block scalar
+AssertionError: expected true to be false
+Tests  1 failed | 30 passed (31)
+```
+
+Matches your claim exactly, and that test is the unique mutant-killer — the other 30 are indifferent to the dedent exit.
+
+**Discriminating for the claimed reason, not by accident.** I ran three fixture variants against both the original and mutated modules:
+
+| Fixture | original | mutated |
+| --- | --- | --- |
+| new fixture (`env:` NOTE at indent 10, deeper than the `run:` key at 8) | false | **true** |
+| old fixture (first 5 lines, no mention of the script) | false | false |
+| mention at indent 6, shallower than the earlier `run:` key | false | false |
+
+That isolates the mechanism: the mention only becomes a false positive when it sits deeper than the earlier `run:` key, which is the only condition the dedent exit governs. The old fixture was indeed vacuous under mutation, and a shallower mention would have been vacuous too, so the specific indent chosen is what does the work. The mutated failure path is line 7 re-entering the `indent &gt; blockIndent` branch with `blockIndent` still 8; the `NOTE:` key never matches the `run:` regex, so under the correct implementation it is simply skipped.
+
+## Gate
+
+The `scripts/` row is all but one command of the chain, so I ran the complete gate rather than argue for a narrower set. `npm run validate` ran end to end with no early exit:
+
+- `npm audit` — 0 vulnerabilities
+- `npm test` — 20 files, 195 tests passed
+- `npm run test:e2e` — 23 passed (17.6s); the `[WebServer] Synthetic E2E Server Action rejection` log is the intended fixture for the recovery spec, not a failure
+- `npm run lint` — clean
+- `npm run format:check` — all files match
+- `npm run check:agent-docs` — "Agent docs are consistent."
+- `npm run check:labels` — valid, 13 labels
+- `npm run build` — compiled, 8 routes
+
+No new warnings.
+
+## Working tree
+
+`git status --short --untracked-files=all` is identical to the pre-run state: 11 modified files, plus untracked `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/gate-commands.mjs` and `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/gate-commands.test.mjs`. No stray files, no leftover mutation. Branch is `scottdensmore/chore/single-validation-command` at `ebe1c77` with the change uncommitted.
+
+## Coverage
+
+No missing coverage. The change is a test-fixture strengthening with no implementation delta; the fixture now kills a mutant that previously survived, which is a net coverage gain. Non-finding worth one line only if you care: the shallow-mention case in my table (a mention indented no deeper than the `run:` key) is handled correctly but has no test of its own — the existing comment-skip test covers the adjacent concern, so I would not add one.
+
+**PASS** — complete gate, not merely the scoped `scripts/` row.</result>
+<usage><subagent_tokens>25021</subagent_tokens><tool_uses>9</tool_uses><duration_ms>215994</duration_ms></usage>
+</task-notification>
