@@ -1,0 +1,440 @@
+<task-notification>
+<task-id>b3kfl4mrx</task-id>
+<tool-use-id>toolu_01BTy2MZ72qsrjzcZvM2Ckyo</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/ae375060-e807-4452-8616-11a2ca6e5b0b/tasks/b3kfl4mrx.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch PR 134 CI" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Ok lets merge things.
+
+---
+
+Is there anything else we left to fix?
+
+---
+
+was ithe .claude/ row problem
+
+---
+
+we can ignore those agent files and directories. Assume those are just fine
+
+---
+
+<task-notification>
+<task-id>bw3orbg2x</task-id>
+<tool-use-id>toolu_01RFhcHxJjrJrRK6LQe2uSRY</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/ae375060-e807-4452-8616-11a2ca6e5b0b/tasks/bw3orbg2x.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch CI for PR 135" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+what is next?
+
+---
+
+<task-notification>
+<task-id>a0ad2299f7abf3f3c</task-id>
+<tool-use-id>toolu_01RrM8hS4zdiiNM54fdwwe8K</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/8b32d28e-e529-4809-a03c-12f8ff7ad581/tasks/a0ad2299f7abf3f3c.output</output-file>
+<status>completed</status>
+<summary>Agent "UI surface review" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Enumeration
+
+All four views run:
+
+- `git diff main...HEAD` — **empty**; nothing committed on this branch yet.
+- `git status --short --untracked-files=all` — 11 modified tracked files, **zero untracked files**.
+- `git diff --cached` — empty; nothing staged.
+- `git diff` — the whole change, 11 files, +130/-45.
+
+Files touched: `/home/scottdensmore/Developer/scottdensmore/my-first-commit/package.json`, `/home/scottdensmore/Developer/scottdensmore/my-first-commit/.github/workflows/ci.yml`, `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/check-agent-docs.mjs`, `/home/scottdensmore/Developer/scottdensmore/my-first-commit/.claude/agents/verifier.md`, `/home/scottdensmore/Developer/scottdensmore/my-first-commit/AGENTS.md`, `/home/scottdensmore/Developer/scottdensmore/my-first-commit/CHANGELOG.md`, `/home/scottdensmore/Developer/scottdensmore/my-first-commit/CONTRIBUTING.md`, and `docs/{architecture,development,production,release}.md`.
+
+## No user-visible surface
+
+Nothing under `app/`, `components/`, `public/`, `tests/e2e/`, Tailwind config, or any style file is touched. No rendered markup, styling, interaction, state, or accessibility contract changes. There are no design findings to make, and I did not attempt to assess rendered behavior. The description you gave (scripts, CI workflow, docs, one check script) matches what is actually in the working tree.
+
+## Stray or leftover files: none staged, one on-disk note
+
+- No untracked files. `.next/`, `test-results/`, `tsconfig.tsbuildinfo`, `next-env.d.ts`, `node_modules/`, and `.entire/{logs,metadata,tmp}/` are all matched by `.gitignore` or `.entire/.gitignore`, so none can land in the commit.
+- `/home/scottdensmore/Developer/scottdensmore/my-first-commit/.agents/` is an empty leftover directory. Git will not commit it, so it is not a blocker for this change, but it is not in `.gitignore` and — unlike `.claude/`, `.codex/`, `.entire/`, `.vercel/` — it is in none of the `.prettierignore` / `eslint.config.mjs` / `vitest.config.ts` ignore lists that the sibling change established. Anything later dropped in it would be linted and collected as product code. Worth `rmdir`-ing now.
+
+## Observations outside the design remit
+
+Reported because I read the files to establish there was no surface; treat as input to the verifier/code-review pass, not as design findings. I confirmed `npm run check:agent-docs` passes on the working tree, that it correctly fails when a command is added to the `validate` script (tested against a scratch copy), and that Prettier and ESLint are clean on the changed non-markdown files.
+
+**should-fix** — `docs/development.md:72-76` and `AGENTS.md:34`
+The prose says two agent-facing files "keep deliberate inline copies of the expanded list ... [AGENTS.md](../AGENTS.md#commands) and the `verifier` sub-agent definition". AGENTS.md no longer keeps the expanded list; it keeps a one-line summary comment (`# audit, test, test:e2e, lint, format:check, check:agent-docs, check:labels, build`). `GATE_DOCS` in `scripts/check-agent-docs.mjs:62` covers only `docs/development.md` and `.claude/agents/verifier.md`, so that AGENTS.md summary is the one remaining unchecked copy of the list — exactly the drift this change claims to eliminate. Fix: reword the sentence to name only the verifier as an expanded copy, and either drop the command names from the AGENTS.md comment or extend the check to validate that inline summary too.
+
+**should-fix** — `AGENTS.md:130`
+The step-7 scoped-rerun table still says that "any other `*.md` file, or anything under the repository-root `.claude/`, ..." reruns "nothing; no gate command reads it". After this change `npm run check:agent-docs` reads both `docs/development.md` and `.claude/agents/verifier.md`. A review fix that edits either would rerun nothing locally and fail in CI. Fix: add those two paths to the `AGENTS.md` or a pointer file` row at line 128, or carve them out of the last row.
+
+**should-fix** — `scripts/check-agent-docs.mjs:105` and `:117`
+`chainedCommands` and `gateBlock` are non-trivial parsers (fence scanning, trailing-comment stripping via `/\s+#.*$/`) added inline with no unit test, while the repo precedent for exactly this kind of logic is `scripts/ignore-entries.mjs` plus `scripts/ignore-entries.test.mjs`, and `CONTRIBUTING.md:19` asks for tests with the change. Fix: extract both into a small module and cover the cases the comments describe — non-bash fences, an annotated block, and a block whose first command does not match.
+
+**polish** — `scripts/check-agent-docs.mjs:180`
+When `package.json` is missing entirely, `readIfPresent` returns `null`, `gateScript` stays `undefined`, and the reported problem is "package.json has no `validate` script", which sends the reader looking for a script in a file that is not there. Fix: branch on `packageJson === null` with a distinct "package.json is missing" message. Also note `JSON.parse` is unguarded, so malformed JSON throws a raw stack instead of a problem line.
+
+**polish** — `.github/workflows/ci.yml:26-33`
+Collapsing to one step is deliberate and well justified in the comment, but two small regressions come with it: the GitHub Actions UI no longer names the failing check at a glance (it is one "Validate" step), and "Install Playwright browsers" now always runs before any command, so a unit-test failure pays the browser install cost it previously skipped. Both are acceptable tradeoffs; if you want the annotation back cheaply, `echo "::group::"` markers are not needed — the per-command `npm run` banner already identifies each one, which the comment says.</result>
+<usage><subagent_tokens>29512</subagent_tokens><tool_uses>18</tool_uses><duration_ms>162637</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>ad5c70bf37bee1351</task-id>
+<tool-use-id>toolu_01Dm3JMaGLbtwmkhUEgJ9TtU</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/8b32d28e-e529-4809-a03c-12f8ff7ad581/tasks/ad5c70bf37bee1351.output</output-file>
+<status>completed</status>
+<summary>Agent "Full gate verification" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Gate result
+
+`npm run validate` ran to completion from the repository root: **exit 0**. All eight chained commands executed and each identified itself in the log.
+
+| # | Command | Evidence |
+| --- | --- | --- |
+| 1 | `npm audit` | `found 0 vulnerabilities` |
+| 2 | `npm test` | 19 test files, 164 tests passed (12.9s) |
+| 3 | `npm run test:e2e` | 23 Playwright tests passed (18.1s), 12 workers |
+| 4 | `npm run lint` | clean, no output |
+| 5 | `npm run format:check` | `All matched files use Prettier code style!` |
+| 6 | `npm run check:agent-docs` | `Agent docs are consistent.` |
+| 7 | `npm run check:labels` | `.github/labels.yml is valid (13 labels).` |
+| 8 | `npm run build` | `✓ Compiled successfully in 4.6s` |
+
+No command behaved differently than standalone, and nothing was masked: every command printed its own `&gt; my-first-commit@0.3.0 &lt;name&gt;` header, so the log proves all eight ran rather than the chain exiting early.
+
+## Script-under-test observations
+
+**Command set and order match the old workflow exactly.** `git diff main...HEAD -- .github/workflows/ci.yml` is empty because the branch has **no commits** — `HEAD` and `main` are both `ebe1c77`, and the entire change is unstaged in the worktree. I read the previous workflow with `git diff -- .github/workflows/ci.yml` instead. Old steps: `npm audit`, `npm test`, [Playwright install], `npm run test:e2e`, `npm run lint`, `npm run format:check`, `npm run check:agent-docs`, `npm run check:labels`, `npm run build`. New chain: identical eight commands, identical relative order, nothing added or dropped.
+
+**Playwright install still precedes validation.** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/.github/workflows/ci.yml:26-33` — `npx playwright install --with-deps chromium` is the step immediately before `Validate`. It moved earlier relative to `npm audit`/`npm test` (it used to sit between them and `test:e2e`); correctness is unaffected, the only effect is that a failing audit or unit test now pays the browser-install time first.
+
+**Failure attribution.** I probed npm chain behavior in a scratch package. npm 11.16 prints no `npm error` footer naming the failing inner script; the exit code propagates (`EXIT=1`) and the failing command is identified only by the last `&gt; ... &lt;name&gt;` header, with skipped commands inferable from absent headers. `npm audit` is the one non-script element and prints no header, but the chain echo on log line 2 plus audit's distinctive output makes it identifiable. `.claude/agents/verifier.md` already states this contract ("a later command reporting nothing means it never ran"), so attribution is documented, not worse than before — just indirect.
+
+**The new drift check is not vacuous.** Against a copy of the repo I confirmed it fails closed: adding a ninth command to `scripts.validate` (both docs flagged, exit 1), reordering `lint`/`format:check` in `verifier.md` (exit 1), deleting the expanded block from `docs/development.md` (exit 1), and removing the `validate` script entirely (exit 1).
+
+## Findings
+
+**1. `missing-coverage` — `chainedCommands` and `gateBlock` have no unit tests.** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/check-agent-docs.mjs:105-131`. I agree this warrants a finding. Both are pure functions with non-obvious parsing rules the comments themselves call out as subtle: consuming *every* fence so an unmatched `text`/`env` block cannot produce a phantom block, and stripping trailing `# ...` comments. The harness precedent exists — `scripts/ignore-entries.mjs` exports its helpers and `scripts/ignore-entries.test.mjs` tests them, and `npx vitest list --filesOnly` confirms `scripts/*.test.mjs` is collected. `check-agent-docs.mjs` currently exports nothing, so covering these needs the same extract-or-export move. Worth pinning at minimum: the phantom-block case the comment describes, comment stripping, and empty-segment filtering. Author can act.
+
+Related edge case a test would pin down: a full-line `#` comment at column 0 inside the documented block makes the block unmatchable (`\s+#.*$` requires leading whitespace), so the check reports the confusing "has no command block starting with `npm audit`" rather than a drift diff. It fails closed, so this is low severity, not a separate blocker.
+
+**2. `warning` — `docs/development.md` describes an inline copy AGENTS.md no longer has, and that copy is unchecked.** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/docs/development.md:73-77` says two agent-facing files "keep deliberate inline copies of the expanded list ... [AGENTS.md](../AGENTS.md#commands) and the `verifier` sub-agent definition" and to "Keep both in step when the script changes." After this change AGENTS.md keeps no expanded list — only a one-line summary comment at `/home/scottdensmore/Developer/scottdensmore/my-first-commit/AGENTS.md:34` enumerating all eight commands — and `GATE_DOCS` covers only `docs/development.md` and `.claude/agents/verifier.md`. I verified the gap: rewriting that comment to `# audit, test, lint, build` still yields `Agent docs are consistent.` (exit 0). Since the change's stated purpose is that the command list cannot drift silently, either the prose should stop claiming AGENTS.md holds a checked copy, or the summary should be covered. Author can act; adding AGENTS.md to `GATE_DOCS` as-is would fail, since no fenced block there starts with `npm audit`.
+
+## Coverage assessment
+
+No user-visible surface: the change touches `package.json` scripts, CI workflow, one script, and documentation. No new Playwright journey is warranted, and no `app/`/`components/` behavior changed. The only new executable logic is the two helper functions in finding 1. Documentation and CI-configuration portions qualify for the no-new-test exemption.
+
+## Notes (not findings)
+
+- Pre-existing, not branch-introduced: `npm test` emits a Vite `configLoader: 'native'` warning about ESM syntax in `vitest.config.ts`. The branch does not touch that file.
+- `CHANGELOG.md` has an `### Changed` entry describing the new script, CI change, and the extended check.
+
+**FAIL** — 2 actionable findings (the gate itself passed in full; both findings are about coverage and doc accuracy, not command failures).</result>
+<usage><subagent_tokens>35719</subagent_tokens><tool_uses>21</tool_uses><duration_ms>285063</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a2dda130f83ef4a98</task-id>
+<tool-use-id>toolu_0138LTKtdyFqo68TuUA27gar</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/8b32d28e-e529-4809-a03c-12f8ff7ad581/tasks/a2dda130f83ef4a98.output</output-file>
+<status>completed</status>
+<summary>Agent "Scoped rerun after fixes" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Scoped rerun — branch `scottdensmore/chore/single-validation-command`
+
+Note: the change is uncommitted in the working tree (`git log main..HEAD` is empty); I verified the working-tree state.
+
+### Commands rerun (step 7 `scripts/` row)
+
+| Command | Result |
+| --- | --- |
+| `npm test` | 20 files, 179 tests passed (includes `scripts/gate-commands.test.mjs`, confirmed via `npx vitest list`) |
+| `npm run test:e2e` | 23 passed (17.1s) |
+| `npm run lint` | clean |
+| `npm run format:check` | all files match |
+| `npm run check:agent-docs` | "Agent docs are consistent." |
+| `npm run check:labels` | valid (13 labels) |
+| `npm run build` | succeeded, 8 routes |
+
+Not rerun: **`npm audit`**, from the complete gate pass earlier on this branch. Justified: `package-lock.json` is unmodified and `git diff main -- package.json` is only the added `validate` script line, which `npm audit` does not read.
+
+### 1. Both prior findings resolved — verified
+
+- **Third copy of the command list:** gone. A scan of every tracked/untracked `*.md|yml|mjs|ts|json` for the eight gate commands returns only `package.json` (the script), `/home/scottdensmore/Developer/scottdensmore/my-first-commit/docs/development.md`, `/home/scottdensmore/Developer/scottdensmore/my-first-commit/.claude/agents/verifier.md` (both in `GATE_DOCS`), and `AGENTS.md`. The `AGENTS.md` hit is the `## Commands` script catalogue at lines 15–28 — non-gate order, includes `dev`/`test:watch`/`format`/`sync:labels`, first command `npm run dev`, and it omits `validate` entirely, so it is not a gate-chain copy and `gateBlock` cannot select it. The `npm run validate` block at line 34 now carries no enumeration. `.github/workflows/ci.yml` is a single `Validate` step.
+- **Distinct package.json failure modes:** confirmed by probe (below): missing → "package.json is missing. It defines the validation gate."; malformed → "package.json is not valid JSON, so the gate cannot be read: Unexpected end of JSON input"; script absent → "package.json has no `validate` script." No longer conflated.
+
+### 2. Drift check still fails closed — probed on a scratch copy
+
+Full repo copy at `.../scratchpad/probe` (node_modules symlinked); working tree untouched. Baseline passed, then 8 mutations, each exiting 1 with a specific message:
+
+| Probe | Result |
+| --- | --- |
+| Ninth command appended to `validate` | both `GATE_DOCS` reported as differing |
+| `check:labels` deleted from `docs/development.md` block | drift reported, both lists printed |
+| `lint`/`format:check` swapped in `verifier.md` | order drift reported |
+| `verifier.md` gate block deleted | "has no command block starting with `npm audit`" |
+| `validate` script deleted / malformed JSON / missing package.json | three distinct messages |
+| `docs/development.md` deleted | "is missing. It documents the `validate` command list." |
+
+Restored baseline passed again.
+
+### 3. Test coverage claims — genuine, with one correction to the stated rationale
+
+Four source mutations in the scratch copy each failed exactly the test whose name claims that behaviour: removing the full-line `#` filter → "ignores a full-line comment at column zero"; removing the trailing-comment strip → "strips trailing comments…"; removing the empty-segment filter → "drops empty segments…"; dropping the info-string guard → "does not read a non-shell block". No mutation passed silently.
+
+Correction on the phantom-block test: under a regex regressed to **strictly** `/```bash\n(...)```/`, "is not confused by a non-shell block appearing first" still **passes** — that mutation is caught instead by "accepts a fence with no info string" and "accepts a sh fence" (2 failed / 13 passed). The phantom test does fail (`gateBlock` returns `null`) under `/```(?:bash|sh)?\n(...)```/`, the bare-fence variant that actually produces the phantom block described in the comment at `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/gate-commands.test.mjs:86-88`. So the regression is pinned; the main agent's phrasing "only bash fences" names the one variant the phantom test does not catch, and the suite catches that one elsewhere. Observation, not an actionable finding.
+
+Also noted (non-actionable): the strictly-bash-only mutation leaves `node scripts/check-agent-docs.mjs` reporting success, since both real docs use ` ```bash ` fences — the unit tests are the only guard on that branch of behaviour, which is the point of extracting the module. And the new gate-comparison loop in `check-agent-docs.mjs` `main()` has no unit test of its own; it matches the existing `ignore-entries.mjs` pattern (logic tested in the module, `main()` exercised by running the script), and my 8 probes exercised it directly.
+
+No branch-introduced warnings. The Vite `configLoader: 'native'` warning in `npm test` is pre-existing (`vitest.config.ts` unchanged on this branch).
+
+**PASS (scoped)** — 0 actionable findings. Not rerun: `npm audit`, last passed in the complete gate on this branch; its inputs are unchanged.</result>
+<usage><subagent_tokens>48065</subagent_tokens><tool_uses>24</tool_uses><duration_ms>297942</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>aa0e84d6faeba8989</task-id>
+<tool-use-id>toolu_014nkWbY6wD7mtcCsEt7nxtc</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/8b32d28e-e529-4809-a03c-12f8ff7ad581/tasks/aa0e84d6faeba8989.output</output-file>
+<status>completed</status>
+<summary>Agent "Code review before commit" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>I read `AGENTS.md`, `docs/development.md`, `.claude/agents/verifier.md`, the full working-tree diff, and both untracked scripts, then exercised the new code: `node scripts/check-agent-docs.mjs` passes, all 15 new tests pass, eslint and prettier are clean on the changed files, and I confirmed in an isolated copy that adding a ninth command to `scripts.validate` makes `check:agent-docs` fail with both doc copies named. I also probed `gateBlock` with a 4-backtick nested fence, a near-miss first block (`npm audit --json`), and CRLF input — all behave correctly.
+
+## Findings
+
+**1. should-fix — `AGENTS.md:129` (step 7 table): the `package.json` row omits the check that now reads `package.json`.**
+This change makes `npm run check:agent-docs` read `package.json` (`scripts/check-agent-docs.mjs:146-172` parses it to get `scripts.validate`), but the rerun mapping for `package.json` or `package-lock.json` is still "`npm audit`, plus everything in the first row" — and the first row (line 127) has no `check:agent-docs`. Failure scenario: a review-driven fix adds `npm run check:types` to the `validate` script; the verifier reruns audit, unit, e2e, lint, format:check, build, all green, and the docs-vs-script drift the new check exists to catch ships to CI, where it fails. Fix: add `npm run check:agent-docs` to the `package.json` row. The same row-127 gap already applies to `eslint.config.mjs` and `vitest.config.ts` ("a root config file"), which `check:agent-docs` also reads for the ignore lists — pre-existing from the prior commit, but worth correcting in the same pass since this change is what re-touches the table.
+
+**2. should-fix — `AGENTS.md:140-142`: "it exists to read exactly these paths" is false, and contradicts the same bullet twelve lines later.**
+The new sentence says `check:agent-docs` "exists to read exactly these paths: `AGENTS.md`, the pointer files, and the two copies of the gate command list." It also reads `.prettierignore`, `eslint.config.mjs`, `vitest.config.ts`, and `package.json`, and probes `.github/copilot-instructions.md` — and lines 151-154 of the same bullet say so explicitly ("`npm run check:agent-docs` fails if they drift apart"). Failure scenario: an agent takes the "exactly" list literally, concludes a root-config or `package.json` edit is not an input to `check:agent-docs`, and applies the table's first row — reinforcing finding 1. Fix: say it is run in this mode because it is the one gate command that reads these paths, not that these are the only paths it reads.
+
+**3. nit — `docs/development.md:74-75` and `CHANGELOG.md:21`: "the only two places the commands are written out" is overstated.**
+`AGENTS.md:16-28` writes out all eight gate commands individually (audit, test, test:e2e, lint, format:check, check:agent-docs, check:labels, build), unchecked by anything. It is a script catalog rather than the ordered chain, so removing the chained one-liner did resolve the earlier "third copy" finding — but the claim as worded is contradicted by a file the same paragraph points at. Fix: scope the claim to the ordered chain ("the only two places the chain is written out in order"), in both the doc and the changelog entry.
+
+**4. nit — `.github/workflows/ci.yml:29-31`: "there is only one list" is not what the change achieved, and nothing enforces the CI half of the claim.**
+There are three lists — `package.json` plus two documented copies — which is precisely why `GATE_DOCS` had to be added. More usefully: the "CI cannot drift" guarantee rests on `ci.yml` continuing to call `npm run validate`, and no check asserts that; someone can inline a subset of steps here and every doc statement in this change becomes silently false. Concrete fix: reword to "one definition, and the doc copies are checked", and consider having `check-agent-docs.mjs` assert that `.github/workflows/ci.yml` contains `npm run validate` — cheap, and it closes the only unverified link in the chain the comment advertises. On the underlying trade: consolidating the eight steps is sound. Failure attribution survives because `npm run &lt;script&gt;` prints its banner for each of the seven script commands, and `npm audit`'s output is self-identifying.
+
+**5. nit — `.github/workflows/ci.yml:26-27`: browser install now precedes every fast check.**
+Previously `npm audit` and `npm test` ran before `npx playwright install --with-deps chromium`; now the apt-backed install runs on every job, including ones that fail on a lint error seconds later. That cost is inherent to the single step, but the comment presents the trade as granularity-only. Either accept it silently or name it in the comment.
+
+**6. nit — `docs/development.md:96-97`: the blocked-Playwright guidance predates the chained command.**
+"If that download is blocked by network policy, `npm run test:e2e` cannot run locally" was written when the doc listed eight separately-run commands. Now `test:e2e` is third in the chain, so a blocked install stops `lint`, `format:check`, `check:agent-docs`, `check:labels`, and `build` from running at all under `npm run validate`. This repo's environment is known to hit exactly that failure. Fix: add that when e2e cannot run, run the remaining gate commands individually and report which ones ran.
+
+**7. nit — `scripts/check-agent-docs.mjs:2-10`, `docs/development.md:66`, `AGENTS.md:23`: descriptions understate what the check enforces.**
+The file header still says only "Keeps AGENTS.md the single source of agent instructions"; the in-block annotation says "agent pointer files and tooling ignore lists"; `AGENTS.md` says "verify agent pointer files have not drifted". The script now enforces a third thing — the gate list. Fix: mention the gate list in all three (the annotation is comment text, so `gateBlock` strips it and it will not fight the check).
+
+**8. nit — `scripts/check-agent-docs.mjs:152-168`: the `parsed = null` sentinel is fail-open.**
+`null` doubles as "parse failed" and as a legitimate `JSON.parse` result, and a non-object parse result (`null`, an array, a string) skips the whole gate comparison with no problem pushed, so the check reports "Agent docs are consistent." Unreachable with a real `package.json`, but the fix is one line: use `problems.length` before/after, or check `typeof parsed === "object" &amp;&amp; parsed !== null` and push a problem otherwise. Relatedly, if `scripts.validate` were ever an empty string, `gate[0]` is `undefined` and the error reads "no command block starting with `undefined`".
+
+## Re-review of the previously reported fixes
+
+- **Unchecked third copy in `AGENTS.md`** — resolved for the ordered chain (the one-liner is gone and the two remaining copies are machine-checked); see finding 3 for the residual wording.
+- **Stale claim in `docs/development.md`** — resolved; the "keep all three in step" paragraph is replaced by an accurate description of the two checked copies.
+- **Missing tests on the two parsers** — resolved and the assertions are real. Each test fails if its behavior is removed: dropping the `#` filter, the trailing-comment strip, or the info-string filter each changes the returned value or flips it to `null`. The non-shell-block-first regression test documents a genuine past defect.
+- **Column-zero comment edge case** — resolved; `filter(line =&gt; !line.startsWith("#"))` runs after `trim()`, so both indented and column-zero comment lines are dropped, and `\s+#` preserves a `#` that is part of an argument.
+- **Conflated `package.json` failure messages** — resolved; missing file, invalid JSON, and missing script now produce three distinct messages. See finding 8 for the remaining sentinel issue in that same block.
+
+## Answers to the specific questions
+
+- **`chainedCommands` splitting on `&amp;&amp;`**: adequate for what the script is, and its documented limits are honest — it names quoted `&amp;&amp;`, subshells, and `||`, and correctly prescribes a real parser rather than a wider regex. Its failure mode is loud (a mangled segment produces a mismatch), not silent. The one trap the comment does not name is that the tempting "fix" is to paste the mangled segments into the docs, which would make the docs lie; one clause would close that.
+- **`gateBlock` fence scanner**: no remaining correctness gaps I could trigger. Consuming every fence regardless of info string is the right call, indented fences survive the per-line `trim()`, CRLF works, a near-miss first block (`npm audit --json`) is correctly skipped, and a 4-backtick wrapper does not desync it. Unsupported inputs (tilde fences, an info string with attributes) fail closed with a clear "no command block starting with ..." error.
+- **Step 7 table and unread-path exemption**: the `verifier.md`/`docs/development.md` row is now correct, and adding "anything **else** under" to the tooling-directory row correctly removes the collision with it. `package.json` (finding 1) and the "exactly these paths" prose (finding 2) are still wrong.
+- **False or overstated documentation**: findings 2, 3, 4, 6, and 7. Everything else I checked holds — "stops at the first failure", "a command that printed nothing did not run", the `#validation` anchor, and the `CI / validate` job-name references are all accurate.
+
+**CHANGES REQUESTED** — 8 actionable findings (2 should-fix, 6 nits).</result>
+<usage><subagent_tokens>54097</subagent_tokens><tool_uses>15</tool_uses><duration_ms>380502</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a7ced947775ec4a6b</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/8b32d28e-e529-4809-a03c-12f8ff7ad581/tasks/a7ced947775ec4a6b.output</output-file>
+<status>completed</status>
+<summary>Agent "Re-review after fixes" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>I re-reviewed the whole working tree (branch diff is empty — everything is unstaged plus two untracked files in `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/`), read the docs, and exercised the new check against a scratch copy of the repo.
+
+## Verification of the 8 reported fixes
+
+| # | Verdict |
+| --- | --- |
+| 1 | Partially resolved — rows are split and each named path routes to `check:agent-docs`, but two routing claims are wrong (findings 2 and 3 below). |
+| 2 | Resolved. `AGENTS.md:142-145` and `.claude/agents/verifier.md:60-63` now state the carve-out accurately. |
+| 3 | Resolved and true. `grep` over the repo confirms `docs/development.md:60-69` and `.claude/agents/verifier.md:28-37` are the only ordered copies. |
+| 4 | Comment resolved; the new enforcement is weaker than the comment claims (finding 1). |
+| 5 | Resolved (`.github/workflows/ci.yml:34-37`). |
+| 6 | Resolved and accurate — `test:e2e` is third in the chain (`docs/development.md:98-101`). |
+| 7 | Resolved. Every input the header lists is routed by the step-7 table (except the forbidden-doc path, finding 3). |
+| 8 | Resolved. I reproduced all six failure modes independently: missing, malformed (reported exactly once), array, empty script, missing `ci.yml`, and fully inlined CI steps each exit 1 with a distinct message. Also confirmed drift detection fires per-doc when `package.json` or either doc changes. Residual nit 4. |
+
+New code reviewed on its own merits: `scripts/gate-commands.mjs` and its 15 tests pass, are collected by plain `npm test` (`npx vitest list` shows `scripts/gate-commands.test.mjs`), the non-shell-fence regression test is a real assertion, and `eslint`/`prettier --check` are clean over `scripts/`, `package.json`, and `.github/workflows/ci.yml`.
+
+## Findings
+
+**should-fix — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/check-agent-docs.mjs:202`**
+`workflow.includes("npm run validate")` matches anywhere in the file, including the comment that this same change adds at `.github/workflows/ci.yml:29` ("`npm run validate` is the same gate contributors and agents run locally"). So the check passes on the comment alone. I reproduced it on a scratch copy: I replaced the `Validate` step with re-inlined `npm audit` / `npm test` steps and left the comment in place — `node scripts/check-agent-docs.mjs` printed `Agent docs are consistent.` and exited 0. That is exactly the drift the check exists to catch, and it is now asserted as enforced in `AGENTS.md:131`, `docs/development.md:77-79`, `CHANGELOG.md:21`, the `ci.yml` comment, and the script header. Removing the comment as well does fire the check, which is why the author's probe passed. Fix: strip comment lines before the substring test, which also keeps `run: |` blocks working:
+
+```js
+const executable = workflow
+  .split("\n")
+  .filter((line) =&gt; !/^\s*#/.test(line))
+  .join("\n");
+// ... else if (!executable.includes(`npm run ${GATE_SCRIPT}`)) {
+```
+
+**should-fix — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/AGENTS.md:131`**
+The new `.github/workflows/ci.yml` row routes only to `npm run check:agent-docs`, but `npm run format:check` reads that file: `npx prettier --file-info .github/workflows/ci.yml` returns `{"ignored": false, "inferredParser": "yaml"}`, and `.prettierignore` excludes only `*.md` and the tooling dirs. The very next row (`.github/labels.yml`) gets this right with "and `npm run format:check`, which does read YAML". Failure scenario: a review fix reindents or adds a step in `ci.yml`, the verifier reruns only `check:agent-docs` per this row, the state is committed, and CI fails on `format:check`. Fix: `| `.github/workflows/ci.yml` | `npm run check:agent-docs`, which verifies CI still invokes `npm run validate`, and `npm run format:check`, which reads YAML |`.
+
+**nit — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/AGENTS.md:134`**
+"any other `*.md` file … | nothing; no gate command reads it" is false for `.github/copilot-instructions.md`: `FORBIDDEN_DOCS` in `scripts/check-agent-docs.mjs:56` stats it and fails if it exists. A fix that regenerates that file would route to "nothing" and then fail CI. The unread-path exemption is unaffected (it runs `check:agent-docs` regardless), so this is only the table row and the script-header input list. Fix: name the exception in the row, e.g. "any other `*.md` file except `.github/copilot-instructions.md`, which must not exist".
+
+**nit — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/check-agent-docs.mjs:188`**
+`chainedCommands(gateScript)` assumes a string. `"validate": 5` or `"validate": {}` in `package.json` throws `TypeError: script.split is not a function` and prints a stack trace rather than one of the deliberate messages. Exit code is still non-zero, so CI still fails, but the message is the one thing the rest of this block invests in. Fix: widen the guard at line 180 to `if (typeof gateScript !== "string")` with a message covering both missing and non-string.
+
+Everything else checks out: the CI comment's two accepted costs are accurate, the blocked-Playwright guidance matches the chain order, `check:agent-docs` reads every path the step-7 table routes to it, and the CHANGELOG's "only two places the chain is written out in order" survives a repo-wide grep.
+
+**CHANGES REQUESTED** — 4 actionable findings (2 should-fix, 2 nits).</result>
+<usage><subagent_tokens>52294</subagent_tokens><tool_uses>21</tool_uses><duration_ms>249698</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>ab7682035b1f26055</task-id>
+<tool-use-id>toolu_017dmZ29Bi16yDo195xxcaLj</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/8b32d28e-e529-4809-a03c-12f8ff7ad581/tasks/ab7682035b1f26055.output</output-file>
+<status>completed</status>
+<summary>Agent "Second re-review" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>I read `AGENTS.md`, `docs/development.md`, the verifier definition, and the full scope (branch diff is empty — all 12 modified files plus the 2 untracked `scripts/gate-commands*.mjs` are uncommitted), then re-verified each reported fix independently in an isolated copy of the repo (`scripts/`, `package.json`, `ci.yml`, `docs/development.md`, `.claude/agents/verifier.md`, pointers, ignore lists) so my probes could not touch your working tree.
+
+## Verification of the four reported fixes
+
+**1. `GATE_WORKFLOW` substring check — resolved, and the comment-stripping is correct for YAML.**
+I reproduced my original scenario: the `Validate` step replaced by inlined `npm audit` / `npm test` steps with your explanatory comment left in place. `grep -c "npm run validate"` returns 1 (the comment), and the check now exits 1 with the right message. Baseline still exits 0.
+
+On the YAML question you asked me to judge specifically — stripping only whole lines matching `/^\s*#/` is the right conservative choice, and I confirmed it empirically:
+
+- `run: |` block scalar with the command on its own line → passes.
+- `run: |` with a shell comment line above the command → passes (the comment is stripped, the command survives).
+- `run: npm run validate # the whole gate` (trailing YAML comment) → passes; you never strip mid-line, so the value is intact.
+- `run: "npm run validate # not a comment"` (hash inside a quoted scalar) → passes; the line does not start with `#`.
+- Mention only as a shell comment inside a block scalar, commands re-inlined below → correctly fails.
+
+The one theoretical false-strip is a `#`-leading line inside a `run: |` block, which in shell is a comment and therefore never the executable invocation you are testing for. And stripping can only remove lines, never synthesize the substring across a join, since you rejoin with `\n`. No false pass is reachable by this transformation.
+
+**2. `ci.yml` row names both commands** — confirmed at `AGENTS.md:131`, and `npx prettier --check .github/workflows/ci.yml` is clean, so the `format:check` half of the row is real.
+
+**3. `.github/copilot-instructions.md` carve-out** — present at `AGENTS.md:134`. The exemption bullet below still reads "Any `*.md` file", which stays sound: creating that file is caught by `check:agent-docs`, the one command the exemption runs.
+
+**4. Non-string `validate` guard — resolved.** I probed `5`, `{}`, `["npm audit"]`, `null`, `true`, `""`, `"   "`, `"&amp;&amp; &amp;&amp;"`, a missing script, a top-level JSON array, invalid JSON, and a missing `package.json`. All exit 1 with a distinct, accurate message and no stack trace. `null` correctly takes the "not a string" branch rather than the "no script" one.
+
+I also confirmed the drift detection itself has teeth: dropping `npm run check:labels` from `verifier.md`, dropping `npm test` from `docs/development.md`, and breaking the block's first command each produce a specific, actionable failure. `npx vitest run scripts/` gives 47 passing across 2 files (the default include picks up `.mjs`), and `prettier --check` is clean over `scripts/`, `package.json`, and `ci.yml`.
+
+## Findings
+
+**should-fix — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/check-agent-docs.mjs:205-224`: the CI-invocation check is the only new gate logic with no unit test, and it is exactly the logic that was defective last round.**
+`chainedCommands` and `gateBlock` were extracted into `gate-commands.mjs` and have 47 tests between them; the comment-stripping filter and the substring test stayed inline in `main()` and are covered only by your manual probe and mine. Failure scenario: someone later simplifies the filter to `!line.trim().startsWith("#")` on the raw string, or drops the strip while "cleaning up", and the guard silently returns to vacuous — the same defect, undetected, with `npm run check:agent-docs` still green. Concrete fix, matching the pattern this change already establishes twice: move it to `gate-commands.mjs` as `workflowRunsScript(workflow, scriptName)` and add three cases — the plain `run:` form, the `run: |` block form, and the regression (explanatory comment naming the script above re-inlined commands) asserting `false`. This is roughly fifteen lines of source movement and three assertions.
+
+Not blocking in my judgment: the behavior is correct today and I verified it against six workflow shapes. Either land the test in this commit or open a follow-up issue and record that resolution in the commit body.
+
+**nit — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/check-agent-docs.mjs:218`: the substring test does not require the match to be on a `run:` line.** A workflow with `- name: Run npm run validate steps` and an inlined `run: npm audit` passes (I confirmed exit 0). Realistic drift deletes the step name along with the run, so this is close to unreachable; if you extract the helper per the finding above, tightening it to lines matching `/^\s*(-\s*)?run:/` plus block-scalar bodies costs little.
+
+**nit — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/AGENTS.md:134`: the table row can be parsed two ways.** "any other `*.md` file except `.github/copilot-instructions.md`, which must not exist, or anything else under the repository-root `.claude/` …" reads either as "except (X or the tooling dirs)" or as "(any other md except X) or (the tooling dirs)". The second is what you mean, and the first would push tooling-dir changes into "the complete gate" — wasteful rather than unsafe, but it contradicts the exemption bullet twenty lines below. Splitting the carve-out into its own clause, e.g. "any other `*.md` file, or anything else under the repository-root `.claude/`, `.codex/`, `.entire/`, `.vercel/` (`.github/copilot-instructions.md` is excluded: it must not exist, and `check:agent-docs` reads for it)", removes the ambiguity.
+
+Nothing else: no stale copies of the old chain survive anywhere (`npm audit &amp;&amp; …` appears only in `package.json`), the step-7 routing table now covers every new input of `check:agent-docs`, the CI comment names both costs of collapsing the steps honestly, and there is no product-code surface, so there is no accessibility or client/server boundary impact to assess.
+
+**APPROVED** — 3 actionable findings, none blocking (1 should-fix, 2 nits).</result>
+<usage><subagent_tokens>50447</subagent_tokens><tool_uses>16</tool_uses><duration_ms>266703</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a036fadd161b4c253</task-id>
+<tool-use-id>toolu_01WuLS94c44dx1Q6MnSoH2Q7</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/8b32d28e-e529-4809-a03c-12f8ff7ad581/tasks/a036fadd161b4c253.output</output-file>
+<status>completed</status>
+<summary>Agent "Scoped rerun before commit" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>All eight gate commands ran green, individually and through the new `npm run validate` chain. One actionable finding.
+
+## Commands run (scoped: `scripts/` row of step 7)
+
+| Command | Result |
+| --- | --- |
+| `npm test` | 20 files, 195 tests passed |
+| `npm run test:e2e` | 23 passed (chromium, 17.3s) |
+| `npm run lint` | clean |
+| `npm run format:check` | all files match |
+| `npm run check:agent-docs` | "Agent docs are consistent." |
+| `npm run check:labels` | 13 labels valid |
+| `npm run build` | compiled, 8 routes |
+| `npm audit` | 0 vulnerabilities |
+
+I ran `npm audit` despite `package.json`/`package-lock.json` being unchanged — it is fast and removes the judgement call. `package-lock.json` is confirmed untouched (`git diff HEAD -- package-lock.json` empty). I also ran `npm run validate` end to end, since the chaining script is the change itself: exit 0, all eight banners printed in order.
+
+## 1. Comment-bypass genuinely closed — confirmed
+
+Re-probed on a scratch copy at `/tmp/.../scratchpad/probe`. I re-inlined the eight original CI steps under the Validate step while leaving the explanatory comment block (which contains the literal `npm run validate`) in place. `grep -c 'npm run validate'` on the mutated file returns `1` — so the old substring test would have passed. The current check fails:
+
+```
+.github/workflows/ci.yml does not run `npm run validate`. CI must invoke the gate script
+rather than listing its commands, so that the local gate and the CI gate stay one definition.
+EXIT:1
+```
+
+Cross-check: with `workflowRunsScript` replaced by a plain substring search, `check-agent-docs.mjs` reports "Agent docs are consistent." on that same re-inlined file. The defect was real and is now closed.
+
+## 2. Real `ci.yml` not passing by accident — confirmed
+
+`npm run check:agent-docs` passes against the unmodified `/home/scottdensmore/Developer/scottdensmore/my-first-commit/.github/workflows/ci.yml`, and it is the `run:` value of the `Validate` step that satisfies it, not the comment above it — probe 1 removed only the `run:` value and the check flipped to failing.
+
+## 3. The 16 `workflowRunsScript` tests — 15 of 16 assert what they claim
+
+Mutation-killed, so each is load-bearing:
+
+| Mutation | Tests killed |
+| --- | --- |
+| `run:`-key restriction removed (plain substring) | 3: comment-above-re-inlined, shell-comment-in-block-scalar, step-named-after-script |
+| word-boundary lookahead removed | 1: `validate:deployed` |
+| block-scalar body handling removed | 7: block scalar body + all 6 indicators |
+| YAML comment-line skip removed | 1: shell comment in block scalar |
+| run value must equal invocation exactly | 2: trailing YAML comment, script in a chain |
+
+**Finding — `missing-coverage`, actionable.** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/gate-commands.test.mjs:169` — `"does not treat a later step as part of an earlier block scalar"` is vacuous. Its fixture contains no occurrence of `npm run validate` anywhere, so `toBe(false)` holds no matter what the block-scalar logic does. Deleting the dedent-exit at `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/gate-commands.mjs:81` (`blockIndent = null;`) leaves all 31 tests passing — that branch has no test that observes it. I verified a discriminating fixture exists: putting the script name on the dedented line that follows the block scalar (e.g. `- name: Replaces npm run validate with steps` in place of `- name: Audit`) returns `false` unmutated and `true` with the dedent-exit removed. Fixture-only change; the implementation is correct as written.
+
+Note: the "63 tests" figure is the whole `scripts/` directory (31 in `gate-commands.test.mjs` + 32 in `ignore-entries.test.mjs`), not `gate-commands.test.mjs` alone. The `workflowRunsScript` count of 16 is accurate.
+
+Secondary, lower priority: the new `package.json` guards in `/home/scottdensmore/Developer/scottdensmore/my-first-commit/scripts/check-agent-docs.mjs:160-196` (missing file, invalid JSON, non-object, non-string `validate`) have no test. `check-agent-docs.mjs` is a CLI that derives `repoRoot` from `import.meta.url` and calls `process.exit`, so testing those branches needs a refactor rather than a test addition — reasonable to accept, but the branch adds them untested while adding tests for everything it extracted.
+
+## 4. Working tree — no strays
+
+`git status --short --untracked-files=all` lists 11 modified and 2 untracked files, all coherent with this change: `scripts/gate-commands.mjs` and `scripts/gate-commands.test.mjs` (new), `scripts/check-agent-docs.mjs`, `package.json` (adds the `validate` script), `.github/workflows/ci.yml`, and the doc set (`AGENTS.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `docs/architecture.md`, `docs/development.md`, `docs/production.md`, `docs/release.md`, `.claude/agents/verifier.md`) — I read each of the diffs you did not name, and every one is a `npm run validate` rewording. Nothing excluded as unrelated. No backup, `.orig`, or scratch artifacts leaked into the repo; all probes ran on the copy, and the restored copy is byte-identical to the repo file.
+
+Not a finding: the `configLoader: 'native'` warning from `vitest.config.ts` is pre-existing — that file is not modified by this branch.
+
+## Not rerun
+
+`npm audit`, `npm test`, `npm run test:e2e`, `npm run lint`, `npm run format:check`, `npm run check:agent-docs`, `npm run check:labels`, `npm run build` — none skipped. All eight ran on this state, so nothing rests on the earlier pass.
+
+**FAIL** — 1 actionable finding (vacuous test at `scripts/gate-commands.test.mjs:169`).</result>
+<usage><subagent_tokens>49183</subagent_tokens><tool_uses>24</tool_uses><duration_ms>424531</duration_ms></usage>
+</task-notification>
