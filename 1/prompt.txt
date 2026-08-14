@@ -888,3 +888,47 @@ Optional, not counted: `docs/manual-qa.md:51-54` lists rate-limit and outage as 
 **APPROVED** — 4 actionable findings, all nits; none blocks the commit. The change is ready.</result>
 <usage><subagent_tokens>75663</subagent_tokens><tool_uses>34</tool_uses><duration_ms>265890</duration_ms></usage>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>adefaa4b3a7dbbfff</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/adefaa4b3a7dbbfff.output</output-file>
+<status>completed</status>
+<summary>Agent "Final gate before commit" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Full gate run from the repository root, exit 0. Log at `/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/scratchpad/validate.log`.
+
+## Gate results (all eight ran, in CI order)
+
+| Command | Result |
+| --- | --- |
+| `npm audit` | found 0 vulnerabilities |
+| `npm test` | 22 files, 211 tests passed |
+| `npm run test:e2e` | 25 passed (18.5s), 12 workers, no retries |
+| `npm run lint` | clean, no output |
+| `npm run format:check` | All matched files use Prettier code style |
+| `npm run check:agent-docs` | passed |
+| `npm run check:labels` | valid (13 labels) |
+| `npm run build` | compiled 4.6s, TypeScript 12.3s, 8 static pages |
+
+Nothing was skipped by early exit. The only warning in the log is the pre-existing Vite `configLoader: 'native'` notice about ESM syntax in `vitest.config.ts:1:1`; that file is not in this branch's diff, so it is not a branch-introduced warning.
+
+## Your three specific questions
+
+**1. `git diff main -- app/actions.ts` contains only incomplete-results work — confirmed.** The file has exactly four hunks: the `INCOMPLETE_COMMIT_SEARCH_MESSAGE` constant plus the `incomplete = false` parameter on `commitSearchError`; the `e2e-incomplete` fixture; the `e2e-incomplete-empty` case; and the `incomplete_results` handling in `getCommits`. The `followUpCommit` hoist is gone — `grep` for that identifier in `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/actions.ts` returns nothing. The `e2e-result` and `e2e-malformed-dates` fixtures are field-for-field identical to `main`: they produce no hunks at all, and the shared `mockCommit` they spread (line 54) is likewise untouched. The new `e2e-incomplete` fixture reuses that same pre-existing `mockCommit`, so it adds no fixture data of its own.
+
+**2. The new focus assertion is meaningful, not incidentally true.** The heading carries `tabIndex={-1}` (`/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:41`), so it can receive focus only from an explicit call — the `useEffect` at lines 28-30. Remove that effect and focus stays on the submitting control, so `toBeFocused()` fails. It is also not at risk of a competing focus: the only other focus call on this screen is `app/page.tsx:43-47`, guarded by `if (!result?.found)`, which is false on this path, and child effects run before parent effects regardless. The assertion is paired with the `aria-describedby` lookup, so the test now substantiates both halves of the comment's claim — focus lands on the heading, and the heading's accessible description is the caveat text. What no browser test can assert is the actual screen-reader utterance; that limit is inherent, not a gap.
+
+**3. Copy and wrapping changes are covered.** The partial-result paragraph states the fact rather than instructing a retry (lines 75-78), and `break-words` is on both that paragraph and the summary above it (lines 49, 75).
+
+## Coverage
+
+No missing coverage. The new behavior is exercised at every layer: server action including the `github_commit_search_incomplete` event and the no-cache guarantee (`app/actions.test.ts:310-383`), cache rejection and the non-eviction case (`app/commitSearchCache.test.ts:51-59`), message and retry-eligibility for the unfinished-empty state (`app/home/resultMessages.test.ts:24,57`), the copied-result caveat (`app/home/sharedSearch.test.ts:67-72`), the flag threading through search execution (`app/home/searchExecution.test.ts:92-107`), and the two new component test files. Browser coverage adds both journeys, including the AA contrast check on the new amber panel. The doc-only edits to `AGENTS.md`, `docs/production.md`, `docs/manual-qa.md`, and `docs/architecture.md` need no test; `check:agent-docs` covers the `AGENTS.md` fixture-list edit.
+
+`git status` lists nothing outside this change — the two untracked files are the new `SearchResults.test.tsx` and `SearchErrorState.test.tsx`, both part of the work.
+
+**PASS**</result>
+<usage><subagent_tokens>36523</subagent_tokens><tool_uses>19</tool_uses><duration_ms>716969</duration_ms></usage>
+</task-notification>
