@@ -20,18 +20,24 @@ npm run test:watch
 npm run lint             # eslint
 npm run format           # prettier --write
 npm run format:check     # prettier --check (CI gate)
-npm run check:agent-docs # verify agent pointer files have not drifted
+npm run check:agent-docs # verify pointer files, ignore lists, and the gate list have not drifted
 npm run check:labels     # validate .github/labels.yml
 npm run sync:labels      # reconcile GitHub labels with .github/labels.yml
 npm run build
 npm run test:e2e         # playwright; boots its own dev server on :3100
 ```
 
-Full pre-PR validation, matching the `CI / validate` job:
+Full pre-PR validation. The `CI / validate` job runs this same script, so it is the gate, not a copy
+of it:
 
 ```bash
-npm audit && npm test && npm run test:e2e && npm run lint && npm run format:check && npm run check:agent-docs && npm run check:labels && npm run build
+npm run validate         # the complete gate, in CI order
 ```
+
+It stops at the first failure, so a command that printed nothing did not run and did not pass. The
+commands it chains are listed in [docs/development.md](docs/development.md#validation) and in the
+`verifier` sub-agent definition; deliberately not here, because a third copy is a third thing to
+drift. Run the individual commands above when a scoped rerun is enough, per step 7.
 
 ## Layout
 
@@ -118,20 +124,26 @@ npm audit && npm test && npm run test:e2e && npm run lint && npm run format:chec
 
    | Fix touches | Verifier reruns |
    | --- | --- |
-   | `app/`, `components/`, `tests/`, or a root config file | `npm test`, `npm run test:e2e`, `npm run lint`, `npm run format:check`, `npm run build` |
-   | `scripts/` | everything in the row above, plus `npm run check:agent-docs` and `npm run check:labels`, which those scripts implement |
-   | `package.json` or `package-lock.json` | `npm audit`, plus everything in the first row |
-   | `AGENTS.md` or a pointer file | `npm run check:agent-docs` |
+   | `app/`, `components/`, or `tests/` | `npm test`, `npm run test:e2e`, `npm run lint`, `npm run format:check`, `npm run build` |
+   | a root config file | everything in the row above, plus `npm run check:agent-docs`, which reads `.prettierignore`, `eslint.config.mjs`, and `vitest.config.ts` |
+   | `scripts/` | everything in the first row, plus `npm run check:agent-docs` and `npm run check:labels`, which those scripts implement |
+   | `package.json` or `package-lock.json` | `npm audit` and `npm run check:agent-docs`, which reads the `validate` script, plus everything in the first row |
+   | `.github/workflows/ci.yml` | `npm run check:agent-docs`, which verifies CI still invokes `npm run validate`, and `npm run format:check`, which reads YAML |
+   | `AGENTS.md`, a pointer file, `docs/development.md`, or `.claude/agents/verifier.md` | `npm run check:agent-docs`, which reads all of them |
    | `.github/labels.yml` | `npm run check:labels` and `npm run format:check`, which does read YAML |
-   | any other `*.md` file, or anything under the repository-root `.claude/`, `.codex/`, `.entire/`, `.vercel/` | nothing; no gate command reads it |
+   | any other `*.md` file, or anything else under the repository-root `.claude/`, `.codex/`, `.entire/`, `.vercel/` | nothing; no gate command reads it |
+   | `.github/copilot-instructions.md` | `npm run check:agent-docs`, which fails if that file exists at all |
    | anything else | the complete gate |
 
    Outside the unread-path exemption below, the complete gate must run in full at least once on the
    state that enters code review.
 
-   - **Unread-path exemption.** When every path this change adds or modifies is one no gate command
-     reads, the verifier runs `npm run check:agent-docs` only and reports `PASS (unread-paths)`,
-     naming the commands it skipped and why. That set is exactly:
+   - **Unread-path exemption.** When every path this change adds or modifies is one that no gate
+     command other than `npm run check:agent-docs` reads, the verifier runs that command only and
+     reports `PASS (unread-paths)`, naming the commands it skipped and why. `check:agent-docs` is
+     the exception because it is the one gate command that reads these paths at all, not because
+     they are all it reads — it also reads several files that the table above routes to it. The
+     exempt set is exactly:
 
      - Any `*.md` file.
      - Anything under the **repository-root** tooling-state directories `.claude/`, `.codex/`,

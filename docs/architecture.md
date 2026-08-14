@@ -44,7 +44,7 @@ GitHub API failures are normalized in `app/actions.ts`:
 
 GitHub Actions and Vercel cover the main production path:
 
-- `CI / validate` runs the dependency audit, unit tests, browser checks, lint, formatting, agent-document and label checks, and the production build. See the [validation suite](development.md#validation).
+- `CI / validate` runs `npm run validate`: the dependency audit, unit tests, browser checks, lint, formatting, agent-document and label checks, and the production build. Contributors run the same script locally. See the [validation suite](development.md#validation).
 - Vercel deploys previews and production.
 - `Production Health Check` runs Playwright against the public production URL after successful production deployments.
 - `Promote Production Release` creates a tag and GitHub release only after the matching `main` CI run and production health check pass.

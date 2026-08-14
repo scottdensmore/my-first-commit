@@ -47,22 +47,37 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Validation
 
-This is the canonical pre-PR command list. It matches the `CI / validate` job in
-`.github/workflows/ci.yml`. The contributing guide, runbook, and release guide link here rather than
-keeping their own copies. Two agent-facing files keep deliberate inline copies, because agents follow
-instructions better than links: [AGENTS.md](../AGENTS.md#commands) and the `verifier` sub-agent
-definition in `.claude/agents/`. Keep all three in step when CI changes.
+Run the complete gate with one command before opening a pull request:
 
 ```bash
-npm audit
-npm test
-npm run test:e2e
-npm run lint
-npm run format:check
-npm run check:agent-docs
-npm run check:labels
-npm run build
+npm run validate
 ```
+
+The `CI / validate` job runs this same script, so there is one definition of the gate rather than a
+local list and a CI list that can drift apart. It runs these commands in order and stops at the first
+failure:
+
+```bash
+npm audit                # dependency vulnerability gate
+npm test                 # vitest run (jsdom)
+npm run test:e2e         # playwright; boots its own dev server on :3100
+npm run lint             # eslint
+npm run format:check     # prettier --check
+npm run check:agent-docs # agent pointer files, tooling ignore lists, and this gate list
+npm run check:labels     # .github/labels.yml
+npm run build            # production build
+```
+
+Run individual commands while developing; run `npm run validate` before pushing. The contributing
+guide, runbook, and release guide link here rather than keeping their own copies.
+
+The expanded list above and the copy in the `verifier` sub-agent definition in `.claude/agents/` are
+the only two places the chain is written out in order. The verifier keeps its own copy because agents
+follow instructions better than links, and because it needs the individual commands for the scoped
+reruns in [AGENTS.md](../AGENTS.md) step 7. Both copies are checked against the `validate` script by
+`npm run check:agent-docs`, which also fails if CI stops invoking that script, so neither the docs
+nor CI can drift from the gate silently. The `## Commands` catalogue in `AGENTS.md` lists the same
+commands individually, but as a reference of what each one does rather than as the ordered gate.
 
 `npm run check:agent-docs` keeps [AGENTS.md](../AGENTS.md) the single source of agent instructions.
 `CLAUDE.md` and `GEMINI.md` must stay byte-for-byte pointers to it, so notes captured by a coding
@@ -80,8 +95,10 @@ These are the same browsers CI installs:
 npx playwright install --with-deps chromium
 ```
 
-If that download is blocked by network policy, `npm run test:e2e` cannot run locally. Report which
-gate commands could not run rather than treating the gate as passed.
+If that download is blocked by network policy, `npm run test:e2e` cannot run locally. Because it is
+third in the chain, `npm run validate` then stops there and never reaches lint, formatting, the
+document and label checks, or the build. Run the remaining commands individually, and report which
+ones ran rather than treating the gate as passed.
 
 Run the local browser health check:
 
@@ -158,5 +175,5 @@ For major upgrades:
 1. Open a dedicated maintenance issue or PR.
 2. Read the migration guide or release notes first.
 3. Upgrade the package and lockfile together.
-4. Run the full [validation suite](#validation).
+4. Run `npm run validate`, the full [validation suite](#validation).
 5. Update docs, runbook notes, or the changelog when behavior, commands, Node requirements, or deployment assumptions change.
