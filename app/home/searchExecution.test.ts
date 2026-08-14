@@ -89,6 +89,22 @@ describe("runCommitSearch", () => {
       found: true,
       error_kind: "none",
       commit_count: 1,
+      incomplete: false,
+    });
+  });
+
+  it("reports partial results in the completion event", async () => {
+    vi.mocked(getCommits).mockResolvedValue({ ...foundResult, incomplete: true });
+    const { handlers, settle } = createHandlers();
+
+    runCommitSearch("octocat", {}, handlers);
+    await settle();
+
+    expect(trackAppEvent).toHaveBeenCalledWith("search_completed", {
+      found: true,
+      error_kind: "none",
+      commit_count: 1,
+      incomplete: true,
     });
   });
 
@@ -130,6 +146,7 @@ describe("runCommitSearch", () => {
       found: false,
       error_kind: "empty",
       commit_count: 0,
+      incomplete: false,
     });
   });
 
@@ -153,6 +170,7 @@ describe("runCommitSearch", () => {
       found: false,
       error_kind: "unknown",
       commit_count: 0,
+      incomplete: false,
     });
     expect(JSON.stringify(handlers.setResult.mock.calls)).not.toContain("octocat");
     expect(JSON.stringify(handlers.setResult.mock.calls)).not.toContain("secret");
@@ -211,6 +229,7 @@ describe("runCommitSearch", () => {
       found: true,
       error_kind: "none",
       commit_count: 1,
+      incomplete: false,
     });
   });
 });

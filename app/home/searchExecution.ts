@@ -61,6 +61,7 @@ export function runCommitSearch(
       found: data.found,
       error_kind: data.errorKind ?? "none",
       commit_count: data.commits.length,
+      incomplete: Boolean(data.incomplete),
     });
     if (data.found) {
       setRecentSearches((currentSearches) => {

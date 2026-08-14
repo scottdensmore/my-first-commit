@@ -48,11 +48,20 @@ function captureReactRenderErrors(page: Page) {
 
 async function getTextContrastRatio(locator: Locator) {
   return locator.evaluate((element) => {
-    const parseRgb = (color: string) =>
-      color
-        .match(/[\d.]+/g)!
-        .slice(0, 3)
-        .map(Number);
+    // Resolve through a canvas rather than parsing the string: Tailwind 4 serializes its
+    // palette as `lab()`, whose digits are not sRGB channels. Reading them as though they
+    // were reports a wrong ratio in both directions -- it once passed a 9.1:1 button as
+    // 16.4:1 while failing an 8.8:1 panel as 1.2:1.
+    const parseRgb = (color: string) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+      const context = canvas.getContext("2d")!;
+      context.fillStyle = color;
+      context.fillRect(0, 0, 1, 1);
+      const [red, green, blue] = context.getImageData(0, 0, 1, 1).data;
+      return [red!, green!, blue!];
+    };
     const relativeLuminance = (color: string) => {
       const channels = parseRgb(color).map((channel) => {
         const normalized = channel / 255;
@@ -467,6 +476,37 @@ test.describe("local mocked commit search states", () => {
     expect(renderErrors).toEqual([]);
   });
 
+  test("home page flags a partial result instead of claiming a first commit", async ({ page }) => {
+    await searchForUsername(page, "e2e-incomplete");
+
+    await expect(
+      page.getByRole("heading", { name: "Earliest public commit found so far" }),
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toHaveCount(0);
+
+    const partialResultRegion = page.getByRole("region", {
+      name: "GitHub returned a partial result",
+    });
+    await expect(partialResultRegion).toBeVisible();
+    await expect(partialResultRegion).toContainText(/an earlier commit may be missing/i);
+    await expect(page.getByRole("link", { name: "Initial public commit" })).toBeVisible();
+
+    // The caveat is announced through the heading that takes focus, not a live region.
+    const partialResultHeading = page.getByRole("heading", {
+      name: "Earliest public commit found so far",
+    });
+    await expect(partialResultHeading).toBeFocused();
+    const descriptionId = await partialResultHeading.getAttribute("aria-describedby");
+    expect(descriptionId).toBeTruthy();
+    await expect(page.locator(`#${descriptionId}`)).toContainText(
+      /an earlier commit may be missing/i,
+    );
+
+    // The amber panel is a new surface in this palette; assert it clears AA rather than
+    // trusting that it looks fine.
+    expect(await getTextContrastRatio(partialResultRegion)).toBeGreaterThanOrEqual(4.5);
+  });
+
   test("home page renders a helpful empty search state", async ({ page }) => {
     await searchForUsername(page, "e2e-empty");
 
@@ -478,6 +518,20 @@ test.describe("local mocked commit search states", () => {
       page.getByRole("button", { name: "Search example username octocat" }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "Edit username" })).toBeVisible();
+  });
+
+  test("home page distinguishes an unfinished search from an empty one", async ({ page }) => {
+    await searchForUsername(page, "e2e-incomplete-empty");
+
+    await expect(
+      page.getByRole("heading", { name: "GitHub could not finish this search." }),
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "No public commits found." })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+    // Suggesting other profiles would imply this username was searched and came up empty.
+    await expect(page.getByRole("heading", { name: "Check a known public profile" })).toHaveCount(
+      0,
+    );
   });
 
   test("home page renders retry guidance for rate limits", async ({ page }) => {

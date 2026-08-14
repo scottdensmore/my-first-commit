@@ -4,10 +4,14 @@ import FirstCommitDisplay from "@/components/FirstCommitDisplay";
 import { githubRepositoryUrl } from "../githubUrls";
 import type { CommitInfo } from "../commitTypes";
 
+const PARTIAL_RESULT_HEADING_ID = "partial-result-heading";
+const PARTIAL_RESULT_DESCRIPTION_ID = "partial-result-description";
+
 type SearchResultsProps = {
   commits: CommitInfo[];
   lastSearchedUsername: string;
   shareStatus: string;
+  isIncomplete: boolean;
   onCopy: () => void;
 };
 
@@ -15,6 +19,7 @@ export default function SearchResults({
   commits,
   lastSearchedUsername,
   shareStatus,
+  isIncomplete,
   onCopy,
 }: SearchResultsProps) {
   const resultHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -34,11 +39,14 @@ export default function SearchResults({
         <h1
           ref={resultHeadingRef}
           tabIndex={-1}
+          aria-describedby={isIncomplete ? PARTIAL_RESULT_DESCRIPTION_ID : undefined}
           className="rounded-sm text-2xl font-bold text-[var(--github-gray-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2"
         >
-          First public commit found
+          {isIncomplete ? "Earliest public commit found so far" : "First public commit found"}
         </h1>
-        <p className="mt-2 text-sm text-[var(--github-gray-dark)]">
+        {/* A GitHub handle is an unbreakable 40-character token, which overflows the panel at
+            a 320px viewport -- the same width 200% zoom produces on a 640px window. */}
+        <p className="mt-2 text-sm break-words text-[var(--github-gray-dark)]">
           Earliest indexed public commit for @{lastSearchedUsername} appears in{" "}
           <a
             href={githubRepositoryUrl(firstCommit.repository.full_name)}
@@ -50,10 +58,31 @@ export default function SearchResults({
             ? `, with nearby early commits across ${uniqueRepositoryCount} repositories.`
             : "."}
         </p>
-        <p className="mt-2 text-sm text-[var(--github-gray-text)]">
-          GitHub search may miss older commits when indexing is incomplete, delayed, or author
-          metadata changed.
-        </p>
+        {isIncomplete ? (
+          // The caveat is announced through the heading's description rather than a live
+          // region: the block mounts with its content already inside it, which screen
+          // readers often skip, while the heading reliably takes focus when results arrive.
+          <section
+            aria-labelledby={PARTIAL_RESULT_HEADING_ID}
+            className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-5 text-amber-900 shadow-sm"
+          >
+            <h2 id={PARTIAL_RESULT_HEADING_ID} className="text-base font-semibold">
+              GitHub returned a partial result
+            </h2>
+            {/* States the fact rather than instructing a retry: this view offers no search
+                control, so an instruction would send the visitor to the header's "Search
+                another user", which clears the very handle they were told to reuse. */}
+            <p id={PARTIAL_RESULT_DESCRIPTION_ID} className="mt-2 text-sm break-words">
+              The search timed out before scanning every commit, so an earlier commit may be
+              missing. A repeated search for @{lastSearchedUsername} often reaches the full history.
+            </p>
+          </section>
+        ) : (
+          <p className="mt-2 text-sm text-[var(--github-gray-text)]">
+            GitHub search may miss older commits when indexing is incomplete, delayed, or author
+            metadata changed.
+          </p>
+        )}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <button
             type="button"

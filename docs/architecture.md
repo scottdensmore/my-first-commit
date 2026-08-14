@@ -9,7 +9,7 @@ My First Commit is a small Next.js App Router application. It has no database, n
 3. The client validates the username format before submitting.
 4. The client calls the `getCommits` server action in `app/actions.ts`.
 5. The server action queries GitHub's public commit search through Octokit.
-6. Successful and empty GitHub search results are cached briefly in memory by normalized username to reduce repeated API calls.
+6. Successful and empty GitHub search results are cached briefly in memory by normalized username to reduce repeated API calls. Results GitHub marked `incomplete_results` are never cached, so a retry can reach a complete answer.
 7. The server action maps GitHub results into the app's `CommitData` shape.
 8. The client renders the first public commit and the next several commits in `FirstCommitDisplay`.
 9. Successful searches are stored in browser `localStorage` as recent-search shortcuts.
@@ -37,6 +37,7 @@ My First Commit is a small Next.js App Router application. It has no database, n
 GitHub API failures are normalized in `app/actions.ts`:
 
 - Empty public search results show a polite empty state.
+- GitHub sets `incomplete_results` when a commit search times out before scanning every commit, and still returns `200` with a partial item list. Those results carry `incomplete: true` through `CommitData`: the UI presents them as the earliest commit found so far rather than the first commit and explains that searching again may reach the full history, and the cache refuses to store them so that a repeated search can. An incomplete search that returned no items is reported as an unfinished search, never as an absence of commits.
 - Rate limits, timeouts, unavailable GitHub services, validation failures, and unknown errors show recovery-focused copy.
 - Server-side failures are logged with structured event names and sanitized fields only, without usernames, tokens, or raw Octokit error objects.
 

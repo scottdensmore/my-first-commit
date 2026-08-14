@@ -108,6 +108,7 @@ describe("Home", () => {
       found: true,
       error_kind: "none",
       commit_count: 1,
+      incomplete: false,
     });
     expect(mockTrack.mock.calls.flatMap((call) => Object.values(call[1] ?? {}))).not.toContain(
       "octo",
