@@ -3,9 +3,31 @@
   "checkpoint_id": "01M0124KWSYH4XAWM5JWMQT4XF",
   "strategy": "manual-commit",
   "branch": "scottdensmore/fix/incomplete-commit-search-results",
-  "checkpoints_count": 15,
+  "checkpoints_count": 30,
   "files_touched": [
-    "docs/manual-qa.md"
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "app/actions.test.ts",
+    "app/actions.ts",
+    "app/commitSearchCache.test.ts",
+    "app/commitSearchCache.ts",
+    "app/commitTypes.ts",
+    "app/home/SearchErrorState.test.tsx",
+    "app/home/SearchErrorState.tsx",
+    "app/home/SearchResults.test.tsx",
+    "app/home/SearchResults.tsx",
+    "app/home/resultMessages.test.ts",
+    "app/home/resultMessages.ts",
+    "app/home/searchExecution.test.ts",
+    "app/home/searchExecution.ts",
+    "app/home/sharedSearch.test.ts",
+    "app/home/sharedSearch.ts",
+    "app/page.test.tsx",
+    "app/page.tsx",
+    "docs/architecture.md",
+    "docs/manual-qa.md",
+    "docs/production.md",
+    "tests/e2e/home.spec.ts"
   ],
   "sessions": [
     {
@@ -14,13 +36,27 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0
+    "input_tokens": 433,
+    "cache_creation_tokens": 581185,
+    "cache_read_tokens": 40406452,
+    "output_tokens": 124848,
+    "api_call_count": 217,
+    "subagent_tokens": {
+      "input_tokens": 508,
+      "cache_creation_tokens": 707083,
+      "cache_read_tokens": 8935502,
+      "output_tokens": 222507,
+      "api_call_count": 254
+    }
   }
 }

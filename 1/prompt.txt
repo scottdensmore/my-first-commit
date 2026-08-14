@@ -1,0 +1,890 @@
+Analyze this project and the prs for it and lets figure out what to work on next
+
+---
+
+<task-notification>
+<task-id>a78110a60fcfdb662</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a78110a60fcfdb662.output</output-file>
+<status>completed</status>
+<summary>Agent "Verify branch changes" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>All gate commands ran and passed. One coverage gap to report.
+
+## Gate run: `npm run validate` (complete, CI order)
+
+| Command | Result |
+| --- | --- |
+| `npm audit` | 0 vulnerabilities |
+| `npm test` | 21 files, 208 tests passed (13.6s) |
+| `npm run test:e2e` | 25 passed (18.5s), chromium-1234 from `~/.cache/ms-playwright`, no install attempted |
+| `npm run lint` | clean |
+| `npm run format:check` | all matched files use Prettier style |
+| `npm run check:agent-docs` | "Agent docs are consistent." |
+| `npm run check:labels` | valid (13 labels) |
+| `npm run build` | compiled in 4.7s, TypeScript clean, 8 static pages |
+
+Scope covered: the branch has no commits ahead of `main`, so the entire change is the 15 modified files plus untracked `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.test.tsx` (256 insertions). Nothing in `git status --short --untracked-files=all` was excluded as unrelated.
+
+Both requested new journeys passed:
+
+- `tests/e2e/home.spec.ts:470` "home page flags a partial result and offers a retry" (4.5s)
+- `tests/e2e/home.spec.ts:501` "home page distinguishes an unfinished search from an empty one" (3.9s)
+
+No existing journey regressed. `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/page.test.tsx` is unmodified and green, so the two new required `SearchResults` props (`isIncomplete`, `isPending`, plus `onRetry`) did not break it — `page.tsx` supplies them at the only call site.
+
+No new warnings. The Vite `configLoader: 'native'` notice comes from `vitest.config.ts`, which this branch does not touch, and the `csp_violation` / "Synthetic E2E Server Action rejection" web-server lines are the expected output of pre-existing fixtures.
+
+## Findings
+
+**missing-coverage** — nothing asserts that the new retry actually re-issues the search.
+
+`/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/page.tsx:218` wires `onRetry` to `runSearch`, but:
+
+- `app/home/SearchResults.test.tsx` only proves the button calls its `onRetry` prop with the username; the prop is a stub there.
+- `app/page.test.tsx` has no `incomplete` or "Search again" coverage at all.
+- The journey at `tests/e2e/home.spec.ts:470` clicks "Search again" and then re-asserts the same partial-result banner. The `e2e-incomplete` fixture is stateless and returns the identical payload every time, so that assertion passes unchanged even if the click were a no-op.
+
+The result is that the banner's own promise — "searching again can return the complete history" — is not verified anywhere. The repository already has the pattern that would fix this: `e2e-reject-once-*` is a stateful fixture, and the journey at `tests/e2e/home.spec.ts:539` uses it to prove a retry both re-issues and succeeds the second time. An `e2e-incomplete-once-*` fixture that returns a complete result on the second call, or a `page.test.tsx` case asserting a second `getCommits` call after the click, would close it. The author can act on this.
+
+Other new behavior is well covered: `incomplete` propagation and the non-caching decision in `app/actions.test.ts` and `app/commitSearchCache.test.ts` (including the eviction case), the empty-versus-unfinished copy split in `app/home/resultMessages.test.ts`, the share-text caveat in `app/home/sharedSearch.test.ts`, and the heading, `role="status"` banner, and disabled-while-pending contracts in `app/home/SearchResults.test.tsx`. The `AGENTS.md`, `CHANGELOG.md`, and `docs/architecture.md` edits are documentation and need no test.
+
+**FAIL** (1 actionable finding — every gate command passed; the finding is coverage, not a failure)</result>
+<usage><subagent_tokens>32541</subagent_tokens><tool_uses>11</tool_uses><duration_ms>158754</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a529404941d2a99e6</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a529404941d2a99e6.output</output-file>
+<status>completed</status>
+<summary>Agent "Run focused failing journey" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>**Focused journey result: FAILS as expected (red step confirmed).**
+
+Command run (only this one):
+
+```
+npx playwright test tests/e2e/home.spec.ts -g "retrying a partial result reaches the complete history"
+```
+
+Result: `1 failed`, chromium project, 6.9s. No install attempted; the existing browser launched fine.
+
+**Failing assertion** — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/tests/e2e/home.spec.ts:488`, the first assertion in the test:
+
+```
+Locator: getByRole('heading', { name: 'Earliest commit found so far' })
+Expected: visible ... element(s) not found (5000ms)
+```
+
+**Failure reason matches the expectation.** The generated username `e2e-incomplete-once-0-mstalrhu` has no fixture branch in `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/actions.ts` (mocks there cover `e2e-incomplete`, `e2e-incomplete-empty`, the `e2e-reject-once-` prefix, and the other reserved names), so the server action fell through to the real GitHub search. Corroborating evidence:
+
+- Dev-server log during the run: `status: 422, errorKind: 'validation', event: 'github_commit_search_failed'` — a real Octokit call for a non-existent user.
+- Rendered accessibility snapshot shows the validation error state (`heading "GitHub could not validate that search."` plus `button "Edit username"`), not a partial result. The partial-result banner and `Search again` button never appeared, so nothing could clear.
+
+**Ruled out as causes:**
+
+- Not a syntax/parse error — the file compiled and the test executed to its first assertion.
+- Not a selector typo — `app/home/SearchResults.tsx:45` renders exactly `"Earliest commit found so far"` when incomplete and `"First public commit found"` otherwise, and `app/actions.ts:82` supplies the `"Follow-up commit"` message the later assertion uses.
+- Not a missing browser — chromium launched and produced a full page snapshot.
+
+The test fails only because the fixture is absent; the later assertions (banner cleared, `Search again` gone, follow-up commit link) were never reached and remain unverified until the fixture lands.
+
+**FAIL (expected red)** — 1 failing test, expected reason confirmed. This focused run does not substitute for the complete gate.</result>
+<usage><subagent_tokens>17473</subagent_tokens><tool_uses>6</tool_uses><duration_ms>46352</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a80b145acb8e2c67f</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a80b145acb8e2c67f.output</output-file>
+<status>completed</status>
+<summary>Agent "Green rerun after fixture fix" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Scoped rerun on `scottdensmore/fix/incomplete-commit-search-results`. All six commands run, all green.
+
+**1. Previously-red journey now passes**
+
+```
+✓  21 [chromium] › tests/e2e/home.spec.ts:483:7 › local mocked commit search states ›
+     retrying a partial result reaches the complete history (4.9s)
+```
+
+It is a real green, not a vacuous one. `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/actions.ts:106-120` returns the partial result only on the first call for a given `e2e-incomplete-once-*` username and the two-commit history afterward, and the journey asserts all four state transitions: the "First public commit found" heading appears, the partial-result `role="status"` banner reaches count 0, the "Search again" button disappears, and the `Follow-up commit` link becomes visible. The unique per-worker username (`testInfo.workerIndex` plus a base-36 timestamp) keeps the per-process `Set` from bleeding across runs.
+
+One structural note, not a finding: the mock short-circuits at `app/actions.ts:317`, before the cache lookup at line 326, so this journey proves the retry re-issues the search but does not exercise the real "incomplete results are not cached" path. That path is already covered at `app/actions.test.ts:329` ("does not cache an incomplete search, so a retry can reach a complete result") and `app/commitSearchCache.test.ts:51,57`. Coverage is complete across the two layers.
+
+**2. No regression from the `followUpCommit` extraction**
+
+All 26 Playwright journeys passed in 18.3s, including every consumer of the shared const and the sibling fixtures:
+
+- `e2e-result` — "valid shared URLs automatically render search results", "successful search focuses its heading and action colors meet AA contrast", "home page renders result sharing and source context"
+- `e2e-slow-result` — "search shortcuts stay disabled while a request is pending"
+- `e2e-reject-once-*` — "home page recovers from an unexpected Server Action rejection" (the `Synthetic E2E Server Action rejection` stack in the web-server log is the fixture firing as designed, not a failure)
+- `e2e-malformed-dates` — "mixed valid and malformed commit dates render without crashing", which still sees `Commit with malformed date` and `Date unavailable`, confirming the spread-with-override at `app/actions.ts:122-134` preserved the distinct message and bad date
+- `e2e-incomplete` — "home page flags a partial result instead of claiming a first commit", the split-off half of the old journey
+
+**3. Scoped gate commands**
+
+| Command | Result |
+| --- | --- |
+| `npm test` | 21 files, 208 tests passed (13.4s) |
+| `npm run test:e2e` | 26 passed (18.3s) |
+| `npm run lint` | clean, exit 0 |
+| `npm run format:check` | "All matched files use Prettier code style!" |
+| `npm run check:agent-docs` | "Agent docs are consistent." — confirms the `AGENTS.md` fixture-list edit did not drift the pointer files or ignore lists |
+| `npm run build` | compiled in 4.5s, TypeScript clean, 8/8 static pages |
+
+Not rerun, per the step 7 mapping (`app/`, `tests/`, `AGENTS.md` touched): `npm audit` and `npm run check:labels`. Both last passed in the full gate on this branch, and this fix touched no `package.json`, `package-lock.json`, or `.github/labels.yml`.
+
+**Warnings.** The only warning is the pre-existing Vite `configLoader: 'native'` notice about ESM syntax in `vitest.config.ts`. That file is unmodified on this branch, so it is not a branch-introduced finding.
+
+**Coverage.** The earlier missing-coverage finding is closed. The retry behavior now has a dedicated journey that distinguishes the two states rather than re-asserting one banner, and the fixture change is test-only code gated behind `E2E_COMMIT_SEARCH_MOCKS_ENABLED`, which needs no unit test of its own. No new gaps.
+
+**PASS (scoped)** — not rerun: `npm audit`, `npm run check:labels`, both from the prior full-gate pass on this branch.</result>
+<usage><subagent_tokens>24382</subagent_tokens><tool_uses>11</tool_uses><duration_ms>133196</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a2a6898a4424cdc11</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a2a6898a4424cdc11.output</output-file>
+<status>completed</status>
+<summary>Agent "Reverify after UI review fixes" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Full gate run from the repository root. All eight commands ran and succeeded — nothing was skipped by early exit.
+
+| Command | Result |
+| --- | --- |
+| `npm audit` | 0 vulnerabilities |
+| `npm test` | 22 files, 212 tests passed |
+| `npm run test:e2e` | 26/26 journeys passed (18.8s, 0 retries, 0 flakes) |
+| `npm run lint` | clean |
+| `npm run format:check` | "All matched files use Prettier code style!" |
+| `npm run check:agent-docs` | passed (`AGENTS.md` edit on this branch is consistent) |
+| `npm run check:labels` | valid, 13 labels |
+| `npm run build` | compiled 4.4s, TypeScript clean, 8 static pages, 8 routes |
+
+**1. Tailwind 4 `aria-disabled:` variants — emitted, including the stacked one.** Grepped the production stylesheet `/home/scottdensmore/Developer/scottdensmore/my-first-commit/.next/static/chunks/25punfvz3oq_n.css`:
+
+```css
+.aria-disabled\:cursor-not-allowed[aria-disabled=true]{cursor:not-allowed}
+.aria-disabled\:opacity-50[aria-disabled=true]{opacity:.5}
+.aria-disabled\:hover\:bg-white[aria-disabled=true]:hover{background-color:var(--color-white)}
+```
+
+The stacked rule is not silently dropped, and it wins over `hover:bg-amber-100` on specificity alone (class + attribute + pseudo-class = 0,3,0 vs 0,2,0), so it does not depend on source order. The disabled styling is real.
+
+Focus-ring token change also checks out: `--github-blue: #0969da` (`/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/globals.css:8`) is 5.19:1 against white, clearing the 3:1 WCAG 1.4.11 threshold that `amber-500` failed.
+
+**2. All 26 journeys, partial-result and empty-state.** No test was quarantined or renamed out of existence; the count went 23 → 26 with the three new assertions. Specifically green:
+- #20 `home page flags a partial result instead of claiming a first commit` (4.5s)
+- #21 `retrying a partial result reaches the complete history` (4.5s)
+- #23 `home page distinguishes an unfinished search from an empty one` (4.1s)
+- #22 `home page renders a helpful empty search state` (4.1s) — the `e2e-empty` journey still asserts `Check a known public profile` is visible (`tests/e2e/home.spec.ts:527`), and #23 asserts it has count 0 for the incomplete case (`:543`). The `isEmptyResult &amp;&amp; !result.incomplete` gate satisfies both.
+
+The only stderr in the e2e log is the intentional `Synthetic E2E Server Action rejection` from the `e2e-reject-once-*` fixture backing journey #26 (`app/actions.ts:314`) — expected fixture noise, not a failure.
+
+**Warnings:** one Vite `configLoader: 'native'` deprecation notice about ESM syntax in `vitest.config.ts`. Pre-existing — `vitest.config.ts` is untouched on this branch, so it is not a branch-introduced warning.
+
+**Coverage:** every ui-review fix has a test.
+- Region semantics: `app/home/SearchResults.test.tsx:62` (`getByRole("region", …)`) plus `tests/e2e/home.spec.ts:478`.
+- `aria-describedby` present when incomplete and absent when complete: `SearchResults.test.tsx:70` and `:81`, plus the e2e id-resolution check at `home.spec.ts:489`.
+- `aria-disabled` with the guarded onClick: `SearchResults.test.tsx:93-106` asserts `aria-disabled="true"`, `not.toBeDisabled()`, and that clicking while pending does **not** call `onRetry` — that is the behavioral half of the guard, which is the part that could regress silently. E2E covers the `"false"` state at `:497`.
+- Suggestions-panel gating: new `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchErrorState.test.tsx` covers both branches (`:25` visible, `:36` absent).
+
+One optional note, not an actionable finding: the focus-ring color change itself has no computed-style assertion, unlike journey #16 which does contrast-check the success-state action colors. I verified the token in the built CSS directly, and a color constant with no logic behind it is reasonable to leave to review rather than to a test.
+
+**PASS**</result>
+<usage><subagent_tokens>24490</subagent_tokens><tool_uses>14</tool_uses><duration_ms>165665</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a0591b249abf13b1c</task-id>
+<tool-use-id>toolu_01A6Geo1GqVoehS9q2Jx6nMY</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a0591b249abf13b1c.output</output-file>
+<status>completed</status>
+<summary>Agent "Re-review UI after fixes" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>I read `AGENTS.md`, `docs/architecture.md`, and enumerated the full change (branch diff is empty; everything is unstaged plus two untracked test files). I re-read every file in its current state rather than relying on the earlier tree.
+
+## Prior findings: closure status
+
+| # | Prior finding | Status |
+| --- | --- | --- |
+| 1 | Missing `e2e-incomplete-once-*` fixture | **Closed.** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/actions.ts:19,106-120` has the stateful fixture with the shared `followUpCommit`, `AGENTS.md:56-63` documents it, and `tests/e2e/home.spec.ts:643-662` asserts the banner and the "Search again" button both disappear and `Follow-up commit` appears. The journey now fails if the retry does not re-issue the search. My earlier claim was wrong about the tree state; withdrawn. |
+| 2 | Focus ring 2.07:1 | **Closed.** `SearchResults.tsx:48,88` use `focus:ring-[var(--github-blue)]`. I recomputed: 5.19:1 on white, 5.01:1 on `amber-50`. |
+| 3 | Retry feedback and focus | **Closed on feedback**; focus point **accepted as resolved** — see below. |
+| 4 | `role="status"` unreliable | **Closed.** `SearchResults.tsx:68-78` is a labelled `&lt;section&gt;`; the `&lt;h1&gt;` at line 47 carries `aria-describedby`. |
+| 5 | Suggestions on an unfinished search | **Closed.** `SearchErrorState.tsx:33` gates on `isEmptyResult &amp;&amp; !result.incomplete`, covered by `SearchErrorState.test.tsx:28-39` and `home.spec.ts:671-683`. |
+| 6 | Copy | **Closed.** `SearchResults.tsx:50,76-77`. |
+| 7 | `h2` scope | **Closed.** `FirstCommitDisplay` emits no headings, so the outline is `h1` → `h2` inside a labelled region. Valid. |
+| 8 | Visual consistency | **Closed** as described — but the `border-amber-500` choice introduces finding 1 below. |
+
+**On the declined focus point: I withdraw it.** Your counter-argument is the stronger one, and it is one I did not weigh. If focus stayed on the button through a still-partial retry, the only thing that changes is the button's accessible name reverting from "Searching again..." to "Search again" — a name change on the already-focused element, which NVDA and JAWS do not reliably announce. That would make a completed retry silent. Moving focus to the described heading is the only reliable completion signal available here. Keep it.
+
+One gap that follows from that: no test exercises partial → still partial. Both fixtures resolve to a complete result on the second call, so the persistence of the callout and the heading re-focus on a repeat partial are unverified. That is a coverage note, not a defect; a second `e2e-incomplete` click in the existing spec would cover it cheaply.
+
+## New findings
+
+**1. should-fix — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:88` — the retry button's boundary fails WCAG 1.4.11 (2.07:1), and nearly vanishes while it is working.**
+The button is `bg-white` on the section's `bg-amber-50`: the fill contrast is 1.04:1, so the border is the only thing that identifies the control. `border-amber-500` (`#f59e0b`) on `amber-50` (`#fffbeb`) is **2.07:1**, below the 3:1 required for a control's visual boundary. `aria-disabled:opacity-50` then blends the border to **1.46:1** during the pending state — the button all but disappears at the exact moment the user is watching it. Low-vision and bright-screen users lose the affordance.
+*Fix:* `border-amber-700` (4.84:1 on `amber-50`) or at minimum `border-amber-600` (3.07:1, no margin). `amber-700` also sits comfortably with the existing `text-amber-900`. The app's other secondary buttons have similarly thin borders, but they sit on white where the surrounding contrast carries them; this one does not.
+
+**2. should-fix — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:88,90` — the "Searching again..." label, the only progress feedback in this view, renders at 2.60:1.**
+`aria-disabled:opacity-50` composites `text-amber-900` on white over `amber-50`, giving `#bc987d` on `#fffdf5` = **2.60:1**, against a 4.5:1 requirement. WCAG's inactive-component exemption is a poor fit: this is a transient pending state whose label is the message, not an inert control. It matters more than usual because the page-level `Searching GitHub for ...` block at `app/page.tsx:188` is suppressed once `result` exists, so this label is the *entire* progress signal for a retry. Note also that `!lastSearchedUsername` is unreachable inside this component (`SearchResults` only renders after a search that set it), so `isRetryDisabled` is always exactly `isPending` — the dimmed state is never the "truly inactive" case the opacity was meant for.
+*Fix:* drop `aria-disabled:opacity-50` and express the pending state with contrast-safe styling instead, e.g. `aria-disabled:bg-amber-50 aria-disabled:border-amber-300` plus the existing `aria-disabled:cursor-not-allowed`. The label change plus `aria-disabled` already carries the meaning.
+
+**3. should-fix — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/page.tsx:210-220` (with `app/home/searchExecution.ts:59`) — a failed retry throws away the partial result the user was reading.**
+"Search again" is the first control this app has ever placed inside a successful result view that re-issues a search. `runCommitSearch` calls `setResult(data)` unconditionally, so if the retry comes back rate-limited, timed out, or unavailable, `result.found` flips to `false`: `SearchResults` unmounts, the hero and search form return, and the ten commits the visitor was looking at are gone, replaced by an error box. GitHub's commit-search limit is shared across all users of the app's token, so this is reachable, and a slow search that returned `incomplete_results` is precisely the kind that gets retried. Recovery exists ("Try again" re-runs `lastSearchedUsername`), but the user is punished with total data loss for taking the affordance the UI offered.
+*Fix:* keep the last `found` result when a retry from the results view fails, and render the failure inside the amber callout — e.g. thread a `retryError` message through `SearchResults` and swap the button row for `"That retry failed: &lt;message&gt;"` plus the button, leaving the commits on screen. If that is more than this slice should carry, the smaller version is to not clear the found result on a failed retry and let the existing `SearchErrorState` render above the still-mounted results. Either way this path currently has no unit or Playwright coverage.
+
+**4. polish — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchErrorState.tsx:37-39,68` — the same GitHub condition gets two different visual languages and two different button labels.**
+An unfinished search *with* commits is an amber callout headed "GitHub returned a partial result" with an amber outline "Search again". An unfinished search with *no* commits reuses the neutral gray `empty` container headed "GitHub could not finish this search." with a green primary "Try again". A visitor who hits both reads them as unrelated situations. The gray treatment also visually equates "GitHub gave up" with "this user has no commits", which is the exact conflation the rest of the change works to undo.
+*Fix:* when `result.incomplete`, give the error container the amber treatment (`border-amber-300 bg-amber-50 text-amber-900`) and label the retry "Search again" to match. `isEmptyResult` already drives the container class, so this is a third branch on the same expression.
+
+**5. polish — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:88` — the focus ring's offset is white on an amber surface.**
+`focus:ring-offset-2` uses Tailwind's default white `--tw-ring-offset-color`, so keyboard focus on this button draws a white halo between the button and the `amber-50` panel — a treatment that is invisible everywhere else in the app because every other focusable control sits on white. It reads as a rendering artifact rather than a focus indicator.
+*Fix:* add `focus:ring-offset-amber-50`. Contrast is unaffected (blue is 5.01:1 on `amber-50`).
+
+## Limitation
+
+I could not render the change in a browser — the environment blocks the Playwright browser download — so responsive and visual judgements come from reading the markup and computing contrast from the source color values, not from screenshots. Layout at narrow widths looks structurally safe (the callout inherits `max-w-2xl`, contains no username or URL, and its button wraps), but that is inference. Everything above is otherwise verified against current file contents.</result>
+<usage><subagent_tokens>55747</subagent_tokens><tool_uses>18</tool_uses><duration_ms>252222</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a2c27e1b9eed2813c</task-id>
+<tool-use-id>toolu_01H2RFHMnun5MHbV733Bi3ZJ</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a2c27e1b9eed2813c.output</output-file>
+<status>completed</status>
+<summary>Agent "Code review before commit" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>I read `AGENTS.md`, `docs/architecture.md`, `docs/production.md`, the full working diff, both untracked test files, and the surrounding source. I also ran the six affected unit test files (69 tests, all pass) and compiled the new Tailwind variant stack to confirm `aria-disabled:hover:bg-white` is emitted after (and outranks) `hover:bg-amber-100`, so the disabled hover state is correct.
+
+## Declined `ui-review` finding
+
+**Accepted.** Moving focus to the result `&lt;h1&gt;` after a retry is the app's one "results arrived" transition, it is asserted by `tests/e2e/home.spec.ts:375`, and the `SearchErrorState` retry path lands on the same heading. Without it a retry that returns another partial result would announce nothing at all, since the section is not a live region; `aria-describedby` on the focused heading makes the completion and the caveat audible together. I am not re-raising it.
+
+## Findings
+
+### 1. should-fix — a retry that resolves after "Search another user" resurrects the discarded result and steals focus
+`/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/page.tsx:125-132` (header button), with `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.ts:30-41` and `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/searchExecution.ts:57`.
+
+`latestSearchIdRef` is only bumped inside `runSearch`. `startNewSearch` and `resetSearch` clear `result` but never invalidate an in-flight request, so `isLatestSearch()` still returns `true` for a search the user has abandoned. Until this change that hole was unreachable from the results view: no control there could start a search, and the one reset control that coexists with a pending request (`Edit username` in `SearchErrorState.tsx:71-78`) is `disabled={isPending}`. The new "Search again" button makes a request pending *while* the results view — and its always-enabled header button — is on screen.
+
+Failure scenario: partial result on screen; user clicks **Search again**; GitHub takes several seconds (up to the 10 s timeout); user gives up and clicks **Search another user**. The form returns, `lastSearchedUsername` is now `""`, so the pending banner reads "Searching GitHub for ..." with no name; the user starts typing a new handle; the stale retry resolves, `setResult(data)` runs, `SearchResults` remounts over the form, and its focus effect (`SearchResults.tsx:32-34`) pulls focus out of the search box they are typing in — into a result for a username the page no longer displays (`Earliest indexed public commit for @ appears in ...`).
+
+Fix: invalidate the in-flight search on reset. Expose a `cancelPendingSearch()` from `useCommitSearch` that does `++latestSearchIdRef.current`, and call it from both `resetSearch` and `startNewSearch`; that also fixes the empty-name pending banner because `!result` plus a cancelled search should no longer render a pending state. Add `disabled={isPending}` to the header button to match `Edit username`. Cover it with a unit test that resolves a search after a reset and asserts `setResult` is not called with the stale data.
+
+### 2. should-fix — the new log event is missing from the operator runbook
+`/home/scottdensmore/Developer/scottdensmore/my-first-commit/docs/production.md:193-209`.
+
+`app/actions.ts:349-356` emits a new `github_commit_search_incomplete` warn with an `itemCount` field, but the "Structured Logs" section still enumerates only the five previous events and does not list `itemCount` under "Useful fields". `docs/architecture.md` was updated; this file was not. An operator investigating "the app says results are partial" greps the documented list, finds nothing, and concludes the event is unrelated noise or a stray log. Fix: add `github_commit_search_incomplete` to the event list and `itemCount` to the field list, with one line saying it is not a failure — it marks a search GitHub abandoned, which is deliberately not cached.
+
+### 3. nit — partial results are invisible in analytics
+`/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/searchExecution.ts:60-64`.
+
+`search_completed` reports `found`, `error_kind`, and `commit_count`. An incomplete success is indistinguishable from a complete one in the event stream, so there is no way to tell how often this new path fires or whether the retry helps — the two questions this fix creates. Adding `incomplete: Boolean(data.incomplete)` costs one line and leaks nothing (it is a boolean, no username).
+
+### 4. nit — retry test filed under the wrong describe block
+`/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/resultMessages.test.ts:32-34`.
+
+`it("allows retry for an incomplete empty search")` exercises `canRetryCommitSearch` but sits inside `describe("getResultMessage")`, directly above the `describe("canRetryCommitSearch")` block that already has the contrasting `empty → false` case at line 57. Move it next to that case so the pair reads together.
+
+### 5. nit — two divergent disabled conventions for the same "retry this search" control
+`/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:79-91` versus `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchErrorState.tsx:61-69`.
+
+The new button uses `aria-disabled` plus an early-return guard, with a comment explaining that `disabled` blurs the pressed control; the existing "Try again" button, which has exactly the same problem, still uses `disabled`. The new approach is the better one — but the codebase now teaches both. Either apply the same pattern to `SearchErrorState`'s retry button in a follow-up, or note in the comment that the older button is a known exception.
+
+### 6. nit — changelog entry is a five-sentence paragraph among one-line siblings
+`/home/scottdensmore/Developer/scottdensmore/my-first-commit/CHANGELOG.md:11`.
+
+Every other `### Fixed` entry is one sentence, occasionally two. This one narrates the whole issue. Release-note readers skim; trim to the user-visible outcome (partial results are labelled as partial, offer a retry, are never cached, and are never reported as "no commits found") and let `docs/architecture.md` carry the mechanism, which it already does.
+
+## Things I checked and found correct
+
+- `incomplete` propagation: both empty branches (`actions.ts:358-366`, `381-389`) and the success branch (`391-395`) carry the flag; conditional spread keeps it absent rather than `false`, which is what the `toBeUndefined()` assertions and the `toEqual` exact-shape test depend on. No path returns `found: true` with a stale complete-search claim.
+- Cache guard: `commitSearchCache.ts:57-60` returns before both the `set` and `pruneExpiredEntries`, so an incomplete result can neither be stored nor evict the complete entry — and `commitSearchCache.test.ts:51-60` covers both halves non-vacuously.
+- Log sanitization: only a numeric `itemCount`; no username, item payload, or raw response.
+- Test quality: the assertions I probed all fail if the behavior is removed. `actions.test.ts:329` catches a removed cache guard via `toHaveBeenCalledTimes(2)`; `SearchResults.test.tsx:93-106` catches a removed pending guard via `onRetry` not being called; the retry journey proves re-issue through the stateful fixture returning a second commit, not through a re-render. `console.warn` is asserted against the flattened `{...fields, event}` payload the logger actually writes.
+- E2E fixture state (`e2eIncompleteOnceUsernames`) is behind `E2E_COMMIT_SEARCH_MOCKS_ENABLED` at the top of `getE2eCommitSearchResult`, so no unbounded user-keyed Set exists in production; the new journey's username includes `workerIndex` and a timestamp, so Playwright retries and a reused dev server cannot collide.
+- The `followUpCommit` extraction preserves the `e2e-malformed-dates` fixture byte-for-byte in effect.
+- Accessibility semantics: `&lt;section aria-labelledby&gt;` yields a named `region`; heading order h1 → h2 is intact; `aria-describedby` targets exist and are unique; amber-900 text clears AA on both the amber-50 panel and the white/amber-100 button states.
+
+**CHANGES REQUESTED** — 6 actionable findings (2 should-fix, 4 nits).</result>
+<usage><subagent_tokens>91928</subagent_tokens><tool_uses>40</tool_uses><duration_ms>411784</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a678235e0cc320cc3</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a678235e0cc320cc3.output</output-file>
+<status>completed</status>
+<summary>Agent "Verify second review round" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>All 8 gate commands ran and passed. Here is the evidence on the three focus areas plus coverage.
+
+## Gate result
+
+`npm run validate` exit 0 — every command in the chain ran, none skipped:
+
+| Command | Result |
+| --- | --- |
+| `npm audit` | 0 vulnerabilities |
+| `npm test` | 22 files, 216 tests passed |
+| `npm run test:e2e` | 26/26 chromium passed (19.0s), no retries/flakes |
+| `npm run lint` | clean |
+| `npm run format:check` | clean |
+| `npm run check:agent-docs` | consistent |
+| `npm run check:labels` | valid (13 labels) |
+| `npm run build` | compiled, 8 routes |
+
+The only stderr in the run is the intentional `Synthetic E2E Server Action rejection` fixture from `app/actions.ts:314`, asserted by the passing recovery journey.
+
+## 1. Tailwind emission and cascade — confirmed correct
+
+All three utilities are present in the production stylesheet `/home/scottdensmore/Developer/scottdensmore/my-first-commit/.next/static/chunks/3ufqjgq9ierls.css`, and `aria-disabled:opacity-50` is no longer emitted anywhere.
+
+I proved the cascade by loading the built CSS against the exact class list from `SearchResults.tsx:99` in headless chromium and reading computed styles (colors fingerprinted against `var(--color-amber-*)` references):
+
+| State | background | border | cursor | opacity |
+| --- | --- | --- | --- | --- |
+| idle, no hover | white | amber-700 | default | 1 |
+| idle, hovered | amber-100 | amber-700 | default | 1 |
+| `aria-disabled`, no hover | amber-50 | amber-600 | not-allowed | 1 |
+| `aria-disabled`, hovered | **amber-50** | amber-600 | not-allowed | 1 |
+
+`aria-disabled:hover:bg-amber-50` outranks `hover:bg-amber-100` on both axes, so it is not order-dependent: specificity `(0,3,0)` vs `(0,2,0)`, and it also emits later (byte 22646 vs 21157). The pending label now measures **8.73:1** (amber-900 on amber-50), up from the 2.60:1 the reviewer reported.
+
+## 2. `act()` warnings and unhandled rejections — none
+
+The full run produced no `stderr |` blocks. A focused rerun of the four changed test files (`app/page.test.tsx`, `app/home/SearchResults.test.tsx`, `app/home/SearchErrorState.test.tsx`, `app/home/searchExecution.test.ts`) gave 55/55 passed with zero console output — no "not wrapped in act", no unhandled rejection. The abandoned-retry case settles its deferred promise inside `act(async () =&gt; …)`, which is why it stays quiet.
+
+## 3. Label and pending-banner dependencies — no regression
+
+`Search again` / `Try again` split is consistent. The four journeys still asserting `Try again` (`tests/e2e/home.spec.ts:558`, `:573`, `:591`, `:600`) all target rate-limit, unavailable, and Server-Action-rejection states, which `SearchErrorState.tsx:75` still renders as `Try again` because `result.incomplete` is false. Only the incomplete-empty journey (`:541`) moved to `Search again`. All passed.
+
+Nothing depended on the pending banner: `Searching GitHub for` appears only at `app/page.tsx:201` and in no test.
+
+## Findings
+
+**`missing-coverage` — the new pending-banner guard is untested.** `app/page.tsx:195` added `&amp;&amp; lastSearchedUsername`, and no unit or Playwright test asserts that banner in any state. The state it guards is reachable: `startNewSearch` (`app/page.tsx:82-90`) clears `lastSearchedUsername`, while `cancelPendingSearch` only bumps the search id and does not abort the transition, so `isPending` stays true until the in-flight promise settles — exactly the window where the banner would read "Searching GitHub for ...". The adjacent `ignores a retry that resolves after the visitor abandons it` case already builds this scenario with a deferred promise and could assert the banner's absence in a couple of lines. Actionable.
+
+**`missing-coverage` — only one of the two `cancelPendingSearch()` call sites is exercised.** The abandoned-retry test covers `startNewSearch` ("Search another user", `app/page.tsx:83`). The `resetSearch` path ("Edit username" via `SearchErrorState.tsx:84` → `app/page.tsx:75`) has no test proving a late response cannot remount results over the form. Actionable, same pattern as the existing case.
+
+**`missing-coverage` (low, optional) — no browser coverage for retry-failure preservation or for the amber button's contrast.** The `role="alert"` preservation path is well covered at the unit level (`app/page.test.tsx:117-143`), so this is a judgment call rather than a gap in behavior; a journey would need a new incomplete-then-error fixture in `app/actions.ts` alongside the existing `e2e-incomplete-once-*`. Separately, the contrast regression the reviewer caught by eye has no automated guard — `tests/e2e/home.spec.ts:375` asserts AA contrast for the success action colors, and the equivalent assertion on the retry button in idle and `aria-disabled` states would prevent recurrence.
+
+No `audit-failure`, `test-failure`, `build-failure`, `flake`, or `environment` findings. Playwright ran on the cached chromium build; no install was attempted. The one warning in the log (Vite `configLoader: 'native'` on `vitest.config.ts:1:1`) is pre-existing — that file is not modified on this branch.
+
+**FAIL** — 3 actionable findings, all `missing-coverage`; every gate command passed.</result>
+<usage><subagent_tokens>40092</subagent_tokens><tool_uses>25</tool_uses><duration_ms>293967</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>ab16a925481e1e225</task-id>
+<tool-use-id>toolu_01ShbupiX11vpeTfEkhyYp2j</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/ab16a925481e1e225.output</output-file>
+<status>completed</status>
+<summary>Agent "Verify coverage additions" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Gate run: `npm run validate` — stopped at `npm run test:e2e`
+
+| Command | Result |
+| --- | --- |
+| `npm audit` | pass, 0 vulnerabilities |
+| `npm test` | pass — 23 files, 219 tests |
+| `npm run test:e2e` | **FAIL** — 1 failed, 25 passed |
+| `npm run lint` | skipped by early exit — ran separately, exit 0 |
+| `npm run format:check` | skipped — ran separately, exit 0 |
+| `npm run check:agent-docs` | skipped — ran separately, exit 0 |
+| `npm run check:labels` | skipped — ran separately, exit 0 |
+| `npm run build` | skipped — ran separately, exit 0, no warnings |
+
+## Findings
+
+**1. `test-failure` — the new region contrast assertion fails deterministically (author-actionable)**
+
+`/home/scottdensmore/Developer/scottdensmore/my-first-commit/tests/e2e/home.spec.ts:501`
+
+```
+Expected: &gt;= 4.5
+Received:    1.1993073924049975
+```
+
+Failed 2/2 on `--repeat-each=2`, so it is not a flake.
+
+Root cause is the helper, not the palette. I probed the two elements in Chromium at the moment the assertions run:
+
+```
+REGION {"color":"lab(31.2288 30.2627 40.0378)","background":"lab(98.6252 -0.635922 8.42309)"}
+RETRY  {"color":"lab(31.2288 30.2627 40.0378)","background":"rgb(255, 255, 255)"}
+```
+
+`getTextContrastRatio` (`tests/e2e/home.spec.ts:49-71`) does `color.match(/[\d.]+/g).slice(0,3)` and treats the result as 0-255 sRGB channels. Tailwind 4's amber utilities serialize as `lab()`, so it reads `[31.23, 30.26, 40.04]` as an RGB triple (and drops the minus sign on the `-0.636` a-channel). Feeding those numbers through the helper's own math reproduces 1.1993 exactly. The pre-existing usages at lines 384/387 are unaffected because that button is styled from the `--github-*` hex variables, which Chromium serializes as `rgb()`.
+
+**2. `warning` — the retry-button assertion at line 500 passes by accident (author-actionable)**
+
+Same misparse: the foreground is read as a near-black `[31, 30, 40]` while the background is genuine `rgb(255,255,255)`, yielding ~16.4:1 for what is really 9.1:1. It reports pass without measuring the amber text, so it would not catch the amber regression it was added to guard. Both new assertions need a helper that handles non-legacy color serializations before this counts as coverage.
+
+For the record, the palette itself is fine: amber-900 on amber-50 is ~8.8:1 and amber-900 on white is ~9.1:1, both above AA.
+
+## Answers to your two questions
+
+1. **Both targeted elements do paint their own background** — the region is `bg-amber-50` (`app/home/SearchResults.tsx:71`) and the button is `bg-white` (`app/home/SearchResults.tsx:99`), and the probe above confirms neither computes to `rgba(0,0,0,0)`. The transparent-background hazard you flagged is not what bit here; the color-space serialization is.
+2. **No `act()` warnings and no unhandled rejections.** `app/home/useCommitSearch.test.ts` plus `app/page.test.tsx` run clean (40 tests, zero stderr). The only warning anywhere in the run is the pre-existing Vite `configLoader: 'native'` notice about `vitest.config.ts`, which is unmodified on this branch and also appears on `main`.
+
+## Coverage
+
+The other two additions hold up. I mutation-checked the `&amp;&amp; lastSearchedUsername` guard by temporarily removing it from `app/page.tsx:195`: the abandoned-retry test then fails with the banner rendering `Searching GitHub for ` (empty username), so `isPending` really is true at that assertion and the check is not vacuous. `app/page.tsx` was restored byte-identical afterward — verified with `diff -q`, no source change persists. The `cancelPendingSearch` hook tests pass and read as a genuine three-way contract (dropped, kept, retryError cleared). No further missing coverage beyond finding 2.
+
+**FAIL** — 2 actionable findings.</result>
+<usage><subagent_tokens>41734</subagent_tokens><tool_uses>23</tool_uses><duration_ms>315002</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a4bc3eb2e78671a2e</task-id>
+<tool-use-id>toolu_01MSmiAuccg5ZSGooMKzZnjj</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a4bc3eb2e78671a2e.output</output-file>
+<status>completed</status>
+<summary>Agent "Verify contrast helper fix" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Complete gate run on `scottdensmore/fix/incomplete-commit-search-results`.
+
+## Gate: `npm run validate` — exit 0, all 8 commands ran
+
+| Command | Result |
+| --- | --- |
+| `npm audit` | 0 vulnerabilities |
+| `npm test` | 23 files, 219 tests passed |
+| `npm run test:e2e` | 26 passed (18.9s) |
+| `npm run lint` | clean |
+| `npm run format:check` | all matched files use Prettier style |
+| `npm run check:agent-docs` | agent docs are consistent |
+| `npm run check:labels` | valid (13 labels) |
+| `npm run build` | compiled, TypeScript finished, 8 static pages |
+
+Nothing was skipped by early exit.
+
+## 1. Partial-result ratios now match the real palette
+
+Measured out-of-tree with a throwaway script that runs the exact helper body against the mocked dev server, alongside the old string-parsing math for comparison (`/home/scottdensmore/Developer/scottdensmore/my-first-commit/tests/e2e/home.spec.ts:509-510`):
+
+```
+[partial result] Retry button (line 509)
+  color=lab(31.2288 30.2627 40.0378) -&gt; rgb(123,51,6)
+  background=rgb(255, 255, 255)      -&gt; rgb(255,255,255)
+  canvas(new helper) = 9.06:1    string-parse(old) = 16.43:1
+
+[partial result] Partial-result region (line 510)
+  color=lab(31.2288 30.2627 40.0378) -&gt; rgb(123,51,6)
+  background=lab(98.6252 -0.635922 8.42309) -&gt; rgb(255,251,235)
+  canvas(new helper) = 8.73:1    string-parse(old) = 1.20:1
+```
+
+`rgb(123,51,6)` is amber-900, `rgb(255,251,235)` is amber-50 — the real palette values, so 9.06:1 and 8.73:1 are true ratios, not accidental passes. They land on your predicted ~9.1 and ~8.8, and both clear 4.5 with a wide margin rather than hovering at it.
+
+## 2. Pre-existing assertions report unchanged ratios
+
+```
+[successful search] Search button (enabled, line 393)
+  color=rgb(255,255,255) background=rgb(31,136,61)
+  canvas = 4.52:1    string-parse = 4.52:1
+[successful search] Search button (hovered, line 396)
+  color=rgb(255,255,255) background=rgb(26,127,55)
+  canvas = 5.08:1    string-parse = 5.08:1
+```
+
+Both colors serialize as `rgb()`, and the canvas path reproduces the old numbers exactly. The enabled state at 4.52:1 is a genuinely thin margin over 4.5, but that is the shipped `--github-*` palette, unchanged by this branch — not a finding against this fix.
+
+## 3. Stability
+
+`npx playwright test -g "home page flags a partial result instead of claiming a first commit" --repeat-each=2` — 2 passed (8.0s), both runs 2.4s. Deterministic green.
+
+## Notes (non-actionable)
+
+- The vitest run prints a pre-existing Vite warning: `ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1)`. `vitest.config.ts` is untouched on this branch, so this is not branch-introduced.
+- Helper limitation, not hit by any current assertion: `fillRect` with a fully transparent computed color yields `rgb(0,0,0)`, so a transparent-background element would still measure against black. Every element asserted here has an opaque own background (the retry button resolves to white, the region to amber-50), so the readings are correct as written.
+
+## Coverage
+
+Diff is 21 modified files plus three new untracked unit suites (`app/home/SearchErrorState.test.tsx`, `app/home/SearchResults.test.tsx`, `app/home/useCommitSearch.test.ts`), all collected in the 219-test run. Partial-result behavior is covered at both levels: unit coverage in `app/actions.test.ts`, `app/home/resultMessages.test.ts`, `app/home/searchExecution.test.ts`, and journey coverage for the partial flag, the `aria-describedby` announcement, contrast, and the retry-to-complete-history path. The helper change itself is test infrastructure and needs no new test. No missing coverage identified.
+
+**PASS**</result>
+<usage><subagent_tokens>28059</subagent_tokens><tool_uses>16</tool_uses><duration_ms>207573</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>ac2b05feb5b39c2d9</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/ac2b05feb5b39c2d9.output</output-file>
+<status>completed</status>
+<summary>Agent "UI review round three" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Round-3 verdict on the five prior findings
+
+| # | Finding | Status |
+|---|---|---|
+| 1 | Retry button boundary 2.07:1 | **Closed.** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:99` — `border-amber-700`. Converting Tailwind 4's `oklch(0.555 0.163 48.998)` to sRGB gives 5.05:1 on white and 4.87:1 on amber-50. |
+| 2 | "Searching again..." at 2.60:1 | **Closed.** Opacity is gone; the pending state keeps `text-amber-900` on `aria-disabled:bg-amber-50` = 8.77:1 by my own conversion, which corroborates your 8.73 measurement. `isRetryDisabled` and the unreachable `!lastSearchedUsername` term are gone, replaced by the `if (isRetrying) return` guard at `SearchResults.tsx:91`. |
+| 3 | Failed retry threw away the partial result | **Closed.** `useCommitSearch.ts:56-59` keeps the found result and surfaces `retryError`; unit coverage at `app/page.test.tsx` ("keeps a partial result on screen when the retry fails") and `app/home/SearchResults.test.tsx:94`. |
+| 4 | Incomplete-empty used a different visual language | **Partially closed** — see finding 3 below. The container class is applied but the amber text color it declares never reaches any text node. |
+| 5 | White focus-ring offset on amber | **Closed in `SearchResults`**, not applied to the new amber surface in `SearchErrorState` — see finding 7. |
+
+Direct answers to your three questions: the alert does **not** compete with the heading's `aria-describedby`; placement above the button is right for reading order but wrong for layout stability; the amber `SearchErrorState` does **not** yet read like the `SearchResults` partial section. Details below.
+
+---
+
+### 1. should-fix — A retry that succeeds but is still partial produces no feedback, and the pending retry is silent to assistive tech
+**Location:** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:88-102`, `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/page.tsx:195`
+
+**Problem:** Two gaps share one cause — the amber section has no polite status region.
+- *Pending:* pressing "Search again" changes only the button's own label and `aria-disabled`. The page's designed loading state (`page.tsx:195`) is gated on `!result`, so it never renders during a retry. A screen reader user gets, at best, "unavailable" on the focused button; name changes on an already-focused control are not reliably announced by NVDA/JAWS/VoiceOver. GitHub commit search regularly takes seconds, so that is a long silence between the press and the next event.
+- *Still partial:* if the retry returns another `incomplete` result, the heading text, the amber section, and the button label are all identical to before. `retryError` was cleared at `useCommitSearch.ts:42`, so no alert fires. A sighted user sees a brief label flicker and concludes the button is broken; nothing states "searched again, GitHub is still not finished."
+
+**Fix:** Render one always-mounted polite region inside the amber section (always-mounted so the text change is announced — the same reasoning your `SearchResults.tsx:66-68` comment applies to the caveat):
+
+```tsx
+&lt;p role="status" aria-live="polite" className="mt-2 text-sm"&gt;
+  {isRetrying ? `Searching GitHub again for @${lastSearchedUsername}...` : retryStatus}
+&lt;/p&gt;
+```
+
+Set `retryStatus` in `useCommitSearch.applyResult` when `options.keepResultOnFailure &amp;&amp; data.found &amp;&amp; data.incomplete` — e.g. "Searched again; GitHub still returned a partial result." Clear it at the top of `runSearch` alongside `setRetryError("")`. Add a unit test in `SearchResults.test.tsx` for the still-partial string and one in `useCommitSearch.test.ts` for the partial→partial transition, which nothing currently covers.
+
+### 2. should-fix — The failed-retry alert pushes the retry button (and the whole timeline) down under the pointer
+**Location:** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:80-87`
+
+**Problem:** The alert is inserted immediately above the button the visitor just pressed and is most likely to press again. Inside `max-w-2xl` minus `p-5`, the rate-limit string renders on 2-3 lines, so the button drops roughly 50-70px; at a 320px viewport the content box is only ~248px wide and the same string wraps to about seven lines, moving the button and every commit card below it ~140px. A visitor who clicks "Search again", is rate limited, and immediately clicks again lands on the alert text instead of the button.
+
+Reading order *is* the right argument for putting the cause before the remedy, but `role="alert"` is announced out of document order anyway, so nothing is lost by moving it.
+
+**Fix:** Render the alert after the button inside the same section, so the failure sits adjacent to the control that produced it and the control keeps its position:
+
+```tsx
+&lt;button …&gt;{isRetrying ? "Searching again..." : "Search again"}&lt;/button&gt;
+{retryError ? &lt;p role="alert" className="mt-3 …"&gt;…&lt;/p&gt; : null}
+```
+
+If you prefer it above, reserve the space instead (`min-h-*` on a persistent wrapper), but the post-button placement is the cheaper fix and costs nothing in announcement order.
+
+### 3. should-fix — The amber `SearchErrorState` variant does not actually render amber text; `text-amber-900` is inert
+**Location:** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchErrorState.tsx:36-40`, `48-51`, `73`
+
+**Problem:** The container sets `text-amber-900`, but every descendant overrides it: the `h2` sets `text-[var(--github-gray-dark)]`, the `p` sets `text-[var(--github-gray-text)]`, and both buttons set their own colors. Nothing inherits the amber. So the incomplete-empty panel renders as an amber wash with GitHub-gray copy and a **solid green** primary button, while the partial-result section in `SearchResults` renders amber-900 copy with a white/amber-outlined button. The comment at line 35-36 asserts these match; they do not. Contrast is fine either way (gray-text on amber-50 is 6.16:1), so this is consistency and dead CSS, not a WCAG failure — but it undercuts the fix you shipped for round-2 finding #4.
+
+**Fix:** Pick one. Either drop `text-amber-900` from the container as misleading, or make it real by scoping the child overrides:
+
+```tsx
+&lt;h2 className={`text-base font-semibold ${result.incomplete ? "" : "text-[var(--github-gray-dark)]"}`}&gt;
+&lt;p className={`mt-2 text-sm ${result.incomplete ? "" : "text-[var(--github-gray-text)]"}`}&gt;
+```
+
+and give the incomplete-case retry the same white/`border-amber-700`/`text-amber-900` treatment as `SearchResults.tsx:99` so the identically-labeled "Search again" looks like the same action in both places. Add an assertion to `SearchErrorState.test.tsx` for whichever contract you choose.
+
+### 4. polish — The failed-retry alert has no visual weight inside an already-amber panel
+**Location:** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:83`
+
+**Problem:** `mt-2 text-sm font-semibold` amber-900 on amber-50 is legible (8.77:1) but reads as one more line of the same amber caveat. A visitor scanning after a failed retry has no visual cue that a new, action-relevant thing appeared; bold alone is a weak signal next to the panel's own `font-semibold` h2.
+
+**Fix:** Reuse the inset-card pattern the product already uses for a nested block on a tinted panel (`SearchErrorState.tsx:53`): `rounded-md border border-amber-300 bg-white p-3`, or a `border-l-2 border-amber-700 pl-3` rule. Either separates it from the static caveat without introducing a new color.
+
+### 5. polish — The alert splices a full multi-sentence error description into a sentence, with a competing call to action
+**Location:** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:83-86`, `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.ts:57`
+
+**Problem:** `getResultMessage(data).description` is written as standalone panel copy, so the rendered rate-limit alert reads: "That retry did not finish: GitHub temporarily limited commit search requests. Wait a few minutes, then try this username again. The commits below are still the earlier partial result." — a colon introducing two sentences, and an instruction that duplicates the button 40px away. Worse, if the retry returns `errorKind: "empty"` with `incomplete: true`, the alert says "…so nothing came back yet" while ten commits are visible directly below it; the trailing sentence walks it back, but the visitor reads the contradiction first.
+
+**Fix:** Add a short retry-specific variant to `resultMessages.ts` — e.g. `getRetryFailureMessage(result)` returning a single clause per `errorKind` ("GitHub is rate limiting searches right now.", "GitHub took too long again.", "GitHub search is still unavailable.") — and use it for `setRetryError`. Keep "The commits below are still the earlier partial result." as the second sentence.
+
+### 6. polish — The heading's description does not mention a retry that just failed
+**Location:** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:48`
+
+**Problem:** To your question: there is **no** competition. `setResult` is skipped on a kept-result failure, so `firstCommit` identity is unchanged, the effect at line 34-36 does not re-run, and the heading is not refocused — the `role="alert"` fires alone. The residual gap is the opposite one: a screen reader user who shift-tabs back to the h1 afterwards hears only the static caveat and no trace of the failure.
+
+**Fix:** Give the alert an id and append it conditionally: `aria-describedby={isIncomplete ? [PARTIAL_RESULT_DESCRIPTION_ID, retryError ? RETRY_ERROR_ID : null].filter(Boolean).join(" ") : undefined}`. Safe precisely because the heading is not refocused at failure time, so this cannot double-announce.
+
+### 7. polish — The new amber panel in `SearchErrorState` did not get the ring-offset fix
+**Location:** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchErrorState.tsx:73`, `82`
+
+**Problem:** Both buttons use `focus:ring-offset-2` with Tailwind's default white `--tw-ring-offset-color`. On the new `bg-amber-50` panel that halo is a hair off-background — visually near-invisible at 1.03:1 against amber-50, so this is cosmetic rather than a real defect, but it is exactly the pattern round-2 finding #5 established and one of two amber surfaces now follows it.
+
+**Fix:** Add `focus:ring-offset-amber-50` to both buttons when `result.incomplete`, or hoist the offset color to a shared variable so the two amber surfaces cannot drift again.
+
+### 8. polish — The pending border sits 0.08 above the 3:1 threshold
+**Location:** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:99` (`aria-disabled:border-amber-600`)
+
+**Problem:** amber-600 on amber-50 computes to 3.08:1 for the pending state's control boundary (SC 1.4.11 needs 3:1). It passes, but with almost no margin, and your new journey assertion at `tests/e2e/home.spec.ts:479-510` measures *text* contrast only, so a palette nudge would regress this silently.
+
+**Fix:** Keep `border-amber-700` in the pending state too (4.87:1 on amber-50). The background and cursor changes already carry the state; a border that also changes color buys nothing and costs the margin.
+
+### 9. polish — No browser coverage for the failed-retry state you just built
+**Location:** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/tests/e2e/home.spec.ts:513`, `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/actions.ts`
+
+**Problem:** `e2e-incomplete-once-*` covers partial→complete. Nothing covers partial→error, which is the path that produces the alert, the layout shift in finding 2, and the "commits survive" guarantee. That state exists only in jsdom, where neither the shift nor the amber contrast is observable.
+
+**Fix:** Add an `e2e-incomplete-then-rate-limit-*` stateful fixture beside the existing one (and the matching bullet in `AGENTS.md`), then assert in the journey that the `role="alert"` appears, the commit link is still visible, and — once finding 2 lands — that the retry button's bounding box is unchanged.
+
+### 10. polish — `isRetrying` can latch on permanently if the search is never started
+**Location:** `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.ts:40-45`
+
+**Problem:** `setIsRetrying(true)` runs before `runCommitSearch` applies its guards at `searchExecution.ts:42-44`. If normalization or validation rejects the username, the function returns without ever calling `applyResult`, leaving the button stuck on "Searching again..." and `aria-disabled` forever with no way out except "Search another user". Currently unreachable — `lastSearchedUsername` is only ever set post-validation — but it is a one-line trap for the next caller.
+
+**Fix:** Have `runCommitSearch` return `true` when it starts and gate the flag on it: `const started = runCommitSearch(...); if (!started) setIsRetrying(false);` — or move the guards into the hook.
+
+---
+
+**Assessment limits:** I reviewed source and computed contrast by converting Tailwind 4's oklch palette to sRGB rather than rendering the app; my amber-900-on-amber-50 figure (8.77:1) lands within 0.04 of your Chromium measurement (8.73:1), which is good evidence the model is sound, but the layout-shift magnitudes in finding 2 are estimates from box math, not measured in a browser. Separately, the app has no `prefers-reduced-motion` handling anywhere (`animate-in fade-in slide-in-from-bottom-4` at `SearchResults.tsx:43`); that is pre-existing, this change adds no animation, and a failed retry does not replay it because the component stays mounted — noting it rather than counting it as a finding.</result>
+<usage><subagent_tokens>67100</subagent_tokens><tool_uses>24</tool_uses><duration_ms>362216</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a691a283a876e6021</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a691a283a876e6021.output</output-file>
+<status>completed</status>
+<summary>Agent "Code review round two" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Re-review verification
+
+| Previous finding | Status |
+| --- | --- |
+| 1. Stale retry resurrects the result | **Resolved in substance.** I confirmed with a live probe that an abandoned retry's result is discarded, and `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/page.test.tsx` covers it non-vacuously. I accept declining `disabled={isPending}` on the header button — disabling the only escape hatch during a slow retry is worse. But the cancellation is only half-done; see finding 1 below (new defect in the fix, not a re-raise). |
+| 2. Runbook entry | Resolved — `docs/production.md:202-207` names the event, `itemCount`, and that it is not a failure. |
+| 3. Analytics blind to partial results | Resolved — `searchExecution.ts:66` plus assertions in three test files. |
+| 4. Misfiled test | Resolved — now inside the `canRetryCommitSearch` block (`resultMessages.test.ts:57`). |
+| 5. Two `disabled` conventions | Accepted as declined; one comment-accuracy nit below. |
+| 6. Changelog length | Resolved (two lines); wording nit below. |
+
+Server-side work (`app/actions.ts`, `app/commitSearchCache.ts`, `app/commitTypes.ts`) is correct: E2E fixtures bypass the cache, incomplete results are never stored and cannot evict a complete entry, logging stays scalar-only, and no upstream text reaches the client. `getTextContrastRatio`'s canvas rewrite is a real fix and its two new call sites assert meaningful thresholds.
+
+---
+
+### 1. should-fix — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.ts:69` (with `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/page.tsx:98,195`)
+
+`cancelPendingSearch()` cancels the *result* but not the *busy UI*. It bumps `latestSearchIdRef` and clears `retryError`/`isRetrying`, but `isPending` stays true until the abandoned request actually settles, and `isPending` still drives `canSearch`, `SearchForm`, and both `SearchShortcutSection`s.
+
+I verified this by rendering `Home`: partial result → "Search again" (retry left in flight) → "Search another user" → type a new username. Observed state:
+
+```
+SUBMIT LABEL: Searching...   DISABLED: true
+FORM aria-busy: true
+STATUS TEXT PRESENT: false
+```
+
+So the visitor is returned to the form with the submit button disabled and labelled "Searching...", `aria-busy="true"` on the search landmark, every example/recent shortcut disabled — and **no** status text explaining it, because the new `lastSearchedUsername` guard at `page.tsx:195` suppresses the banner. This lasts until the abandoned request resolves: up to `GITHUB_SEARCH_TIMEOUT_MS` (10 s, `app/actions.ts:14`) plus round-trip. It only became reachable with this slice, since before it there was no way to start a search from the results view.
+
+Fix: own the busy flag in the hook instead of reading the transition. Add `isSearching` state — set true in `runSearch` (once `runCommitSearch` actually starts), false in `applyResult` and in `cancelPendingSearch` — and pass that to `canSearch`, `SearchForm`, `SearchShortcutSection`, and the pending banner. The `lastSearchedUsername` clause at `page.tsx:195` then becomes unnecessary, and its comment ("a cancelled search leaves the transition pending with no username to name") stops being accurate only for the `startNewSearch` path while `resetSearch` keeps the username.
+
+### 2. should-fix — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.ts:23` and `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/page.tsx:223`
+
+`isRetrying` has no regression coverage. I mutated `page.tsx` to `isRetrying={isPending}` — the exact bug this round was meant to fix — and ran `app/page.test.tsx`, `app/home/SearchResults.test.tsx`, `app/home/useCommitSearch.test.ts`: **47 passed, 0 failed.** `SearchResults.test.tsx:105` only exercises the prop, and `useCommitSearch.test.ts` never reads `isRetrying`.
+
+This is not merely a cosmetic label: `isRetrying` is also the re-entrancy guard at `SearchResults.tsx:91` (`if (isRetrying) return;`). If the hook stopped setting it, a visitor could stack retries against an already rate-limited search API with no test objecting.
+
+Fix: add a hook test with a deferred `getCommits` — `isRetrying` is `false` while a plain `runSearch` is in flight, `true` while a `{ keepResultOnFailure: true }` search is in flight, and `false` once it settles (both on success and on the preserved-result failure path).
+
+### 3. nit — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.ts:41-43`
+
+`latestSearchIdRef` is bumped and `setIsRetrying(true)` runs *before* `runCommitSearch` applies its own guards (`searchExecution.ts:42-44` returns early for an empty or invalid username). If that early return ever fires for a retry, `applyResult` never runs, so `isRetrying` stays true forever and the button is stuck on "Searching again..." with its own click guard permanently closed. Unreachable today because `lastSearchedUsername` is always a normalized, validated handle — one prop change away from reachable. The id bump also silently cancels a live search for a request that never started. Fix: have `runCommitSearch` return whether it started, and only set the id and flags when it did.
+
+### 4. nit — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/searchExecution.ts:47-49`
+
+`source: options.updateUrl ? "user" : "shared_url"` means the new results-view retry (`page.tsx:226`, no `updateUrl`) reports every user-pressed "Search again" as a shared-link visit. Since this slice's whole point is measuring how often visitors hit and retry partial results, that attribution is now load-bearing. Fix: pass an explicit source (`{ source: "retry" }`) rather than inferring it from `updateUrl`.
+
+### 5. nit — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:94-97`
+
+The comment justifies `aria-disabled` by focus loss ("a disabled control loses focus the moment it is pressed"), then says `SearchErrorState`'s retry is a deliberate exception because "it has no equivalent pending state on screen". That reason addresses the *label*, not the *focus*: `SearchErrorState.tsx:72` is `disabled={isPending || !lastSearchedUsername}`, so pressing "Try again" there does blur the button exactly as described. The exception is fine for this slice; the stated reason is not. Fix: reword to the real reason (out of slice / different control), so the comment does not assert something the sibling code contradicts.
+
+### 6. nit — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/CHANGELOG.md:12`
+
+"Resetting the page no longer lets a slow search that is still running replace what replaced it" is hard to parse for a release-notes reader. Suggest: "Resetting or starting a new search now discards a search that is still running, so its result can no longer appear over the page you moved to."
+
+---
+
+**CHANGES REQUESTED** — 6 actionable findings (2 should-fix, 4 nits).</result>
+<usage><subagent_tokens>91581</subagent_tokens><tool_uses>34</tool_uses><duration_ms>498113</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a46b5dd5352d2a1c5</task-id>
+<tool-use-id>toolu_0157jnPjnzBAxKh1NiRSNijG</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a46b5dd5352d2a1c5.output</output-file>
+<status>completed</status>
+<summary>Agent "Verify narrowed scope" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Final verification — `scottdensmore/fix/incomplete-commit-search-results`
+
+All work is uncommitted on the branch (no commits ahead of `main`); I verified the worktree state, which is what enters review.
+
+### 1. Complete gate — `npm run validate`, exit 0
+
+All eight commands ran in CI order; none was skipped by early exit.
+
+| Command | Result |
+| --- | --- |
+| `npm audit` | found 0 vulnerabilities |
+| `npm test` | 22 files, 211 tests passed |
+| `npm run test:e2e` | 25 passed (18.1s), 0 flaky, 0 retries |
+| `npm run lint` | clean, no output (`@typescript-eslint/no-unused-vars` is active at `warn`; zero warnings emitted) |
+| `npm run format:check` | All matched files use Prettier code style |
+| `npm run check:agent-docs` | Agent docs are consistent |
+| `npm run check:labels` | `.github/labels.yml` is valid (13 labels) |
+| `npm run build` | Compiled in 4.5s, TypeScript clean, 8 static pages |
+
+The one warning in the log (`Vite config uses features unsupported by configLoader: 'native'`, `vitest.config.ts:1:1`) is pre-existing on `main`, not introduced by this branch.
+
+### 2. Retry removal is complete
+
+`grep` across the whole repo (excluding `node_modules`, `.git`, `.next`, reports) for `isRetrying`, `retryError`, `cancelPendingSearch`, `keepResultOnFailure`, `applyResult`, `e2e-incomplete-once`, `Search again`, and `useCommitSearch.test` returned **no matches**. `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.test.ts` does not exist and is not staged as a deletion (it was never committed).
+
+No orphaned exports: I enumerated every `export function|const|type` in `app/home/*.ts(x)` and checked each for a reference outside its own file — all are still consumed. No unused imports, corroborated by a zero-warning ESLint run.
+
+Every surviving "retry"/"try again" mention refers to the pre-existing `SearchErrorState` action or to prose, not to the removed in-place button.
+
+### 3. Reverted files match `main`
+
+- `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.ts` — **byte-identical to `main`** (empty diff). Stronger than required; the `isIncomplete` prop is threaded in `page.tsx`, not the hook.
+- `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/page.tsx` — one added line, `isIncomplete={Boolean(result.incomplete)}` at line 215.
+- `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/searchExecution.ts` — one added line, `incomplete: Boolean(data.incomplete)` at line 64, inside the analytics payload.
+
+### 4. Journeys — 25, not 24
+
+`main` has 23 journeys; the branch adds exactly two and removes none, so the total is **25**. The "24 remaining" figure in the task is off by one — worth reconciling with whatever count the scope reduction was tracked against, but it is a bookkeeping mismatch, not a gate failure. Nothing was accidentally dropped: a title-level diff against `main` shows two additions and zero deletions.
+
+Both partial-result journeys and the reverted-expectation one pass:
+- `home.spec.ts:479` "flags a partial result instead of claiming a first commit" (4.4s) — asserts the changed heading, the absence of "First public commit found", the labelled region, the `aria-describedby` link, and AA contrast on the amber panel.
+- `home.spec.ts:522` "distinguishes an unfinished search from an empty one" (3.7s) — asserts the unfinished heading, **`Try again` visible**, and that "Check a known public profile" is absent.
+
+Note that `getTextContrastRatio` in `/home/scottdensmore/Developer/scottdensmore/my-first-commit/tests/e2e/home.spec.ts:51` was rewritten to resolve colors through a canvas instead of parsing the serialized string. That is a real correctness fix (Tailwind 4 emits `lab()`, whose digits are not sRGB channels) and it also governs the pre-existing AA assertion at line 384, which still passes — so the change is exercised in both directions.
+
+### Coverage
+
+New behavior is covered at every layer, with no gaps I can act on:
+
+- Server: `app/actions.test.ts:310,329,351,376` — flagging, the `github_commit_search_incomplete` log, non-caching across a retry, and the incomplete-empty path.
+- Cache: `app/commitSearchCache.test.ts:51,57` — refuses to store, and does not evict an already-cached complete result.
+- Messages: `app/home/resultMessages.test.ts:24,57` — not reported as an absence of commits; retry allowed.
+- Share text: `app/home/sharedSearch.test.ts:67`.
+- Analytics: `app/home/searchExecution.test.ts:97` plus `incomplete: false` assertions on the four complete-result cases.
+- Components: new `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.test.tsx` (4 cases, including the `aria-describedby` contract in both states) and `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchErrorState.test.tsx` (2 cases covering the withheld suggestions).
+
+The accessibility contract is asserted in both unit and browser layers, and the two user-visible journeys are exercised in Playwright.
+
+**PASS**</result>
+<usage><subagent_tokens>41100</subagent_tokens><tool_uses>23</tool_uses><duration_ms>151710</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a1f522f265fd44624</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a1f522f265fd44624.output</output-file>
+<status>completed</status>
+<summary>Agent "Final UI review" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>I re-read the whole change: branch diff is empty (you're on `main` with everything uncommitted), so the change is the 20 modified files plus the two untracked test files. The user-visible surface is `app/home/SearchResults.tsx`, `app/home/SearchErrorState.tsx`, `app/home/resultMessages.ts`, `app/home/sharedSearch.ts` (copied text), and `app/page.tsx`. The rest (`actions.ts`, cache, types, docs, changelog) has no rendered surface. This is much smaller than the last round, and the removals check out — no retry button, no pending state, no failure alert, no amber container in `SearchErrorState`.
+
+## Direct answer on the retry gap
+
+**Acceptable for this slice. Not a blocker.** Recovery from the results view exists and is not obscure: the search URL carries `?user=&lt;handle&gt;` (`/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/sharedSearch.ts:5`), so a plain page reload re-runs the same search, and `getInitialSharedUsername` re-triggers it on load. Nothing is broken, unreachable, or misleading. The panel's core job — refusing to call a partial result "First public commit found" — is done, and the incomplete-*empty* path is genuinely well served because `SearchForm` still renders for non-found results with the handle intact and focus in the input, so Enter retries.
+
+What is off is smaller and purely editorial: the copy issues an instruction the view has no affordance for. That is finding 1, fixable with one sentence and no new control.
+
+## Findings
+
+**1. should-fix — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:71-72`**
+Problem: the panel says "Searching for @{username} again often reaches the full history," but the results view renders no search form and no retry control. The only visible button is the header's **Search another user** (`app/page.tsx:126-131`), whose label contradicts the instruction (the visitor wants the *same* user) and whose handler `startNewSearch` clears `username`, `lastSearchedUsername`, and the `?user=` param — so following the nearest affordance discards exactly what the copy told them to reuse. A visitor who reads the sentence looks for a button, finds one that says the opposite, clicks it, and has to retype the handle.
+Fix: state the fact instead of issuing an instruction, so the copy stops implying a control that was deferred:
+
+```
+The search timed out before scanning every commit, so an earlier commit may be
+missing. A repeated search for @{lastSearchedUsername} often reaches the full history.
+```
+
+That is truthful with or without the button and needs no change when the follow-up adds it. If you would rather keep an actionable sentence, name the path that actually works — "Reloading this page runs the search again and often reaches the full history" — which is accurate today because of the `?user=` param.
+
+**2. polish — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:70-73`**
+Problem: `@{lastSearchedUsername}` is an unbreakable token of up to 40 characters. Inside the panel the content box at a 320 CSS-pixel viewport is roughly 248px (`main` `p-4` plus the panel's `p-5`), and 40 characters at `text-sm` needs roughly 290px, so a maximum-length handle forces horizontal scrolling. That 320px width is also what 200% browser zoom produces on a 640px window, which is the WCAG 1.4.10 reflow condition. The pre-existing summary paragraph at line 47-48 has the same token in a slightly wider box.
+Fix: add `break-words` to the panel paragraph (`className="mt-2 text-sm break-words"`), and to line 47's paragraph while you are there. I could not render this to measure it, so treat the pixel numbers as an estimate rather than a measurement.
+
+**3. polish — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:45-48`**
+Problem: in the incomplete case the h1 reads "Earliest public commit found so far" and the very next line reads "Earliest indexed public commit for @octo appears in…". Two adjacent lines opening on "Earliest" reads like a duplicated string, and "found so far" versus "indexed" invites the visitor to wonder whether they are two different claims.
+Fix: for `isIncomplete`, vary the summary opener — for example "This is the earliest commit GitHub indexed for @{username} before the search stopped, in {repo}." Low stakes; leave it if you would rather not add another branch to the paragraph.
+
+## On your two decisions
+
+**Color is not load-bearing in `SearchErrorState`.** Reverting the amber was the right call. The distinction is carried by the title ("GitHub could not finish this search." versus "No public commits found."), by the withheld suggestions, by the **Try again** button, and by focus landing in a still-populated search input. None of that depends on hue, and the previous amber never reached a text node anyway. The one thing worth naming, which I am *not* asking you to change: an incomplete-empty result is styled as a neutral status with `role="status"` (`SearchErrorState.tsx:37-39`) because `isEmptyCommitSearchResult` keys only on `errorKind === "empty"`, while the semantically identical `errorKind: "timeout"` gets `role="alert"` and red. I think the calm treatment is the better one here — GitHub returned 200, the state is recoverable, and a red alert would overstate it — so the inconsistency reads as a deliberate choice rather than a defect.
+
+**Finding 7 is indeed moot.** The remaining amber is in `SearchResults`, on a non-focusable `&lt;section&gt;` with no ring, so there is no offset problem. The `&lt;h1&gt;`'s own `focus:ring-offset-2` sits on the white page background, which is correct.
+
+## Notes, not findings
+
+- The `region` landmark with `aria-labelledby` plus `aria-describedby` on the focused h1 is a good pairing: focus lands on the h1, the caveat is announced with it, and the panel is still reachable by landmark navigation afterward. The comment at lines 60-62 explains why this beats a live region, and that reasoning is correct.
+- Copied share text carries the caveat and the reworded summary (`sharedSearch.ts:29-42`), so the partial status survives the copy path. Good.
+- Pre-existing and out of scope: `animate-in fade-in slide-in-from-bottom-4` at `SearchResults.tsx:37` has no matching plugin in `package.json` (no `tailwindcss-animate` / `tw-animate-css`), so those classes are inert. That is why there is no reduced-motion exposure here, but it also means the intended entrance animation never runs.
+
+I could not render the page — Playwright browsers cannot install in this environment per the known download block — so contrast, reflow, and focus behavior are assessed from the markup and from your journey's 8.73:1 measurement rather than from a live render.</result>
+<usage><subagent_tokens>43936</subagent_tokens><tool_uses>15</tool_uses><duration_ms>173219</duration_ms></usage>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a977a32cf1ec00239</task-id>
+<tool-use-id>toolu_01NAmokk4vQTHnMn2tvX1ZPi</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a977a32cf1ec00239.output</output-file>
+<status>completed</status>
+<summary>Agent "Final code review" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Review summary
+
+I reviewed the full uncommitted state as a fresh change: the branch has no commits, so everything is unstaged plus the two untracked test files, all of which I read. I also checked the removal for coherence.
+
+**Removal is clean.** `grep` across `*.ts`, `*.tsx`, and `*.md` finds no reference to a "Search again" affordance, `cancelPendingSearch`, or any retry state in the results view. `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.ts` is byte-identical to `main`; `app/page.tsx` and `app/home/searchExecution.ts` are `+1/-0` each (`git diff --numstat main` confirms). `SearchResultsProps` has exactly the five props `page.tsx` passes — no dangling `onRetry`/`isPending`. `docs/architecture.md:40`, `docs/production.md:203-206`, and the `CHANGELOG.md` entry describe caching, labelling, and the error-state "Try again" button only; none claims an in-results retry control. The `Try again` button referenced by the changelog and by `SearchErrorState.test.tsx` is the pre-existing `SearchErrorState` button, which `canRetryCommitSearch` now reaches for incomplete-empty — that is real, not stale prose.
+
+**Correctness spot checks that hold.** `setCachedCommitSearch` refuses incomplete results *before* `Map.set`, so a previously cached complete result is not overwritten (the comment at `app/commitSearchCache.ts:58-59` is accurate). The cache read happens before the GitHub call, so a complete result already in cache still short-circuits. `response.data.incomplete_results === true` correctly treats the absent field in existing mocks as false. `logger.warn({event, fields})` flattens to `{...fields, event}`, matching the `actions.test.ts:323-326` assertion shape. `vitest.setup.ts` registers RTL `cleanup`, so the repeated `render` calls in both new component tests are isolated.
+
+**Tests are not vacuous.** Each new assertion fails if the behavior is reverted: `commitSearchCache.test.ts:51` returns a value instead of `null`; `:57` compares against an object that would carry `incomplete: true`; `resultMessages.test.ts:24` pins the exact new title *and* rejects the old one; `SearchResults.test.tsx:47,58,70` cover both the positive and negative `aria-describedby` states; `SearchErrorState.test.tsx:21` is the paired control for `:28`. The `actions.test.ts:329` retry test asserts the second call actually reaches Octokit.
+
+## Findings
+
+**nit** — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/tests/e2e/home.spec.ts:494`
+The comment states "The caveat is announced through the heading that takes focus, not a live region," but the test only verifies the `aria-describedby` wiring; nothing asserts the heading actually holds focus. The focus assertion exists only for the complete-result heading (line 399), so if the focus effect regressed for the partial path the announcement would silently stop happening while this test stayed green. Add `await expect(partialResultHeading).toBeFocused();` after line 497.
+
+**nit** — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/SearchResults.tsx:71-73`
+"Searching for @{username} again often reaches the full history" instructs an action the results view offers no direct control for: with `result.found` true, `app/page.tsx:140-163` hides the search form, and the only button is the header's "Search another user". The path exists (that button, then the `@octo` recent-search chip, since a partial result is still recorded as found), so the copy is truthful, just two indirect clicks. Given the affordance is deliberately deferred, this is fine to ship; the follow-up slice should either restore the in-place control or name the path in the copy.
+
+**nit** — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/docs/production.md:203-206`
+"a rise in this event means visitors are seeing partial results and retrying" overstates what the log proves: the same event fires with `itemCount: 0`, where the visitor saw no commits at all and the unfinished-search state instead, and no logged signal shows whether anyone retried. Suggest: "…means visitors are seeing partial results; `itemCount: 0` means the search returned nothing and the visitor saw the unfinished-search state."
+
+**nit** — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/actions.ts:71-81`
+The `followUpCommit` hoist is not needed by this change — the new `e2e-incomplete` fixture returns `[mockCommit]` only. It is a correct refactor (I verified the resulting `e2e-malformed-dates` object is field-for-field identical to before), but it is unrelated churn inside the reviewed diff. Keeping it is defensible; dropping it would shrink the diff.
+
+Optional, not counted: `docs/manual-qa.md:51-54` lists rate-limit and outage as states that cannot be triggered on demand in production and are covered by fixtures. The partial-result state now fits that description too and could join that sentence.
+
+**APPROVED** — 4 actionable findings, all nits; none blocks the commit. The change is ready.</result>
+<usage><subagent_tokens>75663</subagent_tokens><tool_uses>34</tool_uses><duration_ms>265890</duration_ms></usage>
+</task-notification>
