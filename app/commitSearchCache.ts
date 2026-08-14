@@ -55,6 +55,9 @@ export function getCachedCommitSearch(cacheKey: string, now = Date.now()) {
 
 export function setCachedCommitSearch(cacheKey: string, result: CommitData, now = Date.now()) {
   if (!result.found && result.errorKind !== "empty") return;
+  // A partial result would otherwise be served as definitive for the whole TTL,
+  // and would evict a complete result already cached for this user.
+  if (result.incomplete) return;
 
   pruneExpiredEntries(now);
   commitSearchCache.set(cacheKey, {

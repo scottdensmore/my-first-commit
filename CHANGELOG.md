@@ -8,6 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Fixed
 
+- A commit search that GitHub abandoned before scanning every commit is now labelled a partial result rather than "First public commit found", explains that an earlier commit may be missing, and is never cached, so searching again can reach the full history. An unfinished search that returned nothing is reported as unfinished instead of as an absence of commits, offers a retry, and no longer suggests checking a different profile. Copied result text carries the same caveat.
 - Primary green actions now meet WCAG AA text contrast, and successful searches move focus to the result heading for a clear assistive-technology transition.
 - GitHub search failure logs now exclude raw upstream messages and accept only validated numeric rate-limit metadata.
 - Vercel Analytics event URLs now remove shared-search usernames while preserving unrelated query parameters.

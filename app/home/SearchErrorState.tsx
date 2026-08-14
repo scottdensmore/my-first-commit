@@ -28,6 +28,9 @@ export default function SearchErrorState({
   const isEmptyResult = isEmptyCommitSearchResult(result);
   const canRetry = canRetryCommitSearch(result);
   const resultMessage = getResultMessage(result);
+  // An unfinished search shares the "empty" kind but proves nothing about this username,
+  // so pointing the visitor at other profiles would imply a conclusion GitHub never reached.
+  const suggestAlternativeProfiles = isEmptyResult && !result.incomplete;
 
   return (
     <div
@@ -39,7 +42,7 @@ export default function SearchErrorState({
         {resultMessage.title}
       </h2>
       <p className="mt-2 text-sm text-[var(--github-gray-text)]">{resultMessage.description}</p>
-      {isEmptyResult ? (
+      {suggestAlternativeProfiles ? (
         <div className="mt-4 rounded-md border border-[var(--github-border)] bg-white p-3">
           <h3 className="text-sm font-semibold text-[var(--github-gray-dark)]">
             Check a known public profile

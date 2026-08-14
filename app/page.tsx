@@ -212,6 +212,7 @@ export default function Home() {
             commits={result.commits}
             lastSearchedUsername={lastSearchedUsername}
             shareStatus={shareStatus}
+            isIncomplete={Boolean(result.incomplete)}
             onCopy={copyResult}
           />
         ) : null}

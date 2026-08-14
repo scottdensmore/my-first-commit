@@ -199,6 +199,13 @@ GitHub API failures are logged with structured event names:
 - `github_commit_search_unavailable`
 - `github_commit_search_failed`
 - `github_commit_search_malformed_item`
+- `github_commit_search_incomplete`
+
+`github_commit_search_incomplete` is not a failure. GitHub returned `incomplete_results`, meaning it
+abandoned the search before scanning every commit and returned whatever it had indexed. The app
+labels that result partial and deliberately does not cache it, so a rise in this event means
+visitors are seeing partial results rather than that searches are erroring. An `itemCount` of `0`
+means the search returned nothing and the visitor saw the unfinished-search state instead.
 
 Useful fields include:
 
@@ -207,6 +214,7 @@ Useful fields include:
 - `rateLimitRemaining`
 - `rateLimitReset`
 - `itemIndex`
+- `itemCount`
 
 Upstream error messages are used only to classify failures and are not logged. Rate-limit metadata
 is logged only when header values are valid non-negative integers. Search usernames, request URLs,

@@ -22,5 +22,11 @@ export type CommitData = {
   found: boolean;
   error?: string;
   errorKind?: CommitErrorKind;
+  /**
+   * GitHub reported `incomplete_results`, meaning the search timed out before
+   * scanning every commit. An earlier commit may exist that this result misses,
+   * so partial results are surfaced to the visitor and never cached.
+   */
+  incomplete?: boolean;
   commits: CommitInfo[];
 };

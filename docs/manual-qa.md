@@ -48,8 +48,9 @@ production until a person looks. After a release:
    GitHub Search API with the production `GITHUB_TOKEN`.
 2. Search a username with no indexed public commits and confirm the empty state explains that GitHub
    indexing can lag.
-3. Rate-limit and outage states cannot be triggered on demand in production; they depend on GitHub.
-   Local coverage already asserts their retry actions and recovery copy through the `e2e-rate-limit`
-   and `e2e-unavailable` fixtures, so do not retest them by hand. Confirm real behavior from Vercel
-   logs after the next live failure.
+3. Rate-limit, outage, and partial-result states cannot be triggered on demand in production; they
+   depend on GitHub. Local coverage already asserts their retry actions and recovery copy through
+   the `e2e-rate-limit`, `e2e-unavailable`, `e2e-incomplete`, and `e2e-incomplete-empty` fixtures,
+   so do not retest them by hand. Confirm real behavior from Vercel logs after the next live
+   failure, where a partial result appears as a `github_commit_search_incomplete` event.
 4. Confirm the result timeline renders a real commit with its message, date, and repository link.

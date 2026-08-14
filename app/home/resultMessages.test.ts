@@ -21,6 +21,14 @@ describe("getResultMessage", () => {
     expect(getResultMessage(errorResult(errorKind)).title).toBe(title);
   });
 
+  it("does not report an incomplete empty search as an absence of commits", () => {
+    const message = getResultMessage({ ...errorResult("empty"), incomplete: true });
+
+    expect(message.title).not.toBe("No public commits found.");
+    expect(message.title).toBe("GitHub could not finish this search.");
+    expect(message.description).toMatch(/try again/i);
+  });
+
   it("falls back to the result error text for unknown kinds", () => {
     const message = getResultMessage(errorResult("unknown", "Boom"));
     expect(message.title).toBe("We could not complete that search.");
@@ -44,6 +52,10 @@ describe("canRetryCommitSearch", () => {
 
   it.each(["empty", "validation"] as const)("does not allow retry for %s", (errorKind) => {
     expect(canRetryCommitSearch(errorResult(errorKind))).toBe(false);
+  });
+
+  it("allows retry for an incomplete empty search, which is unfinished rather than answered", () => {
+    expect(canRetryCommitSearch({ ...errorResult("empty"), incomplete: true })).toBe(true);
   });
 
   it("returns false when there is no result", () => {

@@ -18,9 +18,15 @@ const E2E_REJECT_ONCE_USERNAME_PREFIX = "e2e-reject-once-";
 const e2eRejectedUsernames = new Set<string>();
 const EMPTY_COMMIT_SEARCH_MESSAGE =
   "No public commits found for this user (or indexing is delayed).";
+const INCOMPLETE_COMMIT_SEARCH_MESSAGE =
+  "GitHub could not finish this search, so no commits were returned yet.";
 
-function commitSearchError(error: string, errorKind: CommitErrorKind): CommitData {
-  return { found: false, error, errorKind, commits: [] };
+function commitSearchError(
+  error: string,
+  errorKind: CommitErrorKind,
+  incomplete = false,
+): CommitData {
+  return { found: false, error, errorKind, ...(incomplete ? { incomplete } : {}), commits: [] };
 }
 
 type GitHubErrorDetails = {
@@ -86,6 +92,14 @@ function getE2eCommitSearchResult(username: string): CommitData | null {
     };
   }
 
+  if (username === "e2e-incomplete") {
+    return {
+      found: true,
+      incomplete: true,
+      commits: [mockCommit],
+    };
+  }
+
   if (username === "e2e-malformed-dates") {
     return {
       found: true,
@@ -110,6 +124,8 @@ function getE2eCommitSearchResult(username: string): CommitData | null {
   switch (username) {
     case "e2e-empty":
       return commitSearchError(EMPTY_COMMIT_SEARCH_MESSAGE, "empty");
+    case "e2e-incomplete-empty":
+      return commitSearchError(INCOMPLETE_COMMIT_SEARCH_MESSAGE, "empty", true);
     case "e2e-rate-limit":
       return commitSearchError(
         "GitHub rate limit reached. Please try again in a few minutes.",
@@ -312,9 +328,27 @@ export async function getCommits(username: string): Promise<CommitData> {
     );
 
     const items = response.data.items;
+    // GitHub abandons a commit search that runs too long and still returns 200 with
+    // whatever it had indexed so far. Treating that as authoritative would claim a
+    // "first" commit that may not be the earliest one, so it stays flagged and
+    // uncached; setCachedCommitSearch drops incomplete results.
+    const isIncompleteSearch = response.data.incomplete_results === true;
+
+    if (isIncompleteSearch) {
+      logger.warn({
+        event: "github_commit_search_incomplete",
+        fields: {
+          itemCount: items?.length ?? 0,
+        },
+      });
+    }
 
     if (!items || items.length === 0) {
-      const emptyResult = commitSearchError(EMPTY_COMMIT_SEARCH_MESSAGE, "empty");
+      const emptyResult = commitSearchError(
+        isIncompleteSearch ? INCOMPLETE_COMMIT_SEARCH_MESSAGE : EMPTY_COMMIT_SEARCH_MESSAGE,
+        "empty",
+        isIncompleteSearch,
+      );
       setCachedCommitSearch(cacheKey, emptyResult);
       return emptyResult;
     }
@@ -333,13 +367,18 @@ export async function getCommits(username: string): Promise<CommitData> {
     });
 
     if (commits.length === 0) {
-      const emptyResult = commitSearchError(EMPTY_COMMIT_SEARCH_MESSAGE, "empty");
+      const emptyResult = commitSearchError(
+        isIncompleteSearch ? INCOMPLETE_COMMIT_SEARCH_MESSAGE : EMPTY_COMMIT_SEARCH_MESSAGE,
+        "empty",
+        isIncompleteSearch,
+      );
       setCachedCommitSearch(cacheKey, emptyResult);
       return emptyResult;
     }
 
     const result: CommitData = {
       found: true,
+      ...(isIncompleteSearch ? { incomplete: true } : {}),
       commits,
     };
     setCachedCommitSearch(cacheKey, result);

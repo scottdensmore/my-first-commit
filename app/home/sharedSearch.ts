@@ -26,11 +26,17 @@ export function buildResultShareText(username: string, result: CommitData) {
   }
 
   const firstLine = firstCommit.message.split("\n")[0];
+  const summary = result.incomplete
+    ? `${username}'s earliest public commit found so far: ${firstLine}`
+    : `${username}'s first public commit: ${firstLine}`;
 
   return [
-    `${username}'s first public commit: ${firstLine}`,
+    summary,
     `Repository: ${firstCommit.repository.full_name}`,
     `Commit: ${firstCommit.html_url}`,
+    ...(result.incomplete
+      ? ["Note: GitHub search was incomplete, so an earlier commit may exist."]
+      : []),
     `Search: ${window.location.href}`,
   ].join("\n");
 }

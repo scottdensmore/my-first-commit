@@ -63,6 +63,15 @@ describe("buildResultShareText", () => {
     expect(text).toContain("Commit: https://github.com/octocat/repo/commit/abc123");
   });
 
+  it("does not call a partial result the first public commit", () => {
+    const result: CommitData = { found: true, incomplete: true, commits: [commit] };
+    const text = buildResultShareText("octocat", result);
+
+    expect(text).not.toContain("octocat's first public commit:");
+    expect(text).toContain("octocat's earliest public commit found so far: Initial commit");
+    expect(text).toContain("GitHub search was incomplete, so an earlier commit may exist.");
+  });
+
   it("falls back to a search summary when there are no commits", () => {
     const result: CommitData = { found: false, commits: [] };
     expect(buildResultShareText("octocat", result)).toContain(

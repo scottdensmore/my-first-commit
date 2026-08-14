@@ -307,6 +307,83 @@ describe("getCommits", () => {
     });
   });
 
+  it("marks partial results when GitHub reports an incomplete search", async () => {
+    searchCommits.mockResolvedValue({
+      data: {
+        items: [commitItem],
+        incomplete_results: true,
+      },
+    });
+
+    const result = await getCommits("octo");
+
+    expect(result.found).toBe(true);
+    expect(result.incomplete).toBe(true);
+    expect(result.commits).toHaveLength(1);
+    expect(console.warn).toHaveBeenCalledWith({
+      event: "github_commit_search_incomplete",
+      itemCount: 1,
+    });
+  });
+
+  it("does not cache an incomplete search, so a retry can reach a complete result", async () => {
+    searchCommits.mockResolvedValueOnce({
+      data: {
+        items: [commitItem],
+        incomplete_results: true,
+      },
+    });
+    searchCommits.mockResolvedValueOnce({
+      data: {
+        items: [commitItem],
+        incomplete_results: false,
+      },
+    });
+
+    const incompleteResult = await getCommits("octo");
+    const completeResult = await getCommits("octo");
+
+    expect(searchCommits).toHaveBeenCalledTimes(2);
+    expect(incompleteResult.incomplete).toBe(true);
+    expect(completeResult.incomplete).toBeUndefined();
+  });
+
+  it("marks an incomplete empty search as partial and does not cache it", async () => {
+    searchCommits.mockResolvedValue({
+      data: {
+        items: [],
+        incomplete_results: true,
+      },
+    });
+
+    const result = await getCommits("octo");
+    await getCommits("octo");
+
+    expect(result).toEqual({
+      found: false,
+      error: "GitHub could not finish this search, so no commits were returned yet.",
+      errorKind: "empty",
+      incomplete: true,
+      commits: [],
+    });
+    expect(searchCommits).toHaveBeenCalledTimes(2);
+  });
+
+  it("caches and does not mark complete searches as partial", async () => {
+    searchCommits.mockResolvedValue({
+      data: {
+        items: [commitItem],
+        incomplete_results: false,
+      },
+    });
+
+    const result = await getCommits("octo");
+    await getCommits("octo");
+
+    expect(result.incomplete).toBeUndefined();
+    expect(searchCommits).toHaveBeenCalledTimes(1);
+  });
+
   it("returns a helpful rate limit message and logs a structured warning for GitHub rate-limit 403 errors", async () => {
     searchCommits.mockRejectedValue({
       status: 403,

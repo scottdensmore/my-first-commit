@@ -48,6 +48,19 @@ describe("commit search cache", () => {
     expect(getCachedCommitSearch("octo", 1_200)).toEqual(commitSearchResult);
   });
 
+  it("never stores an incomplete result", () => {
+    setCachedCommitSearch("octo", { ...commitSearchResult, incomplete: true }, 1_000);
+
+    expect(getCachedCommitSearch("octo", 1_100)).toBeNull();
+  });
+
+  it("does not let an incomplete result evict a cached complete result", () => {
+    setCachedCommitSearch("octo", commitSearchResult, 1_000);
+    setCachedCommitSearch("octo", { ...commitSearchResult, incomplete: true }, 1_100);
+
+    expect(getCachedCommitSearch("octo", 1_200)).toEqual(commitSearchResult);
+  });
+
   it("caps the number of cached entries", () => {
     for (let index = 0; index < 101; index += 1) {
       setCachedCommitSearch(`octo-${index}`, commitSearchResult, 1_000);

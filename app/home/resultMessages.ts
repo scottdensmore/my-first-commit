@@ -32,11 +32,19 @@ export function getResultMessage(result: CommitData): ResultMessage {
           "Check the username and try again. GitHub may reject searches for users that do not exist or cannot be searched.",
       };
     case "empty":
-      return {
-        title: "No public commits found.",
-        description:
-          "Try another username or check back later; GitHub commit search indexing can lag.",
-      };
+      // An incomplete search proves nothing about whether commits exist, so it must not
+      // be reported as an absence of them.
+      return result.incomplete
+        ? {
+            title: "GitHub could not finish this search.",
+            description:
+              "The search timed out before scanning every commit, so nothing came back yet. Try again in a moment.",
+          }
+        : {
+            title: "No public commits found.",
+            description:
+              "Try another username or check back later; GitHub commit search indexing can lag.",
+          };
     default:
       return {
         title: "We could not complete that search.",
@@ -47,6 +55,7 @@ export function getResultMessage(result: CommitData): ResultMessage {
 
 export function canRetryCommitSearch(result: CommitData | null) {
   return (
+    Boolean(result?.incomplete) ||
     result?.errorKind === "rate_limit" ||
     result?.errorKind === "timeout" ||
     result?.errorKind === "unavailable" ||
