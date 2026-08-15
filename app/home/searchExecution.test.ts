@@ -47,7 +47,7 @@ function createHandlers() {
     }),
     setLastSearchedUsername: vi.fn(),
     setShareStatus: vi.fn(),
-    setResult: vi.fn(),
+    applyResult: vi.fn(),
     setRecentSearches: vi.fn(),
   };
   return { handlers, settle: () => pending };
@@ -58,19 +58,36 @@ afterEach(() => {
 });
 
 describe("runCommitSearch", () => {
-  it("ignores blank usernames", () => {
+  it("ignores blank usernames and reports that it did not start", () => {
     const { handlers } = createHandlers();
-    runCommitSearch("   ", {}, handlers);
 
+    expect(runCommitSearch("   ", {}, handlers)).toBe(false);
     expect(handlers.startTransition).not.toHaveBeenCalled();
     expect(trackAppEvent).not.toHaveBeenCalled();
   });
 
-  it("ignores invalid usernames", () => {
+  it("ignores invalid usernames and reports that it did not start", () => {
     const { handlers } = createHandlers();
-    runCommitSearch("bad_name", {}, handlers);
 
+    expect(runCommitSearch("bad_name", {}, handlers)).toBe(false);
     expect(handlers.startTransition).not.toHaveBeenCalled();
+  });
+
+  it("reports that it started so the caller can own the busy flag", () => {
+    vi.mocked(getCommits).mockResolvedValue(foundResult);
+    const { handlers } = createHandlers();
+
+    expect(runCommitSearch("octocat", {}, handlers)).toBe(true);
+  });
+
+  it("attributes a retry to its own source rather than inferring a shared link", async () => {
+    vi.mocked(getCommits).mockResolvedValue(foundResult);
+    const { handlers, settle } = createHandlers();
+
+    runCommitSearch("octocat", { source: "retry" }, handlers);
+    await settle();
+
+    expect(trackAppEvent).toHaveBeenCalledWith("search_submitted", { source: "retry" });
   });
 
   it("updates the shared URL and tracks a user-sourced search", async () => {
@@ -83,7 +100,7 @@ describe("runCommitSearch", () => {
     expect(updateSharedSearchUrl).toHaveBeenCalledWith("octocat");
     expect(handlers.setLastSearchedUsername).toHaveBeenCalledWith("octocat");
     expect(handlers.setShareStatus).toHaveBeenCalledWith("");
-    expect(handlers.setResult).toHaveBeenCalledWith(foundResult);
+    expect(handlers.applyResult).toHaveBeenCalledWith(foundResult);
     expect(trackAppEvent).toHaveBeenCalledWith("search_submitted", { source: "user" });
     expect(trackAppEvent).toHaveBeenCalledWith("search_completed", {
       found: true,
@@ -159,7 +176,7 @@ describe("runCommitSearch", () => {
     runCommitSearch("octocat", {}, handlers);
 
     await expect(settle()).resolves.toBeUndefined();
-    expect(handlers.setResult).toHaveBeenCalledWith({
+    expect(handlers.applyResult).toHaveBeenCalledWith({
       found: false,
       error: "GitHub commit search failed. Please try again.",
       errorKind: "unknown",
@@ -172,8 +189,8 @@ describe("runCommitSearch", () => {
       commit_count: 0,
       incomplete: false,
     });
-    expect(JSON.stringify(handlers.setResult.mock.calls)).not.toContain("octocat");
-    expect(JSON.stringify(handlers.setResult.mock.calls)).not.toContain("secret");
+    expect(JSON.stringify(handlers.applyResult.mock.calls)).not.toContain("octocat");
+    expect(JSON.stringify(handlers.applyResult.mock.calls)).not.toContain("secret");
   });
 
   it("ignores an earlier search that resolves after the latest request", async () => {
@@ -197,7 +214,7 @@ describe("runCommitSearch", () => {
       }),
       setLastSearchedUsername: vi.fn(),
       setShareStatus: vi.fn(),
-      setResult: vi.fn(),
+      applyResult: vi.fn(),
       setRecentSearches: vi.fn(),
     };
     let latestSearchId = 0;
@@ -221,8 +238,8 @@ describe("runCommitSearch", () => {
     await pendingSearches[0];
 
     expect(handlers.setLastSearchedUsername).toHaveBeenLastCalledWith("torvalds");
-    expect(handlers.setResult).toHaveBeenCalledOnce();
-    expect(handlers.setResult).toHaveBeenCalledWith(latestResult);
+    expect(handlers.applyResult).toHaveBeenCalledOnce();
+    expect(handlers.applyResult).toHaveBeenCalledWith(latestResult);
     expect(handlers.setRecentSearches).toHaveBeenCalledOnce();
     expect(trackAppEvent).toHaveBeenCalledTimes(3);
     expect(trackAppEvent).toHaveBeenLastCalledWith("search_completed", {

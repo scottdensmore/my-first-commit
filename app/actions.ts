@@ -16,6 +16,9 @@ const E2E_COMMIT_SEARCH_MOCKS_ENABLED = process.env.E2E_COMMIT_SEARCH_MOCKS === 
 const E2E_SLOW_SEARCH_DELAY_MS = 750;
 const E2E_REJECT_ONCE_USERNAME_PREFIX = "e2e-reject-once-";
 const e2eRejectedUsernames = new Set<string>();
+const E2E_INCOMPLETE_ONCE_USERNAME_PREFIX = "e2e-incomplete-once-";
+const E2E_INCOMPLETE_THEN_ERROR_USERNAME_PREFIX = "e2e-incomplete-then-error-";
+const e2eServedPartialUsernames = new Set<string>();
 const EMPTY_COMMIT_SEARCH_MESSAGE =
   "No public commits found for this user (or indexing is delayed).";
 const INCOMPLETE_COMMIT_SEARCH_MESSAGE =
@@ -68,28 +71,30 @@ function getE2eCommitSearchResult(username: string): CommitData | null {
     },
   };
 
+  const completeResult = (): CommitData => ({
+    found: true,
+    commits: [
+      mockCommit,
+      {
+        ...mockCommit,
+        message: "Follow-up commit",
+        html_url: "https://github.com/e2e-user/next-repo/commit/bcdefa234567",
+        sha: "bcdefa234567",
+        repository: {
+          name: "next-repo",
+          owner: "e2e-user",
+          full_name: "e2e-user/next-repo",
+        },
+      },
+    ],
+  });
+
   if (
     username === "e2e-result" ||
     username === "e2e-slow-result" ||
     username.startsWith(E2E_REJECT_ONCE_USERNAME_PREFIX)
   ) {
-    return {
-      found: true,
-      commits: [
-        mockCommit,
-        {
-          ...mockCommit,
-          message: "Follow-up commit",
-          html_url: "https://github.com/e2e-user/next-repo/commit/bcdefa234567",
-          sha: "bcdefa234567",
-          repository: {
-            name: "next-repo",
-            owner: "e2e-user",
-            full_name: "e2e-user/next-repo",
-          },
-        },
-      ],
-    };
+    return completeResult();
   }
 
   if (username === "e2e-incomplete") {
@@ -98,6 +103,31 @@ function getE2eCommitSearchResult(username: string): CommitData | null {
       incomplete: true,
       commits: [mockCommit],
     };
+  }
+
+  // Stateful, so a browser test can prove a retry re-issues the search rather than
+  // re-rendering the same state: partial first, then the outcome the prefix names.
+  if (
+    username.startsWith(E2E_INCOMPLETE_ONCE_USERNAME_PREFIX) ||
+    username.startsWith(E2E_INCOMPLETE_THEN_ERROR_USERNAME_PREFIX)
+  ) {
+    if (!e2eServedPartialUsernames.has(username)) {
+      e2eServedPartialUsernames.add(username);
+      return {
+        found: true,
+        incomplete: true,
+        commits: [mockCommit],
+      };
+    }
+
+    if (username.startsWith(E2E_INCOMPLETE_THEN_ERROR_USERNAME_PREFIX)) {
+      return commitSearchError(
+        "GitHub rate limit reached. Please try again in a few minutes.",
+        "rate_limit",
+      );
+    }
+
+    return completeResult();
   }
 
   if (username === "e2e-malformed-dates") {

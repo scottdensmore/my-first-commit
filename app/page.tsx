@@ -32,8 +32,12 @@ export default function Home() {
     clearRecentSearches,
     shareStatus,
     setShareStatus,
-    isPending,
+    isSearching,
+    isRetrying,
+    retryError,
+    retryStillPartial,
     runSearch,
+    cancelPendingSearch,
   } = useCommitSearch();
 
   const focusSearchInput = () => {
@@ -69,6 +73,7 @@ export default function Home() {
   };
 
   const resetSearch = () => {
+    cancelPendingSearch();
     setResult(null);
     setShareStatus("");
     clearSharedSearchUrl();
@@ -76,6 +81,7 @@ export default function Home() {
   };
 
   const startNewSearch = () => {
+    cancelPendingSearch();
     setResult(null);
     setUsername("");
     setLastSearchedUsername("");
@@ -90,7 +96,7 @@ export default function Home() {
   };
 
   const usernameValidationMessage = getUsernameValidationMessage(username);
-  const canSearch = Boolean(username.trim()) && !usernameValidationMessage && !isPending;
+  const canSearch = Boolean(username.trim()) && !usernameValidationMessage && !isSearching;
 
   const copyResult = async () => {
     if (!result?.found || !navigator.clipboard) {
@@ -139,7 +145,7 @@ export default function Home() {
       >
         {!result?.found ? (
           <div
-            className={`mb-8 mt-20 text-center transition-all duration-500 ${isPending ? "opacity-50" : "opacity-100"}`}
+            className={`mb-8 mt-20 text-center transition-all duration-500 ${isSearching ? "opacity-50" : "opacity-100"}`}
           >
             <h1 className="mb-4 text-3xl font-extrabold tracking-tight text-[var(--github-gray-dark)] sm:text-5xl">
               Discover your origin.
@@ -155,7 +161,7 @@ export default function Home() {
             username={username}
             validationMessage={usernameValidationMessage}
             canSearch={canSearch}
-            isPending={isPending}
+            isPending={isSearching}
             searchInputRef={searchInputRef}
             onSubmit={handleSearch}
             onUsernameChange={setUsername}
@@ -166,7 +172,7 @@ export default function Home() {
           <SearchShortcutSection
             title="Recent searches"
             usernames={recentSearches}
-            isPending={isPending}
+            isPending={isSearching}
             onSearch={handleShortcutSearch}
             getButtonLabel={(recentUsername) => `@${recentUsername}`}
             buttonAriaLabel={(recentUsername) => `Search ${recentUsername} again`}
@@ -178,14 +184,14 @@ export default function Home() {
           <SearchShortcutSection
             title="Examples"
             usernames={EXAMPLE_USERNAMES}
-            isPending={isPending}
+            isPending={isSearching}
             onSearch={handleShortcutSearch}
             getButtonLabel={(exampleUsername) => `@${exampleUsername}`}
             buttonAriaLabel={(exampleUsername) => `Search example username ${exampleUsername}`}
           />
         ) : null}
 
-        {isPending && !result ? (
+        {isSearching && !result ? (
           <div
             role="status"
             aria-live="polite"
@@ -199,9 +205,9 @@ export default function Home() {
           <SearchErrorState
             result={result}
             exampleUsernames={EXAMPLE_USERNAMES}
-            isPending={isPending}
+            isPending={isSearching}
             lastSearchedUsername={lastSearchedUsername}
-            onRetry={(searchUsername) => runSearch(searchUsername)}
+            onRetry={(searchUsername) => runSearch(searchUsername, { isRetry: true })}
             onReset={resetSearch}
             onExampleSearch={handleShortcutSearch}
           />
@@ -213,6 +219,12 @@ export default function Home() {
             lastSearchedUsername={lastSearchedUsername}
             shareStatus={shareStatus}
             isIncomplete={Boolean(result.incomplete)}
+            retry={{
+              isRetrying,
+              error: retryError,
+              stillPartial: retryStillPartial,
+              onRetry: (searchUsername) => runSearch(searchUsername, { isRetry: true }),
+            }}
             onCopy={copyResult}
           />
         ) : null}

@@ -6,12 +6,21 @@ import type { CommitInfo } from "../commitTypes";
 
 const PARTIAL_RESULT_HEADING_ID = "partial-result-heading";
 const PARTIAL_RESULT_DESCRIPTION_ID = "partial-result-description";
+const RETRY_OUTCOME_ID = "partial-result-retry-outcome";
+
+type PartialResultRetry = {
+  isRetrying: boolean;
+  error: string;
+  stillPartial: boolean;
+  onRetry: (username: string) => void;
+};
 
 type SearchResultsProps = {
   commits: CommitInfo[];
   lastSearchedUsername: string;
   shareStatus: string;
   isIncomplete: boolean;
+  retry: PartialResultRetry;
   onCopy: () => void;
 };
 
@@ -20,18 +29,34 @@ export default function SearchResults({
   lastSearchedUsername,
   shareStatus,
   isIncomplete,
+  retry,
   onCopy,
 }: SearchResultsProps) {
   const resultHeadingRef = useRef<HTMLHeadingElement>(null);
   const firstCommit = commits[0];
 
+  // Keyed on what changed rather than on object identity: a retry that comes back partial
+  // again returns a fresh object for the same commit, and focusing the heading on that
+  // would throw the visitor back to the top of the result and drown the announcement
+  // explaining what just happened.
+  const firstCommitSha = firstCommit?.sha;
   useEffect(() => {
-    if (firstCommit) resultHeadingRef.current?.focus();
-  }, [firstCommit, lastSearchedUsername]);
+    if (firstCommitSha) resultHeadingRef.current?.focus();
+  }, [firstCommitSha, lastSearchedUsername, isIncomplete]);
 
   if (!firstCommit) return null;
 
   const uniqueRepositoryCount = new Set(commits.map((commit) => commit.repository.full_name)).size;
+  // A retry changes nothing else on screen when it comes back still partial, so every
+  // outcome is spoken here rather than left to be inferred from the button's label.
+  const retryOutcome = retry.error
+    ? `${retry.error} The commits below are still the earlier partial result.`
+    : retry.stillPartial
+      ? "Searched again. GitHub still returned a partial result, so an earlier commit may still be missing."
+      : "";
+  const headingDescription = [PARTIAL_RESULT_DESCRIPTION_ID, retryOutcome ? RETRY_OUTCOME_ID : null]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full flex flex-col items-center pb-12 pt-8">
@@ -39,7 +64,7 @@ export default function SearchResults({
         <h1
           ref={resultHeadingRef}
           tabIndex={-1}
-          aria-describedby={isIncomplete ? PARTIAL_RESULT_DESCRIPTION_ID : undefined}
+          aria-describedby={isIncomplete ? headingDescription : undefined}
           className="rounded-sm text-2xl font-bold text-[var(--github-gray-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2"
         >
           {isIncomplete ? "Earliest public commit found so far" : "First public commit found"}
@@ -69,13 +94,43 @@ export default function SearchResults({
             <h2 id={PARTIAL_RESULT_HEADING_ID} className="text-base font-semibold">
               GitHub returned a partial result
             </h2>
-            {/* States the fact rather than instructing a retry: this view offers no search
-                control, so an instruction would send the visitor to the header's "Search
-                another user", which clears the very handle they were told to reuse. */}
+            {/* Sets up the button directly below it. Pointing at the header's "Search
+                another user" instead would clear the very handle being reused. */}
             <p id={PARTIAL_RESULT_DESCRIPTION_ID} className="mt-2 text-sm break-words">
               The search timed out before scanning every commit, so an earlier commit may be
-              missing. A repeated search for @{lastSearchedUsername} often reaches the full history.
+              missing. Searching again often reaches the full history.
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (retry.isRetrying) return;
+                retry.onRetry(lastSearchedUsername);
+              }}
+              // aria-disabled rather than disabled: a disabled control loses focus the
+              // moment it is pressed, stranding a keyboard user mid-action.
+              aria-disabled={retry.isRetrying}
+              className="mt-4 inline-flex items-center justify-center rounded-md border border-amber-700 bg-white px-3 py-2 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-[var(--github-blue)] focus:ring-offset-2 focus:ring-offset-amber-50 aria-disabled:cursor-not-allowed aria-disabled:bg-amber-50 aria-disabled:hover:bg-amber-50"
+            >
+              {retry.isRetrying ? "Searching again..." : "Search again"}
+            </button>
+            {/* One region, mounted whether or not it has anything to say: a live region
+                inserted together with its text is commonly not announced at all, and a
+                separate visible copy of the same message would be read twice. It sits
+                below the button so a wrapping message cannot push the control out from
+                under a visitor about to press it again. */}
+            <div role="status" aria-live="polite">
+              {retry.isRetrying ? (
+                <span className="sr-only">Searching GitHub again for {lastSearchedUsername}.</span>
+              ) : null}
+              {retryOutcome ? (
+                <p
+                  id={RETRY_OUTCOME_ID}
+                  className="mt-3 rounded-md border border-amber-700 bg-white p-3 text-sm font-semibold break-words"
+                >
+                  {retryOutcome}
+                </p>
+              ) : null}
+            </div>
           </section>
         ) : (
           <p className="mt-2 text-sm text-[var(--github-gray-text)]">

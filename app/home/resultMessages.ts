@@ -53,6 +53,27 @@ export function getResultMessage(result: CommitData): ResultMessage {
   }
 }
 
+/**
+ * Copy for a retry that failed while an earlier partial result is still on screen.
+ * `getResultMessage` cannot be reused here: it is written as standalone panel prose,
+ * so it runs to several sentences and its empty-search wording claims nothing came
+ * back -- which would contradict the commits rendered directly below the message.
+ */
+export function getRetryFailureMessage(result: CommitData): string {
+  switch (result.errorKind) {
+    case "rate_limit":
+      return "GitHub is rate limiting searches right now, so wait a few minutes before searching again.";
+    case "timeout":
+      return "GitHub took too long to respond again, so give it a moment before retrying.";
+    case "unavailable":
+      return "GitHub search is still unavailable.";
+    case "empty":
+      return "GitHub could not finish the search again.";
+    default:
+      return "That search did not finish.";
+  }
+}
+
 export function canRetryCommitSearch(result: CommitData | null) {
   return (
     Boolean(result?.incomplete) ||

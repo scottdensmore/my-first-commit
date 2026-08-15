@@ -55,9 +55,12 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
 
 - **E2E mocks.** `E2E_COMMIT_SEARCH_MOCKS=1` makes `app/actions.ts` return fixtures for the reserved
   usernames `e2e-result`, `e2e-slow-result`, `e2e-reject-once-*`, `e2e-malformed-dates`,
-  `e2e-incomplete`, `e2e-incomplete-empty`, `e2e-empty`, `e2e-rate-limit`, and `e2e-unavailable`.
-  Playwright sets this automatically and runs the app on port **3100**, not 3000. Add new fixture
-  cases in `app/actions.ts` when adding browser coverage for a new state.
+  `e2e-incomplete`, `e2e-incomplete-once-*`, `e2e-incomplete-then-error-*`, `e2e-incomplete-empty`,
+  `e2e-empty`, `e2e-rate-limit`, and `e2e-unavailable`. Playwright sets this automatically and runs
+  the app on port **3100**, not 3000. Add new fixture cases in `app/actions.ts` when adding browser
+  coverage for a new state. The `*-once-*` and `*-then-error-*` fixtures are stateful per process,
+  so a test can prove a retry re-issued the search rather than re-rendered: give each such test a
+  unique username, as the existing ones do with the Playwright worker index.
 - **Prettier ignores `*.md`.** Prose is formatted by hand. Do not run the formatter over docs, and do
   not reflow markdown as part of an unrelated change.
 - **The commit cache is per-process.** It is a plain `Map`, so it resets on every serverless cold
