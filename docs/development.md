@@ -60,7 +60,7 @@ failure:
 ```bash
 npm audit                # dependency vulnerability gate
 npm test                 # vitest run (jsdom)
-npm run test:e2e         # playwright; boots its own dev server on :3100
+npm run test:e2e         # playwright; boots its own dev server on :3100 (E2E_PORT to override)
 npm run lint             # eslint
 npm run format:check     # prettier --check
 npm run check:agent-docs # agent pointer files, tooling ignore lists, and this gate list
@@ -106,7 +106,15 @@ Run the local browser health check:
 npm run test:e2e
 ```
 
-Local Playwright runs start the app with `E2E_COMMIT_SEARCH_MOCKS=1` so result and error-state coverage is deterministic and does not depend on GitHub search availability. They use port 3100, not 3000, so the check does not collide with `npm run dev`.
+Local Playwright runs start the app with `E2E_COMMIT_SEARCH_MOCKS=1` so result and error-state coverage is deterministic and does not depend on GitHub search availability. They use port 3100, not 3000, so the check does not collide with `npm run dev`. Set `E2E_PORT` to run on a different port when 3100 is already taken.
+
+Before any spec runs, a global setup asks `/api/health` on that port whether it is this application. Playwright's `reuseExistingServer` only checks that the port answers, so an unrelated app left running there would otherwise be adopted and every spec would fail against the wrong site. The run now stops with one error naming the port and what was found there — a different service, an unexpected status, an unreadable response, a dropped connection, or silence.
+
+The check confirms identity, not freshness: a server of this app left on the port by an interrupted run still passes, even if it is serving another branch or was started without `E2E_COMMIT_SEARCH_MOCKS=1`, in which case the fixture-dependent specs fail. Stop it and let Playwright start its own if a run looks inexplicably wrong.
+
+Playwright starts or adopts its web server before that hook runs, so the check reports the problem rather than preventing the connection. That is enough: it turns a suite-wide wall of misleading failures into one accurate error in a few seconds. It never stops the other process — the port may belong to another checkout or another person's work.
+
+The worker count is set rather than derived from the machine, so the same checkout behaves the same way on any laptop or agent sandbox: 4 locally, and 2 under `CI`, which is what GitHub's 4-vCPU runners were already getting from Playwright's half-the-CPUs default. Set `E2E_WORKERS` to investigate a concurrency-sensitive failure; values outside 1–64 are rejected. Both overrides reject an unusable value rather than falling back silently — Playwright accepts a `NaN` worker count and then hangs with no output at all.
 
 Run the browser health check against production:
 
