@@ -3090,3 +3090,73 @@ Nothing to review on the accessibility or UI axis: no rendered output, ARIA, foc
 **CHANGES REQUESTED** — 4 actionable findings (1 should-fix, 3 nits).</result>
 <usage><subagent_tokens>62741</subagent_tokens><tool_uses>25</tool_uses><duration_ms>416764</duration_ms></usage>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>a12cbaa28f113eced</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a12cbaa28f113eced.output</output-file>
+<status>completed</status>
+<summary>Agent "Verify coalescing review fixes" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Scoped rerun — `scottdensmore/fix/coalesce-commit-searches`
+
+Commands run (the app/ row of the step 7 mapping), all in the repository root:
+
+| Command | Result |
+| --- | --- |
+| `npm test` | PASS — 25 files, 307 tests |
+| `npm run test:e2e` | PASS — 29 passed (22.6s), via `E2E_PORT=3117` |
+| `npm run lint` | PASS — no output, exit 0 |
+| `npm run format:check` | PASS — "All matched files use Prettier code style!" |
+| `npm run build` | PASS — compiled 4.7s, TypeScript clean, 8 static pages |
+
+Not rerun, per the mapping: `npm audit`, `npm run check:agent-docs`, `npm run check:labels`. Each last passed in the prior complete gate on this branch. The fix touched `app/commitSearchCache.test.ts`, `app/commitSearchInFlight.ts`, and `docs/architecture.md`; `docs/architecture.md` is an ordinary `*.md` file that routes to "nothing" (unlike `docs/development.md`, which would route to `check:agent-docs`), so nothing pulled those three back in. `AGENTS.md` is modified on this branch but was not touched by this fix round.
+
+## Your three confirmations
+
+**1. The cache tests genuinely fail under a broken `copyCommitSearchResult` — verified independently.**
+
+I backed up `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/commitSearchCache.ts`, substituted each mutant, ran only `app/commitSearchCache.test.ts`, then restored and confirmed the file byte-for-byte via `sha256sum -c` (`3107918a…` before and after).
+
+Mutant A, `return result;` — 2 failed | 4 passed:
+
+```
+ × commit search cache &gt; returns copies so callers cannot mutate cached results
+ × commit search cache &gt; copies on the way in, so mutating the stored value cannot reach the cache
+```
+
+Mutant B, `return { ...result };` — same two tests fail, same 4 pass. So the shallow copy is caught too, not just the missing one. This is the behaviour the review said was absent: previously `return result;` left all 5 green.
+
+**2. `.then(() =&gt; startSearch())` is binding-only for the existing tests — confirmed empirically.**
+
+I reverted line 42 of `app/commitSearchInFlight.ts` to `.then(startSearch)` and ran the full unit suite: **25 files, 307 tests, all passing**, identical to the fixed state. No existing test distinguishes the two forms, so the change is behaviour-neutral for current coverage. Restored and checksum-verified.
+
+That is the honest answer to "only the binding," and it has a corollary: nothing in the suite would catch a regression back to `.then(startSearch)`. It is defensible to leave it — `startSearch` is an arrow in the one production call site (`app/actions.ts:349`), so neither the lost `this` nor the stray resolution-value argument is observable today, and the reason is recorded in the comment at `app/commitSearchInFlight.ts:39-40`. Flagging it only so the choice is explicit, not as a blocker.
+
+**3. Nothing else in `app/commitSearchCache.test.ts` compares against a mutable value.**
+
+All six tests build their expected value from a fresh `makeCommitSearchResult()` call at assertion time (lines 53, 62, 68, 75, 84, 95). The only values held across a mutation are the locals `cachedResult` (line 44) and `storedResult` (line 57), and neither appears on the expected side of any assertion. No module-level fixture object remains in the file.
+
+## Findings
+
+**`missing-coverage` (minor, author can act or waive)** — `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/actions.test.ts:401-403`. In "makes one GitHub call for concurrent searches of the same username," the assertions are `expect(second).toEqual(first)` and `expect(third).toEqual(first)`. If per-caller copying broke, all three would be the same object and `toEqual` would still pass — a weaker instance of the defect class the review just fixed in the cache test. It is not a gap in practice: `app/commitSearchInFlight.test.ts:90-98` pins copy isolation directly with `not.toBe` plus a cross-caller mutation check. Worth an `expect(second).not.toBe(first)` only if you want the actions-level test to stand on its own.
+
+**`environment` (not blocking, the suite ran)** — Port 3100 is held by an unrelated Next.js app (`&lt;title&gt;Contoso Outdoors Company&lt;/title&gt;`, `/api/health` returns 404). The #109 guard behaved exactly as documented and failed fast at `tests/e2e/globalSetup.ts:16`:
+
+```
+Error: Port 3100 is in use by a server that did not serve /api/health (HTTP 404), so it could not
+be confirmed as this application. Stop whatever is using port 3100 and run the suite again, or
+point this run at a free port with E2E_PORT=&lt;port&gt;.
+```
+
+`E2E_PORT=3117` cleared it and the full Playwright suite ran. No `playwright install` was attempted; browsers were already present.
+
+**Pre-existing warning, not from this branch** — `npm test` prints a Vite config-loader warning about ESM syntax in `vitest.config.ts`. That file is unmodified on this branch, so it predates the change.
+
+No `audit-failure`, `test-failure`, `build-failure`, or `flake`. Working tree is byte-identical to how I found it (`git status --short --untracked-files=all` matches the starting snapshot; both mutated files restored and checksum-verified).
+
+**PASS (scoped)** — skipped: `npm audit`, `npm run check:agent-docs`, `npm run check:labels`, each last green in the prior complete gate. One non-blocking `missing-coverage` finding.</result>
+<usage><subagent_tokens>42902</subagent_tokens><tool_uses>23</tool_uses><duration_ms>272116</duration_ms></usage>
+</task-notification>
