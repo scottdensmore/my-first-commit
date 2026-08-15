@@ -9,7 +9,7 @@ My First Commit is a small Next.js App Router application. It has no database, n
 3. The client validates the username format before submitting.
 4. The client calls the `getCommits` server action in `app/actions.ts`.
 5. The server action queries GitHub's public commit search through Octokit.
-6. Successful and empty GitHub search results are cached briefly in memory by normalized username to reduce repeated API calls. Results GitHub marked `incomplete_results` are never cached, so a retry can reach a complete answer.
+6. Successful and empty GitHub search results are cached briefly in memory by normalized username to reduce repeated API calls. Concurrent requests for the same username share one upstream search rather than each issuing their own, since the cache cannot help until the first one finishes. That sharing is per server instance, like the cache, so the ceiling is one concurrent search per username per instance rather than globally. Results GitHub marked `incomplete_results` are never cached, so a retry can reach a complete answer.
 7. The server action maps GitHub results into the app's `CommitData` shape.
 8. The client renders the first public commit and the next several commits in `FirstCommitDisplay`.
 9. Successful searches are stored in browser `localStorage` as recent-search shortcuts.

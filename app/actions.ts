@@ -3,6 +3,7 @@
 import { Octokit } from "octokit";
 import type { CommitData, CommitErrorKind, CommitInfo } from "./commitTypes";
 import { getCachedCommitSearch, setCachedCommitSearch } from "./commitSearchCache";
+import { coalesceCommitSearch } from "./commitSearchInFlight";
 import { githubProfileUrl } from "./githubUrls";
 import { logger } from "./logger";
 import { getUsernameValidationMessage, normalizeGitHubUsername } from "./username";
@@ -344,6 +345,15 @@ export async function getCommits(username: string): Promise<CommitData> {
   const cachedCommitSearch = getCachedCommitSearch(cacheKey);
   if (cachedCommitSearch) return cachedCommitSearch;
 
+  // The cache only helps after a search finishes; concurrent misses for the same username
+  // would each call GitHub against one shared quota.
+  return coalesceCommitSearch(cacheKey, () => searchGitHubCommits(normalizedUsername, cacheKey));
+}
+
+async function searchGitHubCommits(
+  normalizedUsername: string,
+  cacheKey: string,
+): Promise<CommitData> {
   try {
     const response = await withTimeoutSignal((signal) =>
       octokit.rest.search.commits({

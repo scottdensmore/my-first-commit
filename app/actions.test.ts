@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearCommitSearchCache } from "./commitSearchCache";
+import { clearInFlightCommitSearches } from "./commitSearchInFlight";
 import { getCommits } from "./actions";
 
 const invokeGetCommits = getCommits as unknown as (
@@ -51,6 +52,7 @@ const commitItem = {
 describe("getCommits", () => {
   beforeEach(() => {
     clearCommitSearchCache();
+    clearInFlightCommitSearches();
     searchCommits.mockReset();
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -382,6 +384,75 @@ describe("getCommits", () => {
 
     expect(result.incomplete).toBeUndefined();
     expect(searchCommits).toHaveBeenCalledTimes(1);
+  });
+
+  it("makes one GitHub call for concurrent searches of the same username", async () => {
+    let resolveSearch: (value: unknown) => void = () => {};
+    searchCommits.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSearch = resolve;
+      }),
+    );
+
+    const searches = Promise.all([getCommits("octo"), getCommits("octo"), getCommits("octo")]);
+    resolveSearch({ data: { items: [commitItem] } });
+    const [first, second, third] = await searches;
+
+    // One shared token quota: without this, a link shared with a crowd multiplies into one
+    // upstream search per reader, all asking the identical question.
+    expect(searchCommits).toHaveBeenCalledTimes(1);
+    expect(first.found).toBe(true);
+    expect(second).toEqual(first);
+    expect(third).toEqual(first);
+    // Equal, not identical: toEqual alone would pass if all three shared one object.
+    expect(second).not.toBe(first);
+    expect(third).not.toBe(second);
+  });
+
+  it("coalesces concurrent searches that differ only by case", async () => {
+    let resolveSearch: (value: unknown) => void = () => {};
+    searchCommits.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSearch = resolve;
+      }),
+    );
+
+    const searches = Promise.all([getCommits("Octo"), getCommits("octo"), getCommits("  OCTO  ")]);
+    resolveSearch({ data: { items: [commitItem] } });
+    await searches;
+
+    expect(searchCommits).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not coalesce concurrent searches for different usernames", async () => {
+    searchCommits.mockResolvedValue({ data: { items: [commitItem] } });
+
+    await Promise.all([getCommits("octo"), getCommits("torvalds")]);
+
+    expect(searchCommits).toHaveBeenCalledTimes(2);
+  });
+
+  it("shares one failure across concurrent searches without wedging the username", async () => {
+    let rejectSearch: (reason: unknown) => void = () => {};
+    searchCommits.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectSearch = reject;
+      }),
+    );
+
+    const searches = Promise.all([getCommits("octo"), getCommits("octo")]);
+    rejectSearch(Object.assign(new Error("boom"), { status: 500 }));
+    const [first, second] = await searches;
+
+    expect(first.errorKind).toBe("unavailable");
+    expect(second.errorKind).toBe("unavailable");
+    expect(searchCommits).toHaveBeenCalledTimes(1);
+
+    // A failure must not leave the key behind, or every later search for this username
+    // would replay it instead of retrying.
+    searchCommits.mockResolvedValue({ data: { items: [commitItem] } });
+    await expect(getCommits("octo")).resolves.toMatchObject({ found: true });
+    expect(searchCommits).toHaveBeenCalledTimes(2);
   });
 
   it("returns a helpful rate limit message and logs a structured warning for GitHub rate-limit 403 errors", async () => {

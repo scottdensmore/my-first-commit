@@ -44,6 +44,7 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
 - `app/page.tsx` — homepage shell
 - `app/actions.ts` — `getCommits` server action; Octokit search plus error normalization
 - `app/commitSearchCache.ts` — in-memory TTL cache (5 minutes, 100 entries)
+- `app/commitSearchInFlight.ts` — shares one upstream search between concurrent identical requests
 - `app/username.ts` — validation and normalization, used on both the client and the server action
 - `app/logger.ts` — structured warn/error logging
 - `app/home/` — homepage search internals (hook, form, results, recent searches, analytics)
@@ -72,7 +73,9 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
 - **Prettier ignores `*.md`.** Prose is formatted by hand. Do not run the formatter over docs, and do
   not reflow markdown as part of an unrelated change.
 - **The commit cache is per-process.** It is a plain `Map`, so it resets on every serverless cold
-  start and is not shared between instances. Never treat it as durable storage.
+  start and is not shared between instances. Never treat it as durable storage. The in-flight map
+  in `app/commitSearchInFlight.ts` has the same scope: it coalesces the requests one instance is
+  serving, not requests across instances.
 - **Logging is sanitized on purpose.** `app/logger.ts` takes an event name plus scalar fields. Never
   log usernames, tokens, or raw Octokit error objects.
 - **`GITHUB_TOKEN` is server-only.** Never expose it as a `NEXT_PUBLIC_*` variable. The app works
