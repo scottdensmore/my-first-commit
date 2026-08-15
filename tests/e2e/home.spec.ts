@@ -278,6 +278,29 @@ test("home page renders recent searches stored in the browser", async ({ page })
   await expect(page.getByRole("button", { name: "Search octocat again" })).toBeVisible();
 });
 
+test("home page ignores corrupt stored recent searches", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "my-first-commit:recent-searches",
+      JSON.stringify(["", "  ", "octocat", 42, "not a username", "  OCTOCAT  "]),
+    );
+  });
+
+  await page.goto("/");
+
+  // Asserting the row's visible text, because that is what the visitor reads and it is the
+  // only form that catches every case at once. Before this fix the same stored list rendered
+  // "@", "@", "@octocat", "@ OCTOCAT": blanks became bare "@" buttons that searched for
+  // nothing, and a case variant became a second button for the same person.
+  //
+  // An accessible-name assertion would not do it. These buttons carry an aria-label, so a
+  // blank entry is named "Search  again" rather than "@", and Playwright's name matching is
+  // a case-insensitive substring by default, so "Search octocat again" also matches
+  // "@OCTOCAT".
+  const recentSearches = page.getByRole("region", { name: "Recent searches" });
+  await expect(recentSearches.getByRole("button")).toHaveText(["Clear", "@octocat"]);
+});
+
 test("home page advertises branded app and social preview images", async ({ page, request }) => {
   await page.goto("/");
 
