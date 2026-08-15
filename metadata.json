@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M03AHQMV6S7JXEF1TCY9ZBJ1",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/fix/sanitize-recent-searches",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "CHANGELOG.md",
+    "app/home/recentSearches.test.ts",
+    "app/home/recentSearches.ts",
+    "tests/e2e/home.spec.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 889,
+    "cache_creation_tokens": 2342981,
+    "cache_read_tokens": 158107338,
+    "output_tokens": 327694,
+    "api_call_count": 446,
+    "subagent_tokens": {
+      "input_tokens": 194,
+      "cache_creation_tokens": 233413,
+      "cache_read_tokens": 2548189,
+      "output_tokens": 82958,
+      "api_call_count": 97
+    }
+  }
+}
