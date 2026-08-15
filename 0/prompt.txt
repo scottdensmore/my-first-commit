@@ -1713,3 +1713,51 @@ The renamed test itself is a legitimate regression test for the guard: delete `i
 **FAIL** — 1 environment finding (gate not run), 1 missing-coverage finding. Free port 3100, or start the Playwright server on another port, and re-invoke me for the five scoped commands.</result>
 <usage><subagent_tokens>38185</subagent_tokens><tool_uses>13</tool_uses><duration_ms>186440</duration_ms></usage>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>ac026acc284e997c3</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/ac026acc284e997c3.output</output-file>
+<status>completed</status>
+<summary>Agent "Scoped rerun, port blocked" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Scoped rerun — `scottdensmore/feat/partial-result-retry`
+
+### Commands run
+
+| Command | Result |
+| --- | --- |
+| `npm test` | PASS — 23 files, 246 tests, 14.35s |
+| `npm run lint` | PASS — clean, exit 0 |
+| `npm run format:check` | PASS — "All matched files use Prettier code style!" |
+| `npm run build` | PASS — compiled in 4.8s, TypeScript clean, 8 routes generated |
+
+Not rerun, last green from the complete gate you cite: `npm audit`, `npm run check:agent-docs`, `npm run check:labels` (the step 7 mapping does not route `app/`-only fixes to them), and `npm run test:e2e` (which it *does* route, see below).
+
+### Your e2e claim — I checked it and I agree
+
+I could not check it with `git diff` the way you suggested, and it is worth knowing why: the entire branch is uncommitted (`git status` shows 14 modified files plus untracked `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.test.ts`), there is no stash and no intermediate commit, so `git diff` only reproduces the whole branch-vs-`main` diff. Nothing in git records the state that passed the gate two reports ago. So I verified it two other ways.
+
+**Timestamps.** `test-results/` last written 20:22:58 and `.next/` 20:23:36 — consistent with the gate's order (`test:e2e` then `build`). Every product file on the branch has an mtime at or before 20:21:35 except exactly two: `app/home/useCommitSearch.test.ts` (20:30:44) and `app/home/useCommitSearch.ts` (20:31:04).
+
+**Compiled output.** I snapshotted `.next/static` from the 20:23:36 build before rebuilding, then compared it to the build I just ran. All 12 content-hashed JS chunks are **byte-identical**, and the three per-build manifests are content-identical too — the only difference in the whole client output is the random `BUILD_ID` directory name (`6JiHpzp0psJ3FY4hujTw9` → `2J1drwo3N5LY_76dws1nx`). Client bundles are content-addressed, so a behavioural edit to a client hook could not leave every chunk hash unchanged. Your "comment-only, no product-code behaviour change" claim holds.
+
+I therefore agree the 28-journey browser result still stands for this state, and I would not have you wait on the port for correctness reasons. The one thing I cannot do is convert that into a passing `test:e2e`.
+
+### Findings
+
+- **environment** — `npm run test:e2e` did not run. Port 3100 has a live listener (`ss -ltn` shows `0.0.0.0:3100` and `[::]:3100` LISTEN), and per your instruction I did not probe the owning process or work around the port. Step 7's mapping routes `app/` fixes to `test:e2e`, so this scoped rerun is incomplete on that one command by rule, even though the evidence above says the result is unchanged. Not author-actionable.
+
+### Coverage (optional, not counted as a finding)
+
+The new case at `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.test.ts:157` does exercise the rejection path for real — `bad_name` fails `app/username.ts:10` (`/^[a-zA-Z0-9-]+$/`), so it is genuinely refused before `runCommitSearch` starts. Worth noting the mock there uses `mockReturnValue`, not `mockReturnValueOnce`, so the test's meaning depends on that validation rejecting; a future edit to the username rule would silently weaken it rather than fail it. A one-line comment naming that dependency would make it robust.
+
+The failure mode this guards (form disabled forever with nothing in flight) is user-visible and would be practical in Playwright with the `e2e-slow-result` fixture plus an invalid handle submitted mid-flight. I am not calling that a gap for this slice — the unit test pins the mechanism and no journey can be verified while the port is held — but it is a reasonable follow-up.
+
+Also noting for completeness, not a branch finding: `npm test` prints a Vite `configLoader: 'native'` warning about `vitest.config.ts`. That file is unmodified on this branch, so the warning is pre-existing.
+
+**FAIL — 0 author-actionable findings, 1 environment finding (`npm run test:e2e`, port 3100 held).** Everything you asked me to run is green, and the evidence supports committing on the strength of the earlier browser pass; I am not recording a pass verdict for a command that did not execute.</result>
+<usage><subagent_tokens>29737</subagent_tokens><tool_uses>16</tool_uses><duration_ms>214232</duration_ms></usage>
+</task-notification>
