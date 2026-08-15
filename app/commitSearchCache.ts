@@ -10,7 +10,12 @@ type CacheEntry = {
 
 const commitSearchCache = new Map<string, CacheEntry>();
 
-function copyCommitSearchResult(result: CommitData): CommitData {
+/**
+ * Exported so the in-flight map shares one definition with the cache. Both hand a stored or
+ * shared result to more than one caller, and neither wants a caller's mutation to reach the
+ * other holders of it.
+ */
+export function copyCommitSearchResult(result: CommitData): CommitData {
   return {
     ...result,
     commits: result.commits.map((commit) => ({
