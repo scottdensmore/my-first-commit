@@ -2777,3 +2777,53 @@ Your scoped rerun is correctly derived, with one thing to hold to: the step 7 ta
 **APPROVED** — 1 actionable finding (1 nit). The nit does not gate the commit; fold the one-sentence correction into it if you agree, and no re-review is needed for that edit alone.</result>
 <usage><subagent_tokens>49576</subagent_tokens><tool_uses>22</tool_uses><duration_ms>245648</duration_ms></usage>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>a9e919510d6c79ef9</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a9e919510d6c79ef9.output</output-file>
+<status>completed</status>
+<summary>Agent "Scoped rerun for recent searches" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>All five requested commands passed. No port contention — 3100 was free, so the #109 preflight did not fire.
+
+## Scoped gate results
+
+| Command | Result |
+| --- | --- |
+| `npm test` | 24 files, 296 tests passed (14.2s) |
+| `npm run test:e2e` | 29 passed (22.7s), chromium |
+| `npm run lint` | clean, no output |
+| `npm run format:check` | "All matched files use Prettier code style!" |
+| `npm run build` | compiled, TypeScript clean, 8 static pages |
+
+Not rerun, per the step 7 mapping for an `app/`-only fix: `npm audit`, `npm run check:agent-docs`, `npm run check:labels`. Those last passed in the complete gate on this branch and none of their inputs changed (`package.json`, `package-lock.json`, `AGENTS.md`, pointer files, `docs/development.md`, `.claude/agents/verifier.md`, `.github/labels.yml`, root config files are all untouched — the worktree contains exactly four modified files and no untracked ones).
+
+## Re-persist claim: confirmed true
+
+Your stated mechanism holds at every link. Tracing it:
+
+1. `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/username.ts:8` — `getUsernameValidationMessage` returns `""` for an empty value via `if (!username) return "";`. The pre-fix filter in `git show HEAD:app/home/recentSearches.ts` was `typeof search === "string" &amp;&amp; !getUsernameValidationMessage(search)`, so `""` passed and was returned in the list.
+2. `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/useCommitSearch.ts:40` — `setRecentSearches(getStoredRecentSearches())` puts the blank into React state.
+3. `/home/scottdensmore/Developer/scottdensmore/my-first-commit/app/home/searchExecution.ts:82-91` — the updater spreads `currentSearches` into `nextSearches` and calls `saveStoredRecentSearches(nextSearches)`. Its only filter removes entries whose lowercase equals the newly searched handle, and `"" !== trimmedUsername` for every handle that reaches this point, so the blank survives the filter and is written back.
+
+The second half of the sentence also checks out: `searchExecution.ts:55-57` rejects empty and invalid input (`if (!trimmedUsername) return false; if (getUsernameValidationMessage(trimmedUsername)) return false;`) before any write, so the only value this app ever *adds* is a trimmed, validated handle. "Junk does not originate here" and "it could be re-persisted" are both accurate, and they are consistent with each other.
+
+Two precision notes if you want the sentence airtight, neither of which makes the current wording wrong:
+
+- The write-back is gated on `if (data.found)` at `searchExecution.ts:81`, so it is the next *successful* search, not the next search. A search that errors or finds nothing leaves storage untouched.
+- `nextSearches` is `.slice(0, MAX_RECENT_SEARCHES)` after the new handle is prepended, so a blank sitting in the last slot can be dropped rather than rewritten. Blanks in earlier slots are rewritten. "Could be re-persisted" already covers this; "always" would not.
+
+## Coverage
+
+The new unit case at `app/home/recentSearches.test.ts` ("does not let collapsed duplicates consume cap slots") closes the gap review identified: the pre-existing cap test used only blanks, which a cap-counts-validated-entries mutant satisfies because blanks are rejected before the count, while duplicates are rejected after. The docblock and `CHANGELOG.md` edits are prose-only and need no test. The journey at `tests/e2e/home.spec.ts:281` covers the user-visible surface. No missing coverage.
+
+## Non-findings
+
+`npm test` prints a Vite config-loader deprecation warning about ESM syntax in `vitest.config.ts`. Pre-existing and not attributable to this branch — the worktree does not touch `vitest.config.ts` or any other config file. Not counted as a branch-introduced warning.
+
+**PASS (scoped)** — `npm test`, `npm run test:e2e`, `npm run lint`, `npm run format:check`, `npm run build` all succeeded; `npm audit`, `npm run check:agent-docs`, and `npm run check:labels` were not rerun and stand on the earlier complete pass. Zero actionable findings.</result>
+<usage><subagent_tokens>27597</subagent_tokens><tool_uses>16</tool_uses><duration_ms>177002</duration_ms></usage>
+</task-notification>
