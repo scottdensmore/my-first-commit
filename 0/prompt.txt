@@ -2440,3 +2440,70 @@ Both helper servers stopped; 3100, 3111, and 3112 all clear; no `next dev` or Pl
 **PASS**</result>
 <usage><subagent_tokens>39050</subagent_tokens><tool_uses>27</tool_uses><duration_ms>313467</duration_ms></usage>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>a98f9247e4f859dcf</task-id>
+<tool-use-id>toolu_01WZsh8riWH8APavpts13LiQ</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a98f9247e4f859dcf.output</output-file>
+<status>completed</status>
+<summary>Agent "Verify target extraction" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Scoped rerun — branch `scottdensmore/test/isolate-e2e-server`
+
+### Commands run
+
+| Command | Result |
+| --- | --- |
+| `npm test` | PASS — 24 files, 277 tests |
+| `npm run test:e2e` | PASS — 28 passed in 24.7s, port 3100 free, no `E2E_PORT` override needed |
+| `npm run lint` | PASS — no output |
+| `npm run format:check` | PASS — all matched files clean |
+| `npm run build` | PASS — TypeScript in 13.5s, 8 static pages |
+| `npm run check:agent-docs` | PASS — "Agent docs are consistent." |
+| `npm run check:labels` | PASS — 13 labels valid |
+
+I added `npm run check:labels` beyond your list: the step 7 `scripts/` row routes there too (`scripts/sync-labels.mjs` implements it), and `scripts/` is in the diff. It passed.
+
+Not rerun, last green on the previous complete gate: `npm audit`. No dependency manifest changed.
+
+The `[WebServer] ⨯ Error: Synthetic E2E Server Action rejection` line in the e2e output is the deliberate `e2e-reject-once-*` fixture from `app/actions.ts:332`, not a finding.
+
+### Three-way `PLAYWRIGHT_BASE_URL` behaviour — confirmed
+
+Loaded `/home/scottdensmore/Developer/scottdensmore/my-first-commit/playwright.config.ts` directly and dumped the resolved object, so this is the config's actual wiring, not the module's:
+
+| Env | `use.baseURL` | `webServer` |
+| --- | --- | --- |
+| unset | `http://127.0.0.1:3100` | starts local, url `http://127.0.0.1:3100` |
+| `PLAYWRIGHT_BASE_URL=""` | `http://127.0.0.1:3100` | starts local |
+| `PLAYWRIGHT_BASE_URL=https://deployed.example.com` | that URL | absent |
+| set + `E2E_PORT=nonsense` | that URL, no throw | absent |
+| unset + `E2E_PORT=3200` | `http://127.0.0.1:3200` | url and `-p 3200` both follow |
+
+`baseURL` is a real string in every case, so the `?? undefined` narrowing never actually elides it. `workers` resolved to 4 throughout.
+
+### Finding: the informational note is only partly closed
+
+**Category: `missing-coverage`.** Your summary says "reverting the truthiness to `??` inside the module now fails a test." That is not what happens. I mutated the module, ran the file, and restored it from a byte-identical backup each time:
+
+- `scripts/e2e-server-identity.mjs:89`, `|| null` → `?? null`: **31 passed**, no failure.
+- `scripts/e2e-server-identity.mjs:90`, `deployedBaseUrl ?` → `deployedBaseUrl !== null ?`: **31 passed**, no failure.
+- Both lines reverted to nullish together: **1 failed | 30 passed**.
+
+The empty-string decision is made twice. Line 89 coerces `""` to `null`, and line 90's truthiness ternary independently catches `""`. Either one alone is sufficient, so each is individually redundant and no single-line revert is red. The behaviour is pinned against a full revert, which is a real improvement over the config-only version, but the specific regression test you believe exists for line 89 does not discriminate.
+
+Actionable if you want the guarantee you described: assert on `deployedBaseUrl` in the empty-string case. `resolveTargets({ PLAYWRIGHT_BASE_URL: "" })` currently returns `deployedBaseUrl: null` under `||` and `deployedBaseUrl: ""` under `??`, and the existing test at `scripts/e2e-server-identity.test.mjs:263` checks only `baseUrl` and `localBaseUrl`. One added expectation on that field makes line 89 individually load-bearing.
+
+### Coverage on the rest of the diff
+
+`resolveTargets` has the four cases you describe and they are meaningful; the deployed and `E2E_PORT`-isolation paths are genuinely exercised. `playwright.config.ts` still has no importing test, but it now holds only destructuring and the `new URL(...)` host/port interpolation — the mutation evidence above plus the direct config dump covers that wiring. The `AGENTS.md`, `CHANGELOG.md`, and `docs/development.md` edits are documentation and need no test.
+
+### Cleanup
+
+Worktree matches the starting snapshot exactly: same four modified files, same three untracked files, and `scripts/e2e-server-identity.mjs` diffs identical against the pre-mutation backup. No listener left on 3100 or 3200. Removed the gitignored `test-results/.last-run.json` that the e2e run created and the scratch scripts. Did not attempt `npx playwright install`; cached browsers (`chromium-1234`) were already present.
+
+**FAIL — 1 actionable finding.**</result>
+<usage><subagent_tokens>33920</subagent_tokens><tool_uses>20</tool_uses><duration_ms>283136</duration_ms></usage>
+</task-notification>
