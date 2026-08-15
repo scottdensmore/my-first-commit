@@ -7,12 +7,22 @@ import { MAX_RECENT_SEARCHES } from "./constants";
 import { saveStoredRecentSearches } from "./recentSearches";
 import { updateSharedSearchUrl } from "./sharedSearch";
 
+type SearchSource = "user" | "shared_url" | "retry";
+
+type SearchOptions = {
+  updateUrl?: boolean;
+  source?: SearchSource;
+};
+
 type SearchHandlers = {
   isLatestSearch: () => boolean;
   startTransition: TransitionStartFunction;
   setLastSearchedUsername: Dispatch<SetStateAction<string>>;
   setShareStatus: Dispatch<SetStateAction<string>>;
-  setResult: Dispatch<SetStateAction<CommitData | null>>;
+  // Takes the settled search rather than a state action: the caller decides whether a
+  // failed retry replaces what is on screen, which it cannot do from inside an updater.
+  // It is the single settle signal, so the caller can clear its own busy flag here.
+  applyResult: (result: CommitData) => void;
   setRecentSearches: Dispatch<SetStateAction<string[]>>;
 };
 
@@ -25,25 +35,30 @@ function unexpectedSearchError(): CommitData {
   };
 }
 
+/**
+ * Returns whether the search actually started. A caller that owns a busy flag must gate
+ * it on this: the guards below reject a username without ever settling, which would
+ * otherwise leave the UI busy with nothing in flight to clear it.
+ */
 export function runCommitSearch(
   searchUsername: string,
-  options: { updateUrl?: boolean } = {},
+  options: SearchOptions = {},
   {
     isLatestSearch,
     startTransition,
     setLastSearchedUsername,
     setShareStatus,
-    setResult,
+    applyResult,
     setRecentSearches,
   }: SearchHandlers,
-) {
+): boolean {
   const trimmedUsername = normalizeGitHubUsername(searchUsername);
-  if (!trimmedUsername) return;
-  if (getUsernameValidationMessage(trimmedUsername)) return;
+  if (!trimmedUsername) return false;
+  if (getUsernameValidationMessage(trimmedUsername)) return false;
   if (options.updateUrl) updateSharedSearchUrl(trimmedUsername);
 
   trackAppEvent("search_submitted", {
-    source: options.updateUrl ? "user" : "shared_url",
+    source: options.source ?? (options.updateUrl ? "user" : "shared_url"),
   });
   setLastSearchedUsername(trimmedUsername);
   setShareStatus("");
@@ -56,7 +71,7 @@ export function runCommitSearch(
     }
     if (!isLatestSearch()) return;
 
-    setResult(data);
+    applyResult(data);
     trackAppEvent("search_completed", {
       found: data.found,
       error_kind: data.errorKind ?? "none",
@@ -77,4 +92,6 @@ export function runCommitSearch(
       });
     }
   });
+
+  return true;
 }

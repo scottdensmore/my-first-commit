@@ -21,13 +21,28 @@ function expectSecurityHeaders(response: APIResponse) {
   expect(headers["reporting-endpoints"]).toContain('csp-endpoint="/api/csp-report"');
 }
 
+// Fixture usernames must stay within GitHub's 39-character limit, which the client
+// validates: over it, the Search button silently stays disabled and the journey fails
+// as an unexplained click timeout rather than as a validation error.
+const MAX_GITHUB_USERNAME_LENGTH = 39;
+
 async function searchForUsername(page: Page, username: string) {
+  expect(username.length).toBeLessThanOrEqual(MAX_GITHUB_USERNAME_LENGTH);
+
   await page.goto("/");
   await page.waitForLoadState("networkidle");
 
+  // The page takes focus in a mount effect, so this is the hydration barrier.
+  // `networkidle` is not one: filling this controlled input before hydration leaves
+  // React's state empty, so the Search button never enables and the click hangs for
+  // the full timeout with no indication of why.
   const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+  await expect(searchBox).toBeFocused();
   await searchBox.fill(username);
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+
+  const searchButton = page.getByRole("button", { name: "Search", exact: true });
+  await expect(searchButton).toBeEnabled();
+  await searchButton.click();
 }
 
 function captureReactRenderErrors(page: Page) {
@@ -223,6 +238,9 @@ test("home page blocks invalid usernames without leaving keyboard flow", async (
   await page.goto("/");
 
   const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+  // Same hydration barrier as searchForUsername: a pre-hydration fill leaves React's
+  // state empty, so the validation this asserts never runs.
+  await expect(searchBox).toBeFocused();
   const searchButton = page.getByRole("button", { name: "Search", exact: true });
 
   await searchBox.fill("octo_cat");
@@ -387,7 +405,11 @@ test.describe("local mocked commit search states", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    await page.getByRole("searchbox", { name: "GitHub username" }).fill("e2e-result");
+    // Same hydration barrier as searchForUsername: a pre-hydration fill leaves React's
+    // state empty, so the button never enables and this dies as an unexplained timeout.
+    const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+    await expect(searchBox).toBeFocused();
+    await searchBox.fill("e2e-result");
     const searchButton = page.getByRole("button", { name: "Search", exact: true });
     await expect(searchButton).toBeEnabled();
     expect(await getTextContrastRatio(searchButton)).toBeGreaterThanOrEqual(4.5);
@@ -496,15 +518,76 @@ test.describe("local mocked commit search states", () => {
       name: "Earliest public commit found so far",
     });
     await expect(partialResultHeading).toBeFocused();
-    const descriptionId = await partialResultHeading.getAttribute("aria-describedby");
-    expect(descriptionId).toBeTruthy();
-    await expect(page.locator(`#${descriptionId}`)).toContainText(
+    const describedBy = await partialResultHeading.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    await expect(page.locator(`#${describedBy!.split(" ")[0]}`)).toContainText(
       /an earlier commit may be missing/i,
     );
 
     // The amber panel is a new surface in this palette; assert it clears AA rather than
     // trusting that it looks fine.
     expect(await getTextContrastRatio(partialResultRegion)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  test("a retry that is still partial says so and keeps focus on the button", async ({ page }) => {
+    await searchForUsername(page, "e2e-incomplete");
+
+    const retryButton = page.getByRole("button", { name: "Search again" });
+    await retryButton.click();
+
+    // The fixture is always partial, so this is the repeat-partial outcome: nothing else
+    // on screen changes, and without a message the button reads as broken.
+    await expect(page.getByText(/still returned a partial result/i)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Earliest public commit found so far" }),
+    ).toBeVisible();
+    await expect(retryButton).toBeFocused();
+  });
+
+  test("retrying a partial result reaches the complete history", async ({ page }, testInfo) => {
+    const partialUsername = `e2e-incomplete-once-${testInfo.workerIndex}-${Date.now().toString(36)}`;
+
+    await searchForUsername(page, partialUsername);
+    await expect(
+      page.getByRole("heading", { name: "Earliest public commit found so far" }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Search again" }).click();
+
+    // The fixture returns a complete result on the second call, so the panel clearing
+    // proves the retry re-issued the search rather than re-rendering the same state.
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "GitHub returned a partial result" }),
+    ).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Follow-up commit" })).toBeVisible();
+  });
+
+  test("a failed retry keeps the partial result on screen", async ({ page }, testInfo) => {
+    const partialUsername = `e2e-incomplete-then-error-${testInfo.workerIndex}-${Date.now().toString(36)}`;
+
+    await searchForUsername(page, partialUsername);
+    const retryButton = page.getByRole("button", { name: "Search again" });
+    await expect(retryButton).toBeVisible();
+    const buttonBoxBefore = await retryButton.boundingBox();
+    expect(buttonBoxBefore).not.toBeNull();
+
+    await retryButton.click();
+
+    await expect(page.getByText(/still the earlier partial result/i)).toBeVisible();
+    await expect(page.getByRole("link", { name: "Initial public commit" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "GitHub is asking us to slow down." }),
+    ).toHaveCount(0);
+
+    // The failure renders below the button, so the control the visitor may press again
+    // does not shift out from under them.
+    const buttonBoxAfter = await retryButton.boundingBox();
+    expect(buttonBoxAfter).not.toBeNull();
+    // Tolerance rather than equality: the claim is that the button did not move, and an
+    // exact float comparison would fail on a sub-pixel rendering difference instead.
+    expect(Math.abs(buttonBoxAfter!.y - buttonBoxBefore!.y)).toBeLessThan(1);
+    expect(await getTextContrastRatio(retryButton)).toBeGreaterThanOrEqual(4.5);
   });
 
   test("home page renders a helpful empty search state", async ({ page }) => {

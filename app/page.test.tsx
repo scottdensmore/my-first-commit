@@ -115,6 +115,93 @@ describe("Home", () => {
     );
   });
 
+  it("keeps a partial result on screen when the retry fails", async () => {
+    mockGetCommits
+      .mockResolvedValueOnce({ ...commitResult, incomplete: true })
+      .mockResolvedValueOnce({
+        found: false,
+        error: "GitHub rate limit reached. Please try again in a few minutes.",
+        errorKind: "rate_limit",
+        commits: [],
+      });
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+    await screen.findByRole("heading", { name: /earliest public commit found so far/i });
+
+    await user.click(screen.getByRole("button", { name: "Search again" }));
+
+    // Losing the commits would punish the visitor for taking the retry the UI offered.
+    expect(await screen.findByText(/still the earlier partial result/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Initial commit" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /github is asking us to slow down/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("re-enables the search form when a retry is abandoned", async () => {
+    const slowRetry = createDeferred<CommitData>();
+    mockGetCommits
+      .mockResolvedValueOnce({ ...commitResult, incomplete: true })
+      .mockReturnValueOnce(slowRetry.promise);
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+    await screen.findByRole("heading", { name: /earliest public commit found so far/i });
+
+    await user.click(screen.getByRole("button", { name: "Search again" }));
+    await waitFor(() => {
+      expect(mockGetCommits).toHaveBeenCalledTimes(2);
+    });
+    await user.click(screen.getByRole("button", { name: /search another user/i }));
+
+    // The abandoned request can take the full GitHub timeout to resolve; the form must
+    // not sit disabled and labelled "Searching..." until it does.
+    const searchBox = await screen.findByRole("searchbox", { name: /github username/i });
+    await user.type(searchBox, "torvalds");
+    expect(screen.getByRole("button", { name: /^search$/i })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: /searching/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/searching github for/i)).not.toBeInTheDocument();
+
+    await act(async () => {
+      slowRetry.resolve(commitResult);
+      await slowRetry.promise;
+    });
+
+    expect(
+      screen.queryByRole("heading", { name: /first public commit found/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("attributes a retry from the error panel to a retry, not to a shared link", async () => {
+    mockGetCommits
+      .mockResolvedValueOnce({
+        found: false,
+        error: "GitHub rate limit reached. Please try again in a few minutes.",
+        errorKind: "rate_limit",
+        commits: [],
+      })
+      .mockResolvedValueOnce(commitResult);
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await user.type(screen.getByRole("searchbox", { name: /github username/i }), "octo");
+    await user.click(screen.getByRole("button", { name: /^search$/i }));
+    await screen.findByRole("heading", { name: /github is asking us to slow down/i });
+
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+
+    // Inferring the source from updateUrl would count this as a shared-link arrival,
+    // under-counting retries and inflating shared_url on the same dashboard.
+    await waitFor(() => {
+      expect(mockTrack).toHaveBeenCalledWith("search_submitted", { source: "retry" });
+    });
+  });
+
   it("copies a shareable result summary", async () => {
     mockGetCommits.mockResolvedValue(commitResult);
     const user = userEvent.setup();

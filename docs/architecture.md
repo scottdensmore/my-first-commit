@@ -37,7 +37,7 @@ My First Commit is a small Next.js App Router application. It has no database, n
 GitHub API failures are normalized in `app/actions.ts`:
 
 - Empty public search results show a polite empty state.
-- GitHub sets `incomplete_results` when a commit search times out before scanning every commit, and still returns `200` with a partial item list. Those results carry `incomplete: true` through `CommitData`: the UI presents them as the earliest commit found so far rather than the first commit and explains that searching again may reach the full history, and the cache refuses to store them so that a repeated search can. An incomplete search that returned no items is reported as an unfinished search, never as an absence of commits.
+- GitHub sets `incomplete_results` when a commit search times out before scanning every commit, and still returns `200` with a partial item list. Those results carry `incomplete: true` through `CommitData`: the UI presents them as the earliest commit found so far rather than the first commit and offers a retry, and the cache refuses to store them so that a retry can reach a complete answer. A retry that fails keeps the partial result on screen rather than replacing it, since the visitor took an action the page offered. An incomplete search that returned no items is reported as an unfinished search, never as an absence of commits.
 - Rate limits, timeouts, unavailable GitHub services, validation failures, and unknown errors show recovery-focused copy.
 - Server-side failures are logged with structured event names and sanitized fields only, without usernames, tokens, or raw Octokit error objects.
 
