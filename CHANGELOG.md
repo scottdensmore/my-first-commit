@@ -24,6 +24,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Changed
 
+- `.editorconfig` now carries a `max_line_length` matching Prettier's `printWidth`, so editors show the same wrap column the formatter uses. Markdown opts out, because prose here is hand-wrapped and Prettier does not format it.
 - One command now runs the validation gate. `npm run validate` chains the dependency audit, unit tests, browser checks, lint, formatting, agent-document and label checks, and the production build, stopping at the first failure. The `CI / validate` job runs that same script instead of listing the steps itself, so the local gate and the CI gate are the same definition rather than two lists that drift. `npm run check:agent-docs` now also fails if CI stops invoking the script, or if the copies of the list in the development guide or the `verifier` sub-agent definition stop matching it, and the parsing behind that check is unit tested. Those two are now the only places the chain is written out in order.
 - Local Entire checkpoint hooks now match Claude Code's current tool names, including the newer task tools, so the configuration no longer depends on Claude Code's legacy alias map.
 - Lint and unit tests now cover product code only. `eslint.config.mjs` and `vitest.config.ts` ignore the root-level external tooling-state directories `.claude/`, `.codex/`, `.entire/`, and `.vercel/`, matching `.prettierignore`. Neither tool skips dot-directories on its own, so an agent hook or a stray test file dropped in one of them was previously linted and run as if it were product code. `npm run check:agent-docs` now fails if those three ignore lists drift apart, and the entry matching behind that check is unit tested.
@@ -39,6 +40,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Removed
 
+- Four unused Next.js starter assets — `public/file.svg`, `public/globe.svg`, `public/vercel.svg`, and `public/window.svg` — which were deployed on every release but referenced nowhere in the app, its docs, or the README. The `public/` directory is now empty and gone with them, along with the Prettier ignore entry that existed only to accommodate them.
 - Copilot-specific instruction file. `.github/copilot-instructions.md` is deleted and deregistered from `npm run check:agent-docs`, which now keeps only `CLAUDE.md` and `GEMINI.md` as pointers to `AGENTS.md`. Copilot CLI, the Copilot cloud agent, Copilot code review, and Copilot Chat in VS Code read `AGENTS.md` natively, so those surfaces keep the same instructions; Copilot Chat on GitHub.com and in Visual Studio, JetBrains, Eclipse, and Xcode do not read `AGENTS.md` and no longer receive repository instructions. The check now also fails if the file reappears, since it would outrank `AGENTS.md`. The Copilot CLI hook file `.github/hooks/entire.json` is unaffected and stays.
 
 ## 0.3.0 - 2026-08-01

@@ -11,9 +11,6 @@ test-results
 playwright-report
 next-env.d.ts
 
-# Vendored assets
-public/*.svg
-
 # Tooling state (managed by external tools)
 .entire
 .codex
