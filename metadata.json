@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M01QTT4QS54EAHKEYHZYG494",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/feat/partial-result-retry",
+  "checkpoints_count": 13,
+  "files_touched": [
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "app/actions.ts",
+    "app/home/SearchResults.test.tsx",
+    "app/home/SearchResults.tsx",
+    "app/home/resultMessages.test.ts",
+    "app/home/resultMessages.ts",
+    "app/home/searchExecution.test.ts",
+    "app/home/searchExecution.ts",
+    "app/home/useCommitSearch.test.ts",
+    "app/home/useCommitSearch.ts",
+    "app/page.test.tsx",
+    "app/page.tsx",
+    "docs/architecture.md",
+    "tests/e2e/home.spec.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 182,
+    "cache_creation_tokens": 909551,
+    "cache_read_tokens": 36781509,
+    "output_tokens": 83194,
+    "api_call_count": 91,
+    "subagent_tokens": {
+      "input_tokens": 576,
+      "cache_creation_tokens": 1052899,
+      "cache_read_tokens": 12655902,
+      "output_tokens": 224784,
+      "api_call_count": 288
+    }
+  }
+}
