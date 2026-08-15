@@ -72,10 +72,10 @@ Lint and tests cover product code only, and `npm run check:agent-docs` fails if 
 drift apart.
 
 Membership is the list above, not a tool result. `npx prettier --file-info <path>` reporting
-`"ignored": true` is a signal, not proof — `.prettierignore` also excludes `package-lock.json`,
-`next-env.d.ts`, and `public/*.svg`, which `npm audit`, `npm run build`, and the browser suite do
-read. Agent configuration is not the criterion either: `.github/hooks/` is agent tooling but appears
-in none of the three ignore lists, so this mode does not apply to it.
+`"ignored": true` is a signal, not proof — `.prettierignore` also excludes `package-lock.json` and
+`next-env.d.ts`, which `npm audit` and `npm run build` do read. Agent configuration is not the
+criterion either: `.github/hooks/` is agent tooling but appears in none of the three ignore lists,
+so this mode does not apply to it.
 
 `git status` may also list unrelated work that step 1 of the workflow requires be preserved. Name
 every path you excluded from the change and why. If you cannot establish that a path outside the set

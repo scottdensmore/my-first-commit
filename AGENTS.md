@@ -162,10 +162,9 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
 
      Membership is the list above, not a tool result. `npx prettier --file-info <path>` reporting
      `"ignored": true` is a useful signal but is **not** sufficient alone — `.prettierignore` also
-     excludes `package-lock.json`, `next-env.d.ts`, and `public/*.svg`, each of which some gate
-     command does read. Agent configuration is likewise not the criterion: `.github/hooks/`
-     is agent tooling but appears in none of the three ignore lists, so a change touching it gets
-     no exemption.
+     excludes `package-lock.json` and `next-env.d.ts`, each of which some gate command does read.
+     Agent configuration is likewise not the criterion: `.github/hooks/` is agent tooling but
+     appears in none of the three ignore lists, so a change touching it gets no exemption.
 
      Enumerate with the branch diff plus `git status --short --untracked-files=all`. Step 1
      preserves unrelated work, so status may also list paths that belong to the user rather than to

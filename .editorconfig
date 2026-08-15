@@ -5,8 +5,15 @@ charset = utf-8
 end_of_line = lf
 indent_style = space
 indent_size = 2
+# Matches printWidth in .prettierrc.json, so editors show the column Prettier wraps at in the
+# files it formats. It ignores several it does not, including package-lock.json and next-env.d.ts.
+max_line_length = 100
 insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.md]
 trim_trailing_whitespace = false
+# Prettier does not format markdown here, so nothing enforces a column. Prose is wrapped by
+# hand at 100 while changelog entries are deliberately one long line per entry; an editor that
+# treated the value above as a wrap instruction would reflow them into churn.
+max_line_length = off
