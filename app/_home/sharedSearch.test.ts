@@ -73,7 +73,12 @@ describe("buildResultShareText", () => {
   });
 
   it("falls back to a search summary when there are no commits", () => {
-    const result: CommitData = { found: false, commits: [] };
+    const result: CommitData = {
+      found: false,
+      errorKind: "empty",
+      error: "No public commits found.",
+      commits: [],
+    };
     expect(buildResultShareText("octocat", result)).toContain(
       "octocat's first public commit search:",
     );

@@ -1,7 +1,8 @@
 "use server";
 
 import { Octokit } from "octokit";
-import type { CommitData, CommitErrorKind, CommitInfo } from "./commitTypes";
+import { toCommitSearchSuccess } from "./commitTypes";
+import type { CommitData, CommitErrorKind, CommitInfo, CommitSearchFailure } from "./commitTypes";
 import { getCachedCommitSearch, setCachedCommitSearch } from "./commitSearchCache";
 import { coalesceCommitSearch } from "./commitSearchInFlight";
 import {
@@ -36,7 +37,7 @@ function commitSearchError(
   error: string,
   errorKind: CommitErrorKind,
   incomplete = false,
-): CommitData {
+): CommitSearchFailure {
   return { found: false, error, errorKind, ...(incomplete ? { incomplete } : {}), commits: [] };
 }
 
@@ -480,7 +481,11 @@ async function searchGitHubCommits(
       return [];
     });
 
-    if (commits.length === 0) {
+    // One call establishes the non-empty invariant and builds the result, so the check and the
+    // construction cannot drift apart the way a separate `length === 0` guard could.
+    const result = toCommitSearchSuccess(commits, { incomplete: isIncompleteSearch });
+
+    if (!result) {
       const emptyResult = commitSearchError(
         isIncompleteSearch ? INCOMPLETE_COMMIT_SEARCH_MESSAGE : EMPTY_COMMIT_SEARCH_MESSAGE,
         "empty",
@@ -490,11 +495,6 @@ async function searchGitHubCommits(
       return emptyResult;
     }
 
-    const result: CommitData = {
-      found: true,
-      ...(isIncompleteSearch ? { incomplete: true } : {}),
-      commits,
-    };
     setCachedCommitSearch(cacheKey, result);
     return result;
   } catch (error: unknown) {

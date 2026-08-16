@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearCommitSearchCache } from "./commitSearchCache";
+import type { CommitData, CommitSearchFailure, CommitSearchSuccess } from "./commitTypes";
 import { clearInFlightCommitSearches } from "./commitSearchInFlight";
 import {
   COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES,
@@ -70,6 +71,23 @@ const commitItem = {
     html_url: "https://github.com/octo",
   },
 };
+
+// Narrowing helpers. `CommitData` is a discriminated union, so a test that wants a commit has to
+// say which variant it expects -- and saying it here, once, gives a readable failure when the
+// search returned the other one instead of `Object is possibly undefined` at the assertion.
+function expectSuccess(result: CommitData): CommitSearchSuccess {
+  if (!result.found) {
+    throw new Error(`expected a successful search, got ${result.errorKind}: ${result.error}`);
+  }
+
+  return result;
+}
+
+function expectFailure(result: CommitData): CommitSearchFailure {
+  if (result.found) throw new Error("expected an unsuccessful search, got commits");
+
+  return result;
+}
 
 describe("getCommits", () => {
   beforeEach(() => {
@@ -258,7 +276,7 @@ describe("getCommits", () => {
 
     const result = await getCommits("octo");
 
-    expect(result.commits[0].date).toBe("2024-01-01T00:00:00Z");
+    expect(expectSuccess(result).commits[0].date).toBe("2024-01-01T00:00:00Z");
   });
 
   it("skips commit items without a parseable date while keeping valid results", async () => {
@@ -282,7 +300,7 @@ describe("getCommits", () => {
 
     expect(result.found).toBe(true);
     expect(result.commits).toHaveLength(1);
-    expect(result.commits[0].sha).toBe("abcdef123456");
+    expect(expectSuccess(result).commits[0].sha).toBe("abcdef123456");
     expect(console.warn).toHaveBeenCalledWith({
       event: "github_commit_search_malformed_item",
       itemIndex: 0,
@@ -472,8 +490,8 @@ describe("getCommits", () => {
     rejectSearch(Object.assign(new Error("boom"), { status: 500 }));
     const [first, second] = await searches;
 
-    expect(first.errorKind).toBe("unavailable");
-    expect(second.errorKind).toBe("unavailable");
+    expect(expectFailure(first).errorKind).toBe("unavailable");
+    expect(expectFailure(second).errorKind).toBe("unavailable");
     expect(searchCommits).toHaveBeenCalledTimes(1);
 
     // A failure must not leave the key behind, or every later search for this username
@@ -726,7 +744,7 @@ describe("getCommits", () => {
 
     expect(result.found).toBe(true);
     expect(result.commits).toHaveLength(1);
-    expect(result.commits[0].sha).toBe("abcdef123456");
+    expect(expectSuccess(result).commits[0].sha).toBe("abcdef123456");
     expect(console.warn).toHaveBeenCalledWith({
       event: "github_commit_search_malformed_item",
       itemIndex: 0,

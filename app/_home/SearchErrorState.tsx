@@ -1,4 +1,4 @@
-import type { CommitData } from "../_lib/commitTypes";
+import type { CommitSearchFailure } from "../_lib/commitTypes";
 import {
   canRetryCommitSearch,
   getResultMessage,
@@ -7,7 +7,7 @@ import {
 import SearchShortcutSection from "./SearchShortcutSection";
 
 type SearchErrorStateProps = {
-  result: CommitData;
+  result: CommitSearchFailure;
   exampleUsernames: string[];
   isPending: boolean;
   lastSearchedUsername: string;

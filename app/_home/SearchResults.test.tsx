@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { CommitInfo } from "../_lib/commitTypes";
 import SearchResults from "./SearchResults";
 
-const commits: CommitInfo[] = [
+const commits: [CommitInfo, ...CommitInfo[]] = [
   {
     message: "Initial commit\n\nAdd the first files",
     date: "2024-01-01T00:00:00Z",
@@ -23,9 +23,17 @@ const commits: CommitInfo[] = [
   },
 ];
 
+// `map` widens the tuple back to an array, and these tests need fresh object identity rather than
+// different data -- the focus effect is keyed on what changed, so a copy is how they prove it.
+function copyCommits(): [CommitInfo, ...CommitInfo[]] {
+  const [first, ...rest] = commits;
+
+  return [{ ...first }, ...rest.map((commit) => ({ ...commit }))];
+}
+
 type Overrides = {
   isIncomplete?: boolean;
-  commits?: CommitInfo[];
+  commits?: [CommitInfo, ...CommitInfo[]];
   lastSearchedUsername?: string;
   retry?: Partial<Parameters<typeof SearchResults>[0]["retry"]>;
 };
@@ -154,7 +162,7 @@ describe("SearchResults", () => {
     // result and drown the one announcement explaining what happened.
     rerender({
       isIncomplete: true,
-      commits: commits.map((commit) => ({ ...commit })),
+      commits: copyCommits(),
       retry: { stillPartial: true },
     });
 
@@ -169,7 +177,7 @@ describe("SearchResults", () => {
 
     // The retry button unmounts with the panel, so without this the visitor is dropped
     // at the top of the document with nothing announcing the outcome they asked for.
-    rerender({ isIncomplete: false, commits: commits.map((commit) => ({ ...commit })) });
+    rerender({ isIncomplete: false, commits: copyCommits() });
 
     expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
   });

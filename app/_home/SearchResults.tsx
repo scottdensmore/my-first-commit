@@ -16,7 +16,9 @@ type PartialResultRetry = {
 };
 
 type SearchResultsProps = {
-  commits: CommitInfo[];
+  // The non-empty tuple, not a plain array: this view has no meaningful empty state, and taking
+  // the array meant carrying an early return that could never fire.
+  commits: [CommitInfo, ...CommitInfo[]];
   lastSearchedUsername: string;
   shareStatus: string;
   isIncomplete: boolean;
@@ -39,12 +41,10 @@ export default function SearchResults({
   // again returns a fresh object for the same commit, and focusing the heading on that
   // would throw the visitor back to the top of the result and drown the announcement
   // explaining what just happened.
-  const firstCommitSha = firstCommit?.sha;
+  const firstCommitSha = firstCommit.sha;
   useEffect(() => {
-    if (firstCommitSha) resultHeadingRef.current?.focus();
+    resultHeadingRef.current?.focus();
   }, [firstCommitSha, lastSearchedUsername, isIncomplete]);
-
-  if (!firstCommit) return null;
 
   const uniqueRepositoryCount = new Set(commits.map((commit) => commit.repository.full_name)).size;
   // A retry changes nothing else on screen when it comes back still partial, so every

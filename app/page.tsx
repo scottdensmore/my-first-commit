@@ -213,7 +213,7 @@ export default function Home() {
           />
         ) : null}
 
-        {result?.found && result.commits.length > 0 ? (
+        {result?.found ? (
           <SearchResults
             commits={result.commits}
             lastSearchedUsername={lastSearchedUsername}
