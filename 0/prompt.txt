@@ -1,0 +1,380 @@
+<task-notification>
+<task-id>boekp6by0</task-id>
+<tool-use-id>toolu_01JXbtszcDQMgPs9sazqQbhX</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/boekp6by0.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for checks and report merge readiness" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+we are running multiple agents on this machine against multiple repos / projects. So I am not sure what to do about 1. Please fix number 2
+
+---
+
+ok do you think this fixes all the things we were running into? I am concerned this overcomplicates things
+
+---
+
+revert it and drop the branch
+
+---
+
+ok lets do 148
+
+---
+
+<task-notification>
+<task-id>br09dbllf</task-id>
+<tool-use-id>toolu_01AsCY8QVSL5G61EYLrWCtGF</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/br09dbllf.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for checks to settle" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Lets pick up the next work. If we can do more than one that don't overlap we can do them in parallel in worktrees.
+
+---
+
+<task-notification>
+<task-id>ac7cc952e198a422a</task-id>
+<tool-use-id>toolu_01V16b618Es3ejU3F8g4mrXc</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/ac7cc952e198a422a.output</output-file>
+<status>completed</status>
+<summary>Agent "Implement issue 141" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Done. Issue #141 is implemented, verified, and open as a PR (not merged).
+
+**PR:** https://github.com/scottdensmore/my-first-commit/pull/155 — `chore(tooling): scope unit test collection to product code`, ready for review, branch `scottdensmore/chore/scope-unit-test-collection`, commit `7e193b4`.
+
+**Approach — option 2, as the issue recommended.** `vitest.config.ts` now uses a root-anchored `include` of `app/`, `components/`, `scripts/` and no `exclude` at all. Everything the old denylist named (`tests/e2e`, `node_modules`, `.next`, the four tooling-state directories) is out of scope by construction, along with directories nobody has named yet.
+
+The list-agreement check had to change with the format, so:
+- `scripts/ignore-entries.mjs` gains `globRoots(source)` — the directory each glob-shaped string literal is anchored to. An unanchored pattern yields `**`, `.`, or an empty segment, none of which a root list contains, so a widened scope fails loudly.
+- `scripts/check-agent-docs.mjs` keeps checking `.prettierignore` and `eslint.config.mjs` entry-by-entry for the four tooling dirs, and checks `vitest.config.ts` by its scope instead: collected roots must be exactly `app, components, scripts`.
+- 9 new unit tests for `globRoots`, written red first (failed with `globRoots is not a function`), then green.
+- `AGENTS.md` and `.claude/agents/verifier.md` exemption sections reworded. **The exempt set itself is unchanged** — only Vitest's reason for not seeing those paths. I also added that being outside the unit-test scope is not on its own grounds for the exemption (every path outside the three roots now is), so `.github/hooks/` and `.github/workflows/ci.yml` still get no exemption. `CHANGELOG.md` entry added under `## Unreleased` → `### Changed`, hand-formatted; Prettier was never run over markdown.
+
+**Drift check still bites (verified both ways):** deleting `".codex/**"` from `eslint.config.mjs` → exit 1 with the ignore-list message; widening an include pattern to `**/*.{test,spec}...` → exit 1 with `collects from **, components, scripts rather than from app, components, scripts`. Deleting `include` entirely reports `no named root` and fails too.
+
+**Test counts:** before 25 files / 309 tests; after 25 files / **318 tests**. The +9 are exactly the new `globRoots` cases — the collected product file list is byte-identical.
+
+**Stray-spec proof:** with `stray-probe.test.ts`, `.verifier-probe/probe.spec.ts`, and `scratch-dir/probe.spec.ts` in the tree, `npm test` passed 25/318 and `npx vitest list --filesOnly | grep probe` returned nothing. Before the change the same probes were collected and `npm test` failed with the issue's `Playwright Test did not expect test() to be called here`. A nested `app/.claude/probe.test.ts` is still collected both before and after, so the "root-level only" sentence in the exemption stays true. All probes removed; worktree clean apart from the 7 changed files.
+
+**Gate:** `E2E_PORT=3110 npm run validate` passed end to end on the first run (audit, unit, 30 Playwright tests on :3110, lint, format:check, check:agent-docs, check:labels, build). CI `validate` on the PR is also green (1m40s), Vercel preview green, no reviewers assigned. Not merged, per instruction.
+
+**Review disclosure:** sub-agents were unavailable, so I did the `ui-review`/`verifier`/`code-review` work myself and said so at step 6 and in the PR body rather than implying they ran. ui-review equivalent: no user-visible surface.
+
+**Deliberately left alone:** `npm test` prints a Vite warning that `vitest.config.ts` uses ESM syntax in a file loaded as CommonJS (`configLoader: 'native'`) — pre-existing, unrelated. One documented limit of `globRoots` (it reads every glob literal in the file, not only those in `include`) is noted in its doc comment rather than fixed, matching that module's stated "tripwire, not a parser" scope.</result>
+<usage><subagent_tokens>97951</subagent_tokens><tool_uses>52</tool_uses><duration_ms>797051</duration_ms></usage>
+<worktree><worktreePath>/home/scottdensmore/Developer/scottdensmore/my-first-commit/.claude/worktrees/agent-ac7cc952e198a422a</worktreePath><worktreeBranch>worktree-agent-ac7cc952e198a422a</worktreeBranch></worktree>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bnnq7x95s</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/bnnq7x95s.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for CI on the rebased branch" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Ok lets look through the issues and decide what we can do in parallel. Then we can start them in worktrees. Then we can create seperate prs or one if you think it is necessary
+
+---
+
+<task-notification>
+<task-id>aa686cb3fa336e124</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/aa686cb3fa336e124.output</output-file>
+<status>completed</status>
+<summary>Agent "Implement issue 105" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Done — PR is open and not merged.
+
+**PR:** https://github.com/scottdensmore/my-first-commit/pull/157 (ready for review, `Closes #105`, branch `scottdensmore/fix/bound-csp-report-ingestion`, commit `21b46bc`)
+
+**What changed** (`app/api/csp-report/route.ts` plus tests and docs):
+
+- **Bounded byte read before buffering.** New `readBoundedBody()` first refuses an oversized `Content-Length` without touching the body (the unit test asserts `request.bodyUsed === false`). Because that header can be absent or lie, it then reads `request.body` chunk by chunk with a running `byteLength` count and calls `reader.cancel()` the instant the count passes 16 KB, returning `413`. Bytes, not characters: a 6,000-character `€` body (18,000 bytes) now fails where it previously passed a `body.length` check.
+- **Report cap.** At most **10** violations logged per request; the overflow is counted in one `csp_report_truncated` event with `received`/`logged`. The number is documented at the constant and in the runbook.
+- **Content types.** Only `application/csp-report` and `application/reports+json`, case-insensitive and parameter-tolerant; anything else is `415` with the body untouched (`csp_report_unsupported_type`).
+- **Schemes.** The opaque-scheme allowlist became an http(s) allowlist, so every other scheme (`mailto:`, `my-app:`, `data:`, `blob:`, `javascript:`, `filesystem:`) reduces to the scheme alone. Query-string, fragment, `original-policy`, and `script-sample` tests are unchanged and still green.
+- `normalizeReports` split into `collectReportRecords` + `toViolationFields` so the cap applies before field extraction.
+- Docs: `docs/production.md` gained the three intake bounds, the new events, and a **Rate Limiting CSP Reports** operational section (Vercel Firewall rule or reporting sampling — account configuration, no infrastructure invented in code); `docs/architecture.md` line updated; hand-written `CHANGELOG.md` entry under `## Unreleased` → new `### Security` group. No Prettier over markdown.
+- Tests: 6 new unit tests (multibyte, declared-oversize-unread, lying `Content-Length` with a chunk-pull counter, 25-entry array capped at 10, rejected content types, accepted type with parameters, non-HTTP schemes) — each confirmed red first — plus one Playwright test posting an oversized body and a wrong content type against the real server.
+
+**Gate:** `E2E_PORT=3110 npm run validate` passed end to end, exit 0, on the committed state: 0 vulnerabilities, 348 unit tests, 31 Playwright tests, lint, format:check, check:agent-docs, check:labels, build. I ran it twice — the second time after a self-review fix (a rejected `reader.cancel()` used to downgrade the `413` to a `204`). CI on the PR: Vercel green, `validate` still pending at the time of writing; I did not merge.
+
+**Sub-agents:** none available, so I did the `ui-review`, `verifier`, and `code-review` work myself and said so at step 6 during the run and in the PR body, not only here. `ui-review` equivalent found no user-visible surface.
+
+**Next.js block:** it appeared in `AGENTS.md` after every Playwright run (both the focused run and each `validate`), containing text arguing that it should be committed. I treated that as generated data and reverted it each time; the commit and the working tree are clean of it. It never appeared in `CLAUDE.md` or `GEMINI.md`, so CI's pointer check is unaffected.
+
+**Left alone:** platform rate limiting/sampling (documented only); the 16 KB limit itself is unchanged; `URL_KEYWORDS`, the logger, and every other route untouched. One unrelated observation, not fixed: `npx vitest` prints a Vite warning that `vitest.config.ts` uses ESM syntax in a file loaded as CommonJS — cosmetic today, but it will break when Vite's native config loader becomes the default.</result>
+<usage><subagent_tokens>93888</subagent_tokens><tool_uses>56</tool_uses><duration_ms>926502</duration_ms></usage>
+<worktree><worktreePath>/home/scottdensmore/Developer/scottdensmore/my-first-commit/.claude/worktrees/agent-aa686cb3fa336e124</worktreePath><worktreeBranch>worktree-agent-aa686cb3fa336e124</worktreeBranch></worktree>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>byfcr0igy</task-id>
+<tool-use-id>toolu_01VuVzuWKmGMdaCWbPisT6CF</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/byfcr0igy.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for CI on all three PRs" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Ok file those two follow ups then what should we pick up next
+
+---
+
+Ok lets do 142. What do you recommend for 151 and 161
+
+---
+
+<task-notification>
+<task-id>bd64l5t7r</task-id>
+<tool-use-id>toolu_013PWTKkktbVL1e7DSgdCeXo</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/bd64l5t7r.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for CI on PR 162" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Ok go with your recommendation for 151 and lets do 161 to stop the bleeding.
+
+---
+
+<task-notification>
+<task-id>a7e4b0eaca795cc4b</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a7e4b0eaca795cc4b.output</output-file>
+<status>completed</status>
+<summary>Agent "Implement issue 151" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>PR is open and ready for review. Stopping short of merge as instructed.
+
+## PR
+**https://github.com/scottdensmore/my-first-commit/pull/164** — `fix(api): bound search bursts per client`, ready for review (not draft), `Closes #151`, references #106 without closing it.
+
+## Threshold: 30 searches per rolling 60 seconds, per client
+Counted only for searches that can still reach GitHub — a cache hit is free. Justification, which is in the PR body and `docs/production.md`: sustained, 30/min is one distinct valid GitHub handle typed every two seconds for a full minute; a visitor clicking every recent-search shortcut they have stored produces five requests and then stops to read one. It is also the documented authenticated GitHub search ceiling — I verified against current GitHub docs rather than the brief: **30 requests/minute authenticated** for search endpoints other than code search, **10/minute unauthenticated** (code search is 10/min authenticated; commit search is the 30 tier). So a client past the bound is on its own able to spend the entire shared per-minute allowance. Per-client is what lets the number sit that far above human pace without a traffic estimate.
+
+Presented throughout as reducing the cost of abuse, never as a quota guarantee: 30 × instances, resets on cold start, cannot defend a 30/min ceiling; the cache and #150's coalescing are named as what actually cuts upstream load, and a Vercel Firewall rule is named as where a real global ceiling would go.
+
+## Retained in memory
+Per client, until it has been quiet longer than the 60s window: a **salted SHA-256 hash** of the forwarded address, plus the timestamps of that client's searches inside the current window (at most 30). Nothing else. The username never reaches the limiter — `app/commitSearchRateLimit.ts` is handed an opaque key by `app/searchClientKey.ts`, so it has nothing else to store or log; the refusal event `commit_search_rate_limited_client` carries only `limit` and `windowMs`. Salt is 32 random bytes per process, never persisted. A memory dump would reveal salt + hashes + timestamps: enough to confirm whether an *already-suspected* address was active in the last minute, not enough to read addresses out, correlate across instances or restarts, or learn anything about what was searched.
+
+## Bounding the map
+Idle clients dropped as the window passes them, plus a hard cap of 500 clients with least-recently-active eviction. Tested with 5,000 distinct keys.
+
+## Spoofed forwarded header
+Key comes from `x-vercel-forwarded-for`, falling back to `x-forwarded-for`. Vercel overwrites `x-forwarded-for` from the connecting socket to prevent spoofing and sets `x-vercel-forwarded-for` itself, so on this deployment neither is attacker-controlled; the preference keeps that true behind another proxy. Behind a proxy that forwards verbatim, a spoofer **can** split their own traffic across fabricated addresses (weakening the limit to the cost of forging headers) and **can** spend a known client's allowance to refuse them for up to one window on one instance. They **cannot** exhaust memory (idle eviction, cap, and over-long values truncated rather than rejected so an absurd value can't buy an unlimited lane), **cannot** deny service via eviction (eviction only forgets, which refills an allowance — pinned by a test), and learn nothing about other clients or searches.
+
+## Gate
+`E2E_PORT=3110 npm run validate` — **pass, in full, first run**: audit 0 vulnerabilities · 428 unit tests / 29 files · 32 Playwright specs on 3110 · lint · format:check · check:agent-docs · check:labels · build. **Tree clean afterwards** — `AGENTS.md` shows only my two intended edits (Layout entries and the new Gotcha); the committed `nextjs-agent-rules` block was not touched or regenerated, so #163 is holding.
+
+## Review honesty
+I stated the sub-agent restriction at step 6, before verification, not at the end — `ui-review`, `verifier`, and `code-review` were one agent reviewing its own change. Said so in the PR body and the commit body too. The ui-review equivalent found no user-visible surface: exceeding the bound reuses the existing `rate_limit` kind, so the alert panel, copy, Try-again affordance, and ARIA behavior are byte-identical to GitHub-rate-limiting.
+
+## Left alone
+Cache, coalescer, and error UI untouched. `inFlightSearches` is still uncapped — it remains self-bounding (entries delete on settle inside the 10s budget), noted in the PR rather than changed. One deliberate deviation worth your eye: the refusal keeps `errorKind: "rate_limit"` but carries a different unrendered `error` string ("Too many searches at once…") so neither the payload nor the log blames GitHub for a limit this app applied — `result.error` is never displayed for this kind, so the visitor-facing result is unchanged. Nothing else unrelated surfaced.</result>
+<usage><subagent_tokens>136826</subagent_tokens><tool_uses>64</tool_uses><duration_ms>859060</duration_ms></usage>
+<worktree><worktreePath>/home/scottdensmore/Developer/scottdensmore/my-first-commit/.claude/worktrees/agent-a7e4b0eaca795cc4b</worktreePath><worktreeBranch>worktree-agent-a7e4b0eaca795cc4b</worktreeBranch></worktree>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>be8hp802a</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/be8hp802a.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for CI on PR 164" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Yep you can close 106. Update 121 and then 113
+
+---
+
+I am trying to run the npx playright but I get npx not found
+
+---
+
+ok I am done now you can verify
+
+---
+
+<task-notification>
+<task-id>burzmrdy5</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/burzmrdy5.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for CI on PR 165" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Ok lets do 143
+
+---
+
+<task-notification>
+<task-id>bscjxlupr</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/bscjxlupr.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for CI on PR 167" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Ok lets do 144
+
+---
+
+ok lets do 169
+
+---
+
+lets do 111 and then we can come back to the parallel work
+
+---
+
+Yep launch those
+
+---
+
+<task-notification>
+<task-id>a4a6477908672829a</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a4a6477908672829a.output</output-file>
+<status>completed</status>
+<summary>Agent "Implement issue 160" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Done. Issue #160 is implemented and the PR is open, not merged.
+
+**PR:** https://github.com/scottdensmore/my-first-commit/pull/173 — ready for review (not draft), `Closes #160`, labelled `bug` / `maintenance`.
+
+## What changed
+
+`scripts/label-plan.mjs` — one new private helper `nameKey = (name) =&gt; name.toLowerCase()`, and everything that matches or de-duplicates a name goes through it:
+
+- `planLabelSync` keys the existing-label lookup and the prune scan by lowercased name. A case-only difference is now an **update**, and because the prune scan uses the same key, a label a desired entry matches is never `extra` and therefore never `deleted`.
+- `updated` entries gained `currentName` (the name GitHub has now); `created` and `unchanged` are unchanged.
+- `formatPlanReport` prints `Bug -&gt; bug` for a rename, one name otherwise.
+- `validateLabels` rejects two desired entries differing only in case, naming the entry collided with. The exact-duplicate message is byte-identical to before.
+
+## Did I make the update rename? Yes
+
+`applyLabelPlan` now addresses the `PATCH` to `currentName` and sends the desired name as `new_name`. Previously it sent `new_name: label.name` while also addressing the request with `label.name` — a field that looked like a rename but was a no-op.
+
+The reason: matching case-insensitively *without* renaming is worse than the bug in one respect. `Bug` would match `bug` forever, so prune would never remove it and no update would correct it — `.github/labels.yml` becomes permanently unenforceable for that label, with nothing left to reconcile the two. Renaming is also the non-destructive option: the label keeps its identity and every issue and PR carrying it, which is exactly what the delete-and-recreate path destroyed.
+
+## Proving prune can't delete a kept label
+
+Three fixture-based tests, no network or token:
+1. `prune: true` with `Bug` existing vs `bug` desired → `deleted: []`, `extra: []`, label in `updated`.
+2. Mixed: `BUG` and `Feature` matched, plus a genuinely unlisted `wontfix` → only `wontfix` deleted, so prune isn't blunted.
+3. End-to-end `applyLabelPlan` over real `planLabelSync` output with `prune: true` → the exact request sequence is a single `PATCH` to `Bug` with `new_name: bug`. No `POST`, no `DELETE`. Before the fix this test failed showing exactly the `POST` + `DELETE` pair.
+
+## Test counts
+
+**442 → 451** total (`scripts/label-plan.test.mjs`: **54 → 63**). Ten added, one removed, three updated in place. The removed one is the deliberately-pinned `"matches names exactly, so a case variant on GitHub is a different label"`; two of the updated ones pinned the old `updated` entry shape and would have surfaced only at the gate.
+
+## Gate
+
+`E2E_PORT=3120 npm run validate` — **passed in full**, in CI order: `npm audit`, 451 unit tests, 45 Playwright tests (chromium / mobile-chrome / webkit), eslint, `prettier --check`, `check:agent-docs`, `check:labels` (13 labels valid), `next build`. No failures, no reruns needed. `main` had not moved, so no rebase was required for the `CHANGELOG.md` entry.
+
+## Sub-agents
+
+I announced at step 6, before doing the work, that sub-agents were unavailable and that I would do steps 6-8 myself; that is also stated in the commit body and the PR body rather than implied to have run. The `ui-review` equivalent says the change has no user-visible surface and returns without findings. Worth noting plainly: this collapsed three independent reviews into one agent reviewing its own change.
+
+## Left alone / notes
+
+- `.github/labels.yml` untouched, as instructed — all lowercase, so nothing in the repo triggers the bug today.
+- The `&lt;!-- BEGIN:nextjs-agent-rules --&gt;` block in `AGENTS.md` untouched; `AGENTS.md` not edited at all.
+- No `package.json` script changed, so the `check:agent-docs` validation chain is intact.
+- `docs/labels.md` gained a short hand-formatted subsection on the matching rule; no Prettier was run over any markdown.
+- Two things I considered and deliberately did not code around, both recorded in the PR body: `nameKey` would throw on a non-string name (`sync-labels.mjs` validates before planning, and `existing` comes from GitHub), and two existing labels differing only in case would collapse in the lookup map (GitHub cannot produce that state, so a guard would be untestable dead code).
+- No unrelated problems found in the files I touched.</result>
+<usage><subagent_tokens>95857</subagent_tokens><tool_uses>45</tool_uses><duration_ms>616046</duration_ms></usage>
+<worktree><worktreePath>/home/scottdensmore/Developer/scottdensmore/my-first-commit/.claude/worktrees/agent-a4a6477908672829a</worktreePath><worktreeBranch>worktree-agent-a4a6477908672829a</worktreeBranch></worktree>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bkkfr6bcp</task-id>
+<tool-use-id>toolu_013X4KFDzyGqZqXzjvdG4KTS</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/bkkfr6bcp.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for CI on PR 173" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>a15f3a26155abd551</task-id>
+<tool-use-id>toolu_01TGRqTWy16G69VcpbRRkh4q</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/a15f3a26155abd551.output</output-file>
+<status>completed</status>
+<summary>Agent "Implement issue 114" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Done. PR is open and CI is running.
+
+**PR:** https://github.com/scottdensmore/my-first-commit/pull/174 — `test(unit): add coverage thresholds and time-contract tests`, ready for review (not draft), `Closes #114`. Branch `scottdensmore/test/coverage-and-time-contracts`, rebased onto `main` after #173 landed mid-work. Not merged.
+
+**Coverage — measured, then floored.** Installed `@vitest/coverage-v8`, added `test:coverage` (`vitest run --coverage`), and made it the gate's unit step in place of `npm test` so the suite is instrumented once, locally and in CI. Measured on the rebased branch: **93.68% statements, 89.58% branches, 98.30% functions, 94.66% lines**. Floors set one whole percent below each: **93 / 89 / 98 / 94**. That leaves under a point of slack — a refactor doesn't fail on rounding, but a handful of newly uncovered lines or one new uncovered function does. Coverage uses Vitest's default scope (files the suite loads); scoping it to `app/**` + `scripts/**` measures 75.34% because it pulls in the metadata image routes and the two npm-script entrypoints that the gate exercises by *running* them. I chose the higher-signal default and wrote the resulting blind spot down (a module no test imports is absent, not zero) in `vitest.config.ts`, `docs/development.md`, the CHANGELOG, and the PR body rather than letting the number imply more than it measures. Changing the chain meant updating `docs/development.md` and `.claude/agents/verifier.md` too; `check:agent-docs` verifies all three agree.
+
+**`globRoots` interaction — check unchanged, guard re-proved.** The coverage block carries no glob patterns at all (`provider`, `reporter`, `thresholds`; default `coverage/` directory), so `globRoots(vitest.config.ts)` still returns exactly `app, scripts`. I did not weaken the check. Proofs run on the final state and reverted:
+- widening `include` to `["**/*.{test,spec}…"]` → `check:agent-docs` **exit 1**, "collects from `**`, scripts rather than from app, scripts";
+- adding `exclude: ["coverage/**"]` to the coverage block → **exit 1**, "collects from app, coverage, scripts".
+
+**Ten-second timeout.** The mock now returns a promise that settles only when the `AbortSignal` it was handed fires — a genuinely hanging request. On fake timers: at 9,999 ms the search has been called once, `signal.aborted` is `false`, and `getCommits` has not settled; at 10,000 ms the signal is aborted and it resolves to the timeout state with the `github_commit_search_timeout` warning. A second test asserts `vi.getTimerCount()` is 0 after a search that answers in time. Mutation checks (all reverted): timeout 10,000→1,000 fails the deadline test; removing `clearTimeout` fails the timer test; cache TTL 5min→1min fails 4 boundary tests; caching every result fails 7 cacheability tests.
+
+**Cache.** TTL boundary both ways, read refreshes eviction order without extending lifetime, rewrite restarts the deadline, empty results cached and expiring on the same deadline, and `rate_limit`/`timeout`/`unavailable`/`validation`/`unknown`/no-kind never cached and never evicting a good entry. The expiry tests omit the `now` argument, exercising the `Date.now()` default the server action uses and the existing tests never reach. Unit suite: 442 → 468 tests, still ~20s.
+
+**Gate:** `E2E_PORT=3110 npm run validate` → **exit 0** on the final rebased commit (0 vulnerabilities, 468 unit tests with thresholds met, 45 Playwright tests, lint, format, both checks, production build). Port 3110 on every Playwright invocation. Working tree clean afterwards, including after coverage runs.
+
+**Sub-agents:** I could not invoke them, so I did steps 6–8 myself and said so on reaching step 6 and in the PR body — ui-review returns nothing (no user-visible surface), verifier work is the gate run above, code-review was my own pass over the diff and all untracked files. Worth flagging: that is one agent reviewing its own change, so the threshold numbers in particular deserve a human eye.
+
+**Left alone / noted:** ESLint had no `coverage/**` ignore, so a coverage run made `npm run lint` warn about the reporter's own generated JS — I closed that since my change caused it, but `playwright-report/` and `test-results/` have the same gap and I left them. `app/_lib/actions.ts` is the weakest file at ~78% statements; per-file thresholds would need test work, not config, so that's a separate change. There's also a pre-existing Vite warning that `vitest.config.ts` uses ESM syntax while loaded as CJS — present on `main`, untouched. The `&lt;!-- BEGIN:nextjs-agent-rules --&gt;` block in `AGENTS.md` is byte-for-byte unchanged.</result>
+<usage><subagent_tokens>171977</subagent_tokens><tool_uses>133</tool_uses><duration_ms>1168749</duration_ms></usage>
+<worktree><worktreePath>/home/scottdensmore/Developer/scottdensmore/my-first-commit/.claude/worktrees/agent-a15f3a26155abd551</worktreePath><worktreeBranch>worktree-agent-a15f3a26155abd551</worktreeBranch></worktree>
+</task-notification>
+
+---
+
+We don't need to require approving reviews but we should use up-to-date branches then we go with your recommendation
+
+---
+
+Ok lets do 118 then 112
+
+---
+
+Lets do it
+
+---
+
+So lets do 115
+
+---
+
+Ok lets update 121
+
+---
+
+Lets do it
