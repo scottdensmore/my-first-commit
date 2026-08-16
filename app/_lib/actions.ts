@@ -105,6 +105,51 @@ function getE2eCommitSearchResult(username: string): CommitData | null {
     return completeResult();
   }
 
+  // Every field at a length or shape that has nowhere to wrap: a repository name with no spaces,
+  // a subject that is one unbroken token, a body carrying a long URL, and a 39-character owner.
+  // The other fixtures are all short, so they render identically whether or not the card handles
+  // long content -- which is why the overflow this reproduces went unnoticed.
+  if (username === "e2e-long-data") {
+    const owner = "a".repeat(39);
+    const repositoryName = "supercalifragilisticexpialidocious-monorepo-services-platform";
+
+    return {
+      found: true,
+      commits: [
+        {
+          ...mockCommit,
+          message: [
+            "Refactorthecommitindexingpipelineandnormalizeeverydownstreamconsumer",
+            "",
+            "See https://github.com/" +
+              owner +
+              "/" +
+              repositoryName +
+              "/pull/12345#issuecomment-9876543210",
+          ].join("\n"),
+          repository: {
+            name: repositoryName,
+            owner,
+            full_name: owner + "/" + repositoryName,
+          },
+          author: { ...mockCommit.author, login: owner },
+        },
+        {
+          ...mockCommit,
+          message: "Follow-up with an unbroken subject line that keeps going and going and going",
+          html_url: "https://github.com/e2e-user/next-repo/commit/bcdefa234567",
+          sha: "bcdefa234567",
+          repository: {
+            name: repositoryName,
+            owner,
+            full_name: owner + "/" + repositoryName,
+          },
+          author: { ...mockCommit.author, login: owner },
+        },
+      ],
+    };
+  }
+
   if (username === "e2e-incomplete") {
     return {
       found: true,

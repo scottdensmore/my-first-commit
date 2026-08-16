@@ -59,7 +59,7 @@ export default function SearchResults({
     .join(" ");
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full flex flex-col items-center pb-12 pt-8">
+    <div className="w-full flex flex-col items-center pb-12 pt-8">
       <div className="mb-6 w-full max-w-2xl text-left">
         <h1
           ref={resultHeadingRef}
@@ -160,29 +160,39 @@ export default function SearchResults({
       </div>
 
       <div className="relative w-full max-w-2xl">
-        <div className="absolute bottom-0 left-8 top-10 -z-10 hidden w-0.5 bg-[var(--github-border)] sm:block" />
+        <div
+          aria-hidden="true"
+          className="absolute bottom-0 left-8 top-10 -z-10 hidden w-0.5 bg-[var(--github-border)] sm:block"
+        />
 
-        <div className="flex flex-col gap-0">
-          <div className="mb-8 flex gap-4">
-            <div className="mt-12 hidden flex-col items-center sm:flex">
+        {/* An ordered list, because the order is the point -- these are the earliest commits, and
+            the first one is the answer. Without it assistive technology gets repeated card-shaped
+            groups of divs with no count and no sense of sequence.
+
+            `role="list"` is not redundant. Tailwind's preflight sets `list-style: none` on `ol`,
+            and Safari with VoiceOver drops list semantics from a list styled that way, so the
+            explicit role is what keeps the announcement in the browser this app now tests. */}
+        <ol role="list" aria-label="Earliest public commits" className="flex flex-col gap-0">
+          <li className="mb-8 flex gap-4">
+            <div aria-hidden="true" className="mt-12 hidden flex-col items-center sm:flex">
               <div className="h-4 w-4 rounded-sm border border-[var(--github-green-hover)] bg-[var(--github-green)] shadow-sm" />
             </div>
             <div className="min-w-0 flex-1">
               <FirstCommitDisplay data={firstCommit} isMain />
             </div>
-          </div>
+          </li>
 
           {commits.slice(1).map((commit) => (
-            <div key={`${commit.repository.full_name}-${commit.sha}`} className="mb-4 flex gap-4">
-              <div className="mt-8 hidden flex-col items-center sm:flex">
+            <li key={`${commit.repository.full_name}-${commit.sha}`} className="mb-4 flex gap-4">
+              <div aria-hidden="true" className="mt-8 hidden flex-col items-center sm:flex">
                 <div className="h-4 w-4 rounded-sm border border-[var(--github-green-hover)] bg-[var(--github-green)] opacity-70 shadow-sm" />
               </div>
               <div className="min-w-0 flex-1">
                 <FirstCommitDisplay data={commit} isMain={false} />
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
     </div>
   );
