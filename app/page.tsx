@@ -4,18 +4,18 @@ import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FaGithub } from "react-icons/fa";
-import { trackAppEvent } from "./home/analytics";
-import { EXAMPLE_USERNAMES } from "./home/constants";
-import SearchErrorState from "./home/SearchErrorState";
-import SearchForm from "./home/SearchForm";
-import SearchResults from "./home/SearchResults";
-import SearchShortcutSection from "./home/SearchShortcutSection";
-import { useCommitSearch } from "./home/useCommitSearch";
+import { trackAppEvent } from "./_home/analytics";
+import { EXAMPLE_USERNAMES } from "./_home/constants";
+import SearchErrorState from "./_home/SearchErrorState";
+import SearchForm from "./_home/SearchForm";
+import SearchResults from "./_home/SearchResults";
+import SearchShortcutSection from "./_home/SearchShortcutSection";
+import { useCommitSearch } from "./_home/useCommitSearch";
 import {
   buildResultShareText,
   clearSharedSearchUrl,
   getInitialSharedUsername,
-} from "./home/sharedSearch";
+} from "./_home/sharedSearch";
 import { getUsernameValidationMessage } from "./username";
 const APP_RELEASE = process.env.NEXT_PUBLIC_APP_RELEASE ?? "local";
 const APP_RELEASE_URL = process.env.NEXT_PUBLIC_APP_RELEASE_URL ?? "";

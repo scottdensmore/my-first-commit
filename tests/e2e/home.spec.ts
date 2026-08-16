@@ -351,6 +351,20 @@ test("unknown routes show a branded not-found page", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Go home" })).toHaveAttribute("href", "/");
 });
 
+test("the homepage internals directory is not a route", async ({ page }) => {
+  // `app/_home/` holds the homepage's components and modules, not a page. The leading
+  // underscore is Next.js's private-folder marker, so the segment cannot become a route even
+  // if someone later adds a `page.tsx` there. This asserts the outcome rather than the
+  // mechanism: it passed before the rename too, when the directory was `app/home/` and only
+  // the absence of a `page.tsx` kept `/home` free.
+  const response = await page.goto("/home");
+
+  expect(response?.status()).toBe(404);
+  await expect(
+    page.getByRole("heading", { name: "This commit path does not exist." }),
+  ).toBeVisible();
+});
+
 test("health endpoint reports app status without caching", async ({ request }) => {
   const response = await request.get("/api/health");
 

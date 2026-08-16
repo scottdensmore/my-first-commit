@@ -47,12 +47,19 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
 - `app/commitSearchInFlight.ts` — shares one upstream search between concurrent identical requests
 - `app/username.ts` — validation and normalization, used on both the client and the server action
 - `app/logger.ts` — structured warn/error logging
-- `app/home/` — homepage search internals (hook, form, results, recent searches, analytics)
+- `app/_home/` — homepage search internals (hook, form, results, recent searches, analytics)
 - `app/api/health/route.ts` — runtime health JSON for production checks
 - `app/api/e2e-readiness/route.ts` — non-production probe telling the Playwright preflight whether
   this server was started with the fixture mocks
 - `components/FirstCommitDisplay.tsx` — result timeline rendering
 - `tests/e2e/` — Playwright specs; unit tests are colocated as `*.test.ts(x)`
+
+**A folder under `app/` that is not a route starts with `_`.** Every other directory name there
+claims a URL segment, so an internal folder is one `page.tsx` away from becoming a public route,
+and nothing in its name says it should not be. Next.js treats a leading underscore as a
+[private folder](https://nextjs.org/docs/app/building-your-application/routing/colocation#private-folders)
+and excludes it from routing entirely, so `app/_home/` cannot serve `/home` however many files
+land in it. Name new internal folders the same way; a route directory keeps its bare name.
 
 ## Gotchas
 
