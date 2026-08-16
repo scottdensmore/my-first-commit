@@ -2,11 +2,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import RootLayout, { metadata } from "./layout";
 
-vi.mock("next/font/google", () => ({
-  Geist: () => ({ variable: "geist-sans" }),
-  Geist_Mono: () => ({ variable: "geist-mono" }),
-}));
-
 vi.mock("@vercel/analytics/next", () => ({
   Analytics: () => <div data-testid="vercel-analytics" />,
 }));
@@ -58,6 +53,17 @@ describe("RootLayout", () => {
       index: true,
       follow: true,
     });
+  });
+
+  it("renders text in the stylesheet's font stack without loading a web font", () => {
+    const html = renderToStaticMarkup(
+      <RootLayout>
+        <main>Page content</main>
+      </RootLayout>,
+    );
+
+    expect(html).toContain('<body class="antialiased">');
+    expect(html).not.toMatch(/font-geist/i);
   });
 
   it("mounts Vercel Analytics globally", () => {

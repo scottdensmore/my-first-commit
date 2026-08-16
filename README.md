@@ -49,6 +49,7 @@ The app is a Next.js App Router project. The browser collects a GitHub username,
 
 - **Framework:** [Next.js](https://nextjs.org/) (App Router)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Typography:** The visitor's system UI font stack, defined in `app/globals.css`. No web font is downloaded, so a build needs no font host.
 - **API Client:** [Octokit](https://github.com/octokit/octokit.js)
 - **Icons:** [React Icons](https://react-icons.github.io/react-icons/)
 - **Date Handling:** [date-fns](https://date-fns.org/)

@@ -26,6 +26,9 @@
   --color-gh-text-secondary: var(--github-gray-text);
   --color-gh-text-primary: var(--github-gray-dark);
 
+  /* Typography is the visitor's system UI stack, matching GitHub's own. These two tokens are the
+     only font definitions in the app: no web font is downloaded, so nothing here or in the build
+     depends on an external font host. */
   --font-sans:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji";
