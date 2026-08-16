@@ -29,33 +29,40 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
+      # Pinned rather than left to the runner's default, so the guard runs on the Node this
+      # repository targets. The scripts it runs need no dependencies, so there is no install step.
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
       # Two production deployments landing close together queue two promotions. The older one runs
-      # after main has already advanced, and pushing its tag is rejected when the deployed commit's
-      # workflow files no longer match main:
+      # after a newer deployment is already live, and pushing its tag is rejected when the deployed
+      # commit's workflow files no longer match main:
       #   refusing to allow a GitHub App to create or update workflow `.github/workflows/ci.yml`
       #   without `workflows` permission
       # The superseded commit is no longer production, so skip it instead of failing the run. The
       # newer commit gets its own promotion.
+      #
+      # Resolved from the deployments API rather than from the tip of main, which answers a
+      # different question. main advances at merge; a deployment becomes live later and may never.
+      # Comparing against the tip meant a newer commit still deploying -- or one that failed --
+      # suppressed the release of the commit genuinely in production, and that release was never
+      # cut at all.
       - name: Skip superseded deployment
         id: guard
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          # Resolved through the API rather than git, because the checkout above is shallow and
-          # pinned to the deployed commit, so origin/main is not necessarily present locally.
-          tip="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq '.sha')"
+          active="$(node scripts/resolve-active-deployment.mjs "$GITHUB_REPOSITORY" Production)"
 
-          if [ -z "$tip" ]; then
-            echo "Could not resolve the current main tip."
-            exit 1
-          fi
-
-          if [ "$tip" != "$TARGET_SHA" ]; then
-            echo "main has advanced to ${tip}."
-            echo "${TARGET_SHA} is no longer the deployed production commit; skipping its release."
+          if [ "$active" != "$TARGET_SHA" ]; then
+            echo "${active} is the live production deployment."
+            echo "${TARGET_SHA} has been overtaken; skipping its release."
             echo "superseded=true" >> "$GITHUB_OUTPUT"
           else
+            echo "${TARGET_SHA} is the live production deployment."
             echo "superseded=false" >> "$GITHUB_OUTPUT"
           fi
 

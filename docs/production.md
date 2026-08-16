@@ -110,6 +110,49 @@ See the [release guide](release.md). It owns the before-and-after-release checkl
 `CHANGELOG.md` entries into a dated section, and which workflow publishes which tag. Writing the
 entry in the first place is a per-change step in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
+## The Release Invariant
+
+**A release tag names a commit that was proven healthy in production, not a commit that merely
+merged and then something healthy was observed.** Two checks hold that up, and both exist because
+the obvious version of each answers a subtly different question.
+
+**The health run proves which commit it tested.** It points Playwright at a mutable alias, so a
+green suite on its own means something healthy was serving that URL — not that the commit which
+triggered the run was serving it. Before any spec runs,
+`scripts/verify-deployed-commit.mjs` asks `/api/health` what commit is live and compares it to the
+deployment's SHA. A deployment still in flight, or a failed one leaving the previous build live,
+now fails here in seconds rather than producing a wall of results describing code that is not
+deployed. The payload carries an abbreviated seven-character SHA, so the comparison is by prefix; a
+run reporting `local` is refused, because that is what the route returns when
+`VERCEL_GIT_COMMIT_SHA` is unset and it identifies no deployment at all.
+
+Manual runs pass no expected SHA, since a URL given by hand has no commit to expect, and the step
+is skipped.
+
+**Promotion asks which commit is live, not which is newest.** The superseded guard resolves the
+active deployment through the deployments API — the most recent one whose latest status is
+`success` — rather than comparing against the tip of `main`. Those are different questions: `main`
+advances at merge, while a deployment becomes live later and may never. Comparing against the tip
+meant a newer commit still deploying, or one that failed, suppressed the release of the commit
+genuinely in production, and that release was never cut at all. When no successful deployment can
+be found, the guard stops rather than guessing.
+
+Superseded deployments are still skipped, for the reason they always were: two deployments landing
+close together queue two promotions, and the older one cannot push its tag once its workflow files
+no longer match `main`.
+
+To check the invariant by hand:
+
+```bash
+curl -s https://my-first-commit-eta.vercel.app/api/health | jq -r .commit
+GITHUB_TOKEN=$(gh auth token) node scripts/resolve-active-deployment.mjs \
+  scottdensmore/my-first-commit Production
+```
+
+The first prints an abbreviated SHA and the second a full one. They must agree; if they do not,
+the alias and the deployment record disagree about what is live, and no release should be cut until
+they do.
+
 ## Production Health Check Alerts
 
 When `Production Health Check` fails, GitHub Actions opens or updates a GitHub issue titled:

@@ -24,6 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PLAYWRIGHT_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.base_url || vars.PRODUCTION_BASE_URL || github.event.deployment_status.environment_url }}
+      # Empty for a manual run against an arbitrary URL, where there is no commit to expect. A
+      # deployment_status run always has one, and that is the run a release is promoted from.
+      EXPECTED_COMMIT_SHA: ${{ github.event_name == 'deployment_status' && github.event.deployment.sha || '' }}
 
     steps:
       - name: Check out repository
@@ -59,6 +62,13 @@ jobs:
               exit 1
               ;;
           esac
+
+      # Before the suite, not after. A run against the wrong build otherwise produces a wall of
+      # results describing code that is not deployed, and a pass that claims the triggering commit
+      # is healthy on evidence gathered from a different one.
+      - name: Verify the deployment is serving the expected commit
+        if: env.EXPECTED_COMMIT_SHA != ''
+        run: node scripts/verify-deployed-commit.mjs "$PLAYWRIGHT_BASE_URL" "$EXPECTED_COMMIT_SHA"
 
       - name: Run production browser health checks
         run: npm run test:e2e
