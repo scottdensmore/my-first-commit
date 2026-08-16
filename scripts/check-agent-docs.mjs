@@ -21,12 +21,13 @@
 //   node scripts/check-agent-docs.mjs          verify (exit 1 on drift)
 //   node scripts/check-agent-docs.mjs --fix    rewrite the pointer files from the template
 
-import { readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { chainedCommands, gateBlock, workflowRunsScript } from "./gate-commands.mjs";
 import { globRoots, hasGitignoreEntry, hasQuotedEntry } from "./ignore-entries.mjs";
+import { installedBrowsers, requiredEngines, runsBrowserSuite } from "./browser-projects.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CANONICAL_DOC = "AGENTS.md";
@@ -71,6 +72,13 @@ const IGNORE_LISTS = [
 // stray spec at the repository root or in a directory nobody has thought to exclude, which is the
 // case a denylist keeps losing. Widening the scope has to happen here as well as in the config,
 // which is where the exemption in AGENTS.md gets re-read.
+// Every workflow that runs the browser suite installs browsers with its own hand-written list.
+// Nothing kept those lists in step with the config, so adding a project updated one workflow and
+// not the other, and the mismatch surfaced as a failed production health check after a deploy --
+// which no local command can reach, since that workflow only runs on a production deployment_status.
+const BROWSER_CONFIG = "playwright.config.ts";
+const WORKFLOW_DIR = ".github/workflows";
+
 const COLLECTION_FILE = "vitest.config.ts";
 const COLLECTION_ROOTS = ["app", "scripts"];
 
@@ -287,6 +295,62 @@ async function main() {
           "and gives the walk the whole tree back. Update COLLECTION_ROOTS here and the exemption " +
           `in ${CANONICAL_DOC} when a root is deliberately added.`,
       );
+    }
+  }
+
+  const browserConfig = await readIfPresent(join(repoRoot, BROWSER_CONFIG));
+
+  if (browserConfig === null) {
+    problems.push(`${BROWSER_CONFIG} is missing. It declares the browser projects the suite runs.`);
+  } else {
+    // Resolved from Playwright itself rather than a table kept here: a device descriptor's engine
+    // is Playwright's fact, and a copy of it would be one more list to drift.
+    const { devices } = await import("@playwright/test");
+    const deviceEngines = Object.fromEntries(
+      Object.entries(devices).map(([name, device]) => [name, device.defaultBrowserType]),
+    );
+
+    let required = null;
+
+    try {
+      required = requiredEngines(browserConfig, deviceEngines);
+    } catch (error) {
+      problems.push(`${BROWSER_CONFIG} cannot be read for its browsers: ${error.message}`);
+    }
+
+    if (required !== null) {
+      const workflowDir = join(repoRoot, WORKFLOW_DIR);
+      const workflowFiles = (await readdir(workflowDir)).filter((file) => file.endsWith(".yml"));
+
+      for (const file of workflowFiles.sort()) {
+        const workflow = await readFile(join(workflowDir, file), "utf8");
+        if (!runsBrowserSuite(workflow)) continue;
+
+        const installed = installedBrowsers(workflow);
+
+        if (installed === null) {
+          problems.push(
+            `${WORKFLOW_DIR}/${file} runs the browser suite but never installs a browser. ` +
+              `It needs ${[...required].sort().join(", ")}.`,
+          );
+          continue;
+        }
+
+        // An install naming nothing installs everything, so it satisfies any requirement.
+        if (installed.size === 0) continue;
+
+        const missing = [...required].filter((engine) => !installed.has(engine)).sort();
+
+        if (missing.length > 0) {
+          problems.push(
+            `${WORKFLOW_DIR}/${file} installs ${[...installed].sort().join(", ")} but the ` +
+              `projects in ${BROWSER_CONFIG} need ${[...required].sort().join(", ")}; ` +
+              `${missing.join(", ")} is missing. Playwright fails at browser launch rather than ` +
+              "skipping the project, and a workflow that runs only after a deploy reports that " +
+              "as a failed production check rather than as a failed pull request.",
+          );
+        }
+      }
     }
   }
 
