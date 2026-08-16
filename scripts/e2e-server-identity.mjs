@@ -105,7 +105,7 @@ export function resolveTargets(env = process.env) {
 
 /**
  * The whole preflight decision, kept here rather than in the Playwright global setup so it is
- * reachable by the unit suite -- `vitest.config.ts` excludes `tests/e2e/**`.
+ * reachable by the unit suite -- `vitest.config.mts` excludes `tests/e2e/**`.
  *
  * A deployed target is skipped: that server is not ours to police, and the suite already switches
  * to deployed-mode expectations for it.

@@ -67,7 +67,7 @@ exactly:
   a nested `app/.claude/` is still linted and collected, so it gets no exemption.
 
 Those paths are ignored by configuration, not by convention: `.prettierignore` excludes them and
-`eslint.config.mjs` lists them in `globalIgnores`. `vitest.config.ts` collects tests from `app/`,
+`eslint.config.mjs` lists them in `globalIgnores`. `vitest.config.mts` collects tests from `app/`,
 and `scripts/` only, so a file outside those roots is never a unit test. Lint and
 tests cover product code only, and `npm run check:agent-docs` fails if an ignore entry disappears or
 the collection scope widens.

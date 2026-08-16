@@ -8,7 +8,7 @@ import { findLocalServerProblem } from "../../scripts/e2e-server-identity.mjs";
  * app and report every spec as a branch failure. Running after that check still converts a wall of
  * misleading failures into one accurate error, which is the point.
  *
- * The decision itself lives in `scripts/` so the unit suite can reach it; `vitest.config.ts`
+ * The decision itself lives in `scripts/` so the unit suite can reach it; `vitest.config.mts`
  * excludes `tests/e2e/**`.
  */
 export default async function globalSetup() {

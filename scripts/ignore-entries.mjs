@@ -1,7 +1,7 @@
 // Detects whether an ignore list still contains a given entry.
 //
 // Used by check-agent-docs.mjs to prove that .prettierignore, eslint.config.mjs, and
-// vitest.config.ts ignore the same tooling-state directories, which is what makes the verification
+// vitest.config.mts ignore the same tooling-state directories, which is what makes the verification
 // exemption in AGENTS.md sound.
 //
 // Scope: this is a tripwire against an entry being deleted or commented out, not a proof that the
