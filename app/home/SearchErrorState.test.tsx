@@ -1,20 +1,28 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import type { CommitData } from "../commitTypes";
 import SearchErrorState from "./SearchErrorState";
 
-function renderSearchErrorState(result: CommitData) {
-  render(
+function renderSearchErrorState(result: CommitData, isPending = false) {
+  const onRetry = vi.fn();
+  const errorState = (pending: boolean) => (
     <SearchErrorState
       result={result}
       exampleUsernames={["octocat"]}
-      isPending={false}
+      isPending={pending}
       lastSearchedUsername="octo"
-      onRetry={() => {}}
+      onRetry={onRetry}
       onReset={() => {}}
       onExampleSearch={() => {}}
-    />,
+    />
   );
+  const view = render(errorState(isPending));
+
+  return {
+    onRetry,
+    rerender: (nextIsPending: boolean) => view.rerender(errorState(nextIsPending)),
+  };
 }
 
 describe("SearchErrorState", () => {
@@ -36,5 +44,42 @@ describe("SearchErrorState", () => {
       screen.queryByRole("heading", { name: "Check a known public profile" }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
+  });
+
+  it("keeps focus on the retry while the retry it started is running", () => {
+    const { rerender } = renderSearchErrorState({
+      found: false,
+      errorKind: "rate_limit",
+      commits: [],
+    });
+
+    const retryButton = screen.getByRole("button", { name: "Try again" });
+    retryButton.focus();
+
+    // The panel stays mounted through the retry, so the button a visitor just pressed is
+    // still on screen. Disabling it would blur it to <body> and strand them there for the
+    // whole request.
+    rerender(true);
+
+    // jsdom does not blur a focused control when it becomes disabled, so `toHaveFocus`
+    // states the intent but cannot fail on the regression. `not.toBeDisabled` is the
+    // assertion that actually holds the browser behaviour in place.
+    expect(retryButton).toHaveFocus();
+    expect(retryButton).toHaveAttribute("aria-disabled", "true");
+    expect(retryButton).not.toBeDisabled();
+    expect(retryButton).toHaveAccessibleName("Searching again...");
+  });
+
+  it("refuses a second retry while one is running", async () => {
+    const user = userEvent.setup();
+    const { onRetry } = renderSearchErrorState(
+      { found: false, errorKind: "rate_limit", commits: [] },
+      true,
+    );
+
+    // aria-disabled is advisory, so the handler has to enforce what the attribute claims.
+    await user.click(screen.getByRole("button", { name: "Searching again..." }));
+
+    expect(onRetry).not.toHaveBeenCalled();
   });
 });

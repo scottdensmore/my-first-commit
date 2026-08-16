@@ -651,6 +651,21 @@ test.describe("local mocked commit search states", () => {
     ).toBeVisible();
     await expect(page.getByText(/temporarily limited commit search requests/i)).toBeVisible();
     await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+
+    // This fixture answers the same way every time, so the retry lands back on this panel
+    // with the button still mounted. A `disabled` retry is blurred to <body> the moment it
+    // is pressed and nothing ever gives the focus back, so a keyboard visitor finishes the
+    // request with no place in the document. jsdom does not reproduce that blur, which is
+    // why this assertion lives in a real browser.
+    const retryButton = page.getByRole("button", { name: "Try again" });
+    // Activated from the keyboard, which is both the affected path and the one that does
+    // not depend on a platform's click-to-focus behaviour. The pending label is
+    // deliberately not asserted: the fixture answers immediately, so that window is a race.
+    await retryButton.focus();
+    await page.keyboard.press("Enter");
+
+    await expect(retryButton).toBeVisible();
+    await expect(retryButton).toBeFocused();
   });
 
   test("home page renders retry guidance when GitHub is unavailable", async ({ page }) => {

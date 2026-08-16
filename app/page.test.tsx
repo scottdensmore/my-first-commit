@@ -584,7 +584,13 @@ describe("Home", () => {
     await user.click(screen.getByRole("button", { name: /^search$/i }));
     await user.click(await screen.findByRole("button", { name: /try again/i }));
 
-    expect(screen.getByRole("button", { name: /try again/i })).toBeDisabled();
+    // The retry the visitor just pressed stays focusable and only reports that it is
+    // busy, so activating it does not blur them to <body> for the length of the request.
+    const retryButton = screen.getByRole("button", { name: /searching again/i });
+    expect(retryButton).toHaveAttribute("aria-disabled", "true");
+    expect(retryButton).not.toBeDisabled();
+    // Editing the username is genuinely unavailable mid-retry, and nothing focuses it by
+    // pressing it, so it stays a plain disabled control.
     expect(screen.getByRole("button", { name: /edit username/i })).toBeDisabled();
 
     await act(async () => pendingRetry.resolve(commitResult));
