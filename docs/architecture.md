@@ -7,7 +7,7 @@ My First Commit is a small Next.js App Router application. It has no database, n
 1. The browser renders the homepage from `app/page.tsx`.
 2. The user enters a GitHub username in the search form.
 3. The client validates the username format before submitting.
-4. The client calls the `getCommits` server action in `app/actions.ts`.
+4. The client calls the `getCommits` server action in `app/_lib/actions.ts`.
 5. The server action queries GitHub's public commit search through Octokit.
 6. Successful and empty GitHub search results are cached briefly in memory by normalized username to reduce repeated API calls. Concurrent requests for the same username share one upstream search rather than each issuing their own, since the cache cannot help until the first one finishes. That sharing is per server instance, like the cache, so the ceiling is one concurrent search per username per instance rather than globally. Results GitHub marked `incomplete_results` are never cached, so a retry can reach a complete answer.
 7. Searches that survive the cache are bounded per client by a rolling window of 30 a minute, keyed by a salted hash of the forwarded client address. Anything past the window is answered with the existing rate-limit result instead of reaching GitHub. The window lives in one server instance's memory and resets on a cold start, so it lowers what a burst from one client costs; it is not a global ceiling on the shared GitHub token. See the [rate-limit runbook section](production.md#bounding-search-bursts).
@@ -37,7 +37,7 @@ My First Commit is a small Next.js App Router application. It has no database, n
 
 ## Failure Handling
 
-GitHub API failures are normalized in `app/actions.ts`:
+GitHub API failures are normalized in `app/_lib/actions.ts`:
 
 - Empty public search results show a polite empty state.
 - GitHub sets `incomplete_results` when a commit search times out before scanning every commit, and still returns `200` with a partial item list. Those results carry `incomplete: true` through `CommitData`: the UI presents them as the earliest commit found so far rather than the first commit and offers a retry, and the cache refuses to store them so that a retry can reach a complete answer. A retry that fails keeps the partial result on screen rather than replacing it, since the visitor took an action the page offered. An incomplete search that returned no items is reported as an unfinished search, never as an absence of commits.

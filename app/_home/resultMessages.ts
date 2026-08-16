@@ -1,4 +1,4 @@
-import type { CommitData } from "../commitTypes";
+import type { CommitData } from "../_lib/commitTypes";
 
 type ResultMessage = {
   title: string;

@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getCommits } from "../actions";
-import type { CommitData, CommitInfo } from "../commitTypes";
+import { getCommits } from "../_lib/actions";
+import type { CommitData, CommitInfo } from "../_lib/commitTypes";
 import { trackAppEvent } from "./analytics";
 import { saveStoredRecentSearches } from "./recentSearches";
 import { runCommitSearch } from "./searchExecution";
 import { updateSharedSearchUrl } from "./sharedSearch";
 
-vi.mock("../actions", () => ({ getCommits: vi.fn() }));
+vi.mock("../_lib/actions", () => ({ getCommits: vi.fn() }));
 vi.mock("./analytics", () => ({ trackAppEvent: vi.fn() }));
 vi.mock("./recentSearches", () => ({ saveStoredRecentSearches: vi.fn() }));
 vi.mock("./sharedSearch", () => ({ updateSharedSearchUrl: vi.fn() }));

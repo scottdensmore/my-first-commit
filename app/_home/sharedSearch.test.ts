@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { CommitData, CommitInfo } from "../commitTypes";
+import type { CommitData, CommitInfo } from "../_lib/commitTypes";
 import {
   buildResultShareText,
   clearSharedSearchUrl,

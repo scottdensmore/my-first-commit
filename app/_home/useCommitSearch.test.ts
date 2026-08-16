@@ -1,10 +1,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getCommits } from "../actions";
-import type { CommitData } from "../commitTypes";
+import { getCommits } from "../_lib/actions";
+import type { CommitData } from "../_lib/commitTypes";
 import { useCommitSearch } from "./useCommitSearch";
 
-vi.mock("../actions", () => ({ getCommits: vi.fn() }));
+vi.mock("../_lib/actions", () => ({ getCommits: vi.fn() }));
 vi.mock("./analytics", () => ({ trackAppEvent: vi.fn() }));
 
 const mockGetCommits = vi.mocked(getCommits);

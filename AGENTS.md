@@ -42,16 +42,18 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
 ## Layout
 
 - `app/page.tsx` — homepage shell
-- `app/actions.ts` — `getCommits` server action; Octokit search plus error normalization
-- `app/commitSearchCache.ts` — in-memory TTL cache (5 minutes, 100 entries)
-- `app/commitSearchInFlight.ts` — shares one upstream search between concurrent identical requests
-- `app/commitSearchRateLimit.ts` — per-client rolling window over the searches that reach GitHub
-- `app/searchClientKey.ts` — salted per-process hash of the forwarded client address
-- `app/username.ts` — validation and normalization, used on both the client and the server action
-- `app/logger.ts` — structured warn/error logging
+- `app/_lib/actions.ts` — `getCommits` server action; Octokit search plus error normalization
+- `app/_lib/commitSearchCache.ts` — in-memory TTL cache (5 minutes, 100 entries)
+- `app/_lib/commitSearchInFlight.ts` — shares one upstream search between concurrent identical requests
+- `app/_lib/commitSearchRateLimit.ts` — per-client rolling window over the searches that reach GitHub
+- `app/_lib/searchClientKey.ts` — salted per-process hash of the forwarded client address
+- `app/_lib/username.ts` — validation and normalization, used on both the client and the server action
+- `app/_lib/logger.ts` — structured warn/error logging
 - `app/_home/` — homepage search internals (hook, form, results, timeline card, recent searches,
   analytics)
 - `app/_components/` — components used by something other than one feature
+- `app/_lib/` — everything above plus `commitTypes.ts`, `githubUrls.ts`, and
+  `e2eCommitSearchMocks.ts`; no route file lives here and no file here renders
 - `app/api/health/route.ts` — runtime health JSON for production checks
 - `app/api/e2e-readiness/route.ts` — non-production probe telling the Playwright preflight whether
   this server was started with the fixture mocks
@@ -72,14 +74,22 @@ relative import now means "same feature" rather than nothing in particular. Befo
 component to `app/_components/`, check that it really has more than one caller; the last occupant
 of the root `components/` directory had exactly one, three directories away.
 
+**Directly under `app/` there are only route files.** `page.tsx`, `layout.tsx`, `error.tsx`,
+`not-found.tsx`, the metadata files, and route directories — plus their colocated tests, and
+`globals.css`, which is the root layout's stylesheet and belongs beside `layout.tsx` by Next.js
+convention. Everything else goes in `app/_lib/` if it is a module or `app/_components/` if it
+renders. `ls app/` should answer "what does this app serve?" and nothing else; it used to list
+fifteen files that served nothing. A module imported across route boundaries — `logger.ts` was
+imported by a route as `@/app/logger` — is the clearest sign it does not belong at that level.
+
 ## Gotchas
 
-- **E2E mocks.** `E2E_COMMIT_SEARCH_MOCKS=1` makes `app/actions.ts` return fixtures for the reserved
+- **E2E mocks.** `E2E_COMMIT_SEARCH_MOCKS=1` makes `app/_lib/actions.ts` return fixtures for the reserved
   usernames `e2e-result`, `e2e-slow-result`, `e2e-reject-once-*`, `e2e-malformed-dates`,
   `e2e-incomplete`, `e2e-incomplete-once-*`, `e2e-incomplete-then-error-*`, `e2e-incomplete-empty`,
   `e2e-empty`, `e2e-rate-limit`, and `e2e-unavailable`. Playwright sets this automatically and runs
   the app on port **3100**, not 3000; set `E2E_PORT` when that port is taken. Add new fixture cases
-  in `app/actions.ts` when adding browser coverage for a new state. The `*-once-*` and
+  in `app/_lib/actions.ts` when adding browser coverage for a new state. The `*-once-*` and
   `*-then-error-*` fixtures are stateful per process, so a test can prove a retry re-issued the
   search rather than re-rendered: give each such test a unique username, as the existing ones do
   with the Playwright worker index.
@@ -119,21 +129,21 @@ of the root `components/` directory had exactly one, three directories away.
   not reflow markdown as part of an unrelated change.
 - **The commit cache is per-process.** It is a plain `Map`, so it resets on every serverless cold
   start and is not shared between instances. Never treat it as durable storage. The in-flight map
-  in `app/commitSearchInFlight.ts` has the same scope: it coalesces the requests one instance is
+  in `app/_lib/commitSearchInFlight.ts` has the same scope: it coalesces the requests one instance is
   serving, not requests across instances.
 - **The per-client search limit is per-process, and never a quota guarantee.** The rolling window
-  in `app/commitSearchRateLimit.ts` is another plain `Map`, so a limit of 30 searches a minute is
+  in `app/_lib/commitSearchRateLimit.ts` is another plain `Map`, so a limit of 30 searches a minute is
   really 30 per client **per instance**, and a cold start hands the client a fresh allowance.
   Never document or reason about it as a global ceiling for the shared GitHub token; the cache and
   the in-flight map are what actually cut upstream calls. It counts only searches that reach
   GitHub, so anything the cache answers is free. What it keeps per client is a salted hash from
-  `app/searchClientKey.ts` and the times of searches inside the current window — never an address,
+  `app/_lib/searchClientKey.ts` and the times of searches inside the current window — never an address,
   never a username, and never the two together. Keep it that way: the limiter is handed an opaque
   key precisely so nothing here can log or key on who searched what. The map is capped, because a
   map keyed by client is a memory-exhaustion vector otherwise, and eviction must only ever forget
   a client — forgetting refills an allowance, while inheriting one would let a spoofed forwarded
   header refuse service to somebody else.
-- **Logging is sanitized on purpose.** `app/logger.ts` takes an event name plus scalar fields. Never
+- **Logging is sanitized on purpose.** `app/_lib/logger.ts` takes an event name plus scalar fields. Never
   log usernames, tokens, or raw Octokit error objects.
 - **`GITHUB_TOKEN` is server-only.** Never expose it as a `NEXT_PUBLIC_*` variable. The app works
   unauthenticated but hits GitHub search rate limits quickly.

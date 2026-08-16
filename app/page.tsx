@@ -16,7 +16,7 @@ import {
   clearSharedSearchUrl,
   getInitialSharedUsername,
 } from "./_home/sharedSearch";
-import { getUsernameValidationMessage } from "./username";
+import { getUsernameValidationMessage } from "./_lib/username";
 const APP_RELEASE = process.env.NEXT_PUBLIC_APP_RELEASE ?? "local";
 const APP_RELEASE_URL = process.env.NEXT_PUBLIC_APP_RELEASE_URL ?? "";
 

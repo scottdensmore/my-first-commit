@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
-import { logger } from "@/app/logger";
+import { logger } from "@/app/_lib/logger";
 import { POST } from "./route";
 
 const ENDPOINT = "https://my-first-commit-eta.vercel.app/api/csp-report";

@@ -1,4 +1,4 @@
-import { commitSearchMocksEnabled, type EnvLike } from "@/app/e2eCommitSearchMocks";
+import { commitSearchMocksEnabled, type EnvLike } from "@/app/_lib/e2eCommitSearchMocks";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

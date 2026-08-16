@@ -1,4 +1,4 @@
-import { logger } from "@/app/logger";
+import { logger } from "@/app/_lib/logger";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
