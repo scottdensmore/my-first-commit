@@ -38,8 +38,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Every browser `playwright.config.ts` declares a project for, because this job runs the
+      # whole suite. Installing fewer fails at launch rather than skipping the project, and it
+      # fails here — after a production deploy — rather than on the pull request that added one.
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Validate health check target
         run: |
