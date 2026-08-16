@@ -125,6 +125,12 @@ imported by a route as `@/app/logger` — is the clearest sign it does not belon
   `sudo npx playwright install-deps webkit` does the same. **Playwright cannot grant clipboard
   permissions on WebKit at all**, so a spec that calls `context.grantPermissions` with a
   clipboard permission must stay untagged.
+- **A new browser project means a workflow change too.** `npm run check:agent-docs` fails when a
+  workflow that runs the suite installs fewer browsers than `playwright.config.ts` declares
+  projects for. It resolves a project to its *engine*, not its name — `mobile-chrome` is
+  Chromium-backed — so adding a project needs the install list in every such workflow updated to
+  match. Without that check the gap surfaced only after a production deploy, since
+  `deployed-smoke.yml` runs on `deployment_status` and no local command reaches it.
 - **Prettier ignores `*.md`.** Prose is formatted by hand. Do not run the formatter over docs, and do
   not reflow markdown as part of an unrelated change.
 - **The commit cache is per-process.** It is a plain `Map`, so it resets on every serverless cold
