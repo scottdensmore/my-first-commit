@@ -59,7 +59,7 @@ failure:
 
 ```bash
 npm audit                # dependency vulnerability gate
-npm test                 # vitest run (jsdom)
+npm run test:coverage    # vitest run (jsdom) with V8 coverage and its thresholds
 npm run test:e2e         # playwright; boots its own dev server on :3100 (E2E_PORT to override)
 npm run lint             # eslint
 npm run format:check     # prettier --check
@@ -165,6 +165,36 @@ For active test-driven development:
 ```bash
 npm run test:watch
 ```
+
+### Coverage
+
+The unit step of the gate runs with V8 coverage, so coverage is measured once, locally and in CI,
+by the same command:
+
+```bash
+npm run test:coverage    # vitest run --coverage
+```
+
+The text summary prints in the terminal and an HTML report lands in `coverage/`, which Git,
+Prettier, and ESLint all ignore. `npm test` still runs the suite without instrumenting it, which is
+the faster loop for a single file.
+
+Thresholds live in `vitest.config.ts` and are a **non-regression floor**, not a target. They were
+set from a measurement of this suite — 93.68% statements, 89.58% branches, 98.30% functions,
+94.66% lines — and each floor is the whole percent below it:
+
+| Metric | Floor | Measured when set |
+| --- | --- | --- |
+| Statements | 93% | 93.68% |
+| Branches | 89% | 89.58% |
+| Functions | 98% | 98.30% |
+| Lines | 94% | 94.66% |
+
+Under a point of slack means a refactor does not fail on rounding while a few newly uncovered lines
+do. Raise the floors when a deliberate push moves the numbers up; do not lower one to make a change
+pass. Coverage measures the files the suite loads, which is Vitest's default, so a module no test
+imports at all is missing from the report rather than counted as zero — the floors cannot catch a
+wholly untested new file, and review has to.
 
 ## Deployment
 

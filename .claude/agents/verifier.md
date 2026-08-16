@@ -27,7 +27,7 @@ failure, so a later command reporting nothing means it never ran, not that it pa
 
 ```bash
 npm audit
-npm test
+npm run test:coverage
 npm run test:e2e
 npm run lint
 npm run format:check
