@@ -72,7 +72,7 @@ const IGNORE_LISTS = [
 // case a denylist keeps losing. Widening the scope has to happen here as well as in the config,
 // which is where the exemption in AGENTS.md gets re-read.
 const COLLECTION_FILE = "vitest.config.ts";
-const COLLECTION_ROOTS = ["app", "components", "scripts"];
+const COLLECTION_ROOTS = ["app", "scripts"];
 
 // `npm run validate` is the gate. Two things have to hold for that to stay true. CI must invoke the
 // script rather than inlining its own step list, or the local gate and the CI gate become two lists

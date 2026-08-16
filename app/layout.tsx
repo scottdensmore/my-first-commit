@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import PrivacySafeAnalytics from "./PrivacySafeAnalytics";
+import PrivacySafeAnalytics from "./_components/PrivacySafeAnalytics";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
