@@ -256,15 +256,46 @@ Logged fields:
 - `lineNumber`
 - `columnNumber`
 
-URLs are reduced to origin and path. Query strings are dropped because the app puts the searched
-username in `?user=`, and search usernames must not reach logs. Opaque schemes such as `data:` are
-reduced to the scheme so an inline payload is not logged. The reported `original-policy` and
+`http:` and `https:` URLs are reduced to origin and path. Query strings are dropped because the app
+puts the searched username in `?user=`, and search usernames must not reach logs. Every other scheme
+is reduced to the scheme alone — `data:`, `blob:`, and `javascript:` carry their payload inline, and
+`mailto:` or an app-specific scheme registered by an extension carries an address or a path there —
+so `data:` and `my-app:` are logged with nothing after the colon. The reported `original-policy` and
 `script-sample` are never read at all: the policy is long and already known, and the sample can
 contain page content or user input.
 
+The endpoint is unauthenticated, so its intake is bounded three ways:
+
+- **Content type.** Only `application/csp-report` (from `report-uri`) and `application/reports+json`
+  (from the Reporting API) are read. Anything else is answered `415` without the body being touched.
+- **Body size.** 16 KB, counted in bytes rather than characters, and enforced as the body arrives: an
+  oversized `Content-Length` is refused before a byte is read, and because that header can be absent
+  or untrue the stream is counted while it is consumed and cancelled the moment the limit is passed.
+  Oversized bodies are answered `413`.
+- **Reports per request.** At most **10** violations are logged from one POST. A Reporting API array
+  is a batch, so without a cap a single request could turn into a log record per entry. The overflow
+  is counted in one `csp_report_truncated` event carrying `received` and `logged`.
+
 Other events from the same endpoint indicate a malformed or hostile POST rather than a real
-violation: `csp_report_malformed`, `csp_report_empty`, `csp_report_too_large`, and
-`csp_report_unreadable`.
+violation: `csp_report_malformed`, `csp_report_empty`, `csp_report_too_large`,
+`csp_report_unsupported_type`, `csp_report_truncated`, and `csp_report_unreadable`.
+
+### Rate Limiting CSP Reports
+
+The bounds above cap what one request can cost. They do not cap how many requests arrive, and this
+repository has no place to fix that: the app runs as serverless functions with no shared state, so
+per-instance counting would not hold across instances. Rate limiting or sampling for
+`/api/csp-report` is platform configuration, applied in the Vercel project rather than in code.
+
+If `csp_violation` or `csp_report_*` volume becomes noisy or expensive:
+
+1. Add a Vercel Firewall rate-limit rule scoped to the `/api/csp-report` path, keyed by IP.
+2. If real traffic alone is the volume, lower the sampling instead — CSP supports it through the
+   Reporting API endpoint configuration, and a report-only policy does not need every duplicate.
+3. Re-check the log volume after either change before tightening further.
+
+None of this is in the repository, and nothing in the app reads it. Treat a change here as an
+account-level operational change, and note it in this runbook when it is made.
 
 ### Moving CSP To Enforcement
 

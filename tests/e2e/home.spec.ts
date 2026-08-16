@@ -403,6 +403,32 @@ test("csp report endpoint accepts a violation report", async ({ request }) => {
   expect(response.status()).toBe(204);
 });
 
+test("csp report endpoint refuses oversized and unexpected posts", async ({ request }) => {
+  // Local only, for the same reason as the test above.
+  test.skip(isDeployedTarget, "csp report posting only runs against the local Playwright server");
+
+  const oversized = await request.post("/api/csp-report", {
+    headers: { "content-type": "application/csp-report" },
+    // 6,000 characters at three bytes each: only a byte limit rejects this.
+    data: "€".repeat(6_000),
+  });
+
+  expect(oversized.status()).toBe(413);
+
+  const wrongType = await request.post("/api/csp-report", {
+    headers: { "content-type": "application/json" },
+    data: {
+      "csp-report": {
+        "document-uri": "http://localhost/",
+        "effective-directive": "img-src",
+        "blocked-uri": "https://example.test/pixel.gif",
+      },
+    },
+  });
+
+  expect(wrongType.status()).toBe(415);
+});
+
 test("a maximum-length handle does not scroll the page sideways at 320px", async ({ page }) => {
   // 39 characters is the longest handle GitHub issues, and #102 made that bound real by
   // validating on read, so this is the widest label the row can ever hold.
