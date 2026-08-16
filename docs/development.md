@@ -179,7 +179,7 @@ The text summary prints in the terminal and an HTML report lands in `coverage/`,
 Prettier, and ESLint all ignore. `npm test` still runs the suite without instrumenting it, which is
 the faster loop for a single file.
 
-Thresholds live in `vitest.config.ts` and are a **non-regression floor**, not a target. They were
+Thresholds live in `vitest.config.mts` and are a **non-regression floor**, not a target. They were
 set from a measurement of this suite — 93.68% statements, 89.58% branches, 98.30% functions,
 94.66% lines — and each floor is the whole percent below it:
 

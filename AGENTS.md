@@ -221,7 +221,7 @@ imported by a route as `@/app/logger` — is the clearest sign it does not belon
    | Fix touches | Verifier reruns |
    | --- | --- |
    | `app/` or `tests/` | `npm run test:coverage`, `npm run test:e2e`, `npm run lint`, `npm run format:check`, `npm run build` |
-   | a root config file | everything in the row above, plus `npm run check:agent-docs`, which reads `.prettierignore`, `eslint.config.mjs`, and `vitest.config.ts` |
+   | a root config file | everything in the row above, plus `npm run check:agent-docs`, which reads `.prettierignore`, `eslint.config.mjs`, and `vitest.config.mts` |
    | `scripts/` | everything in the first row, plus `npm run check:agent-docs` and `npm run check:labels`, which those scripts implement |
    | `package.json` or `package-lock.json` | `npm audit` and `npm run check:agent-docs`, which reads the `validate` script, plus everything in the first row |
    | `.github/workflows/ci.yml` | `npm run check:agent-docs`, which verifies CI still invokes `npm run validate`, and `npm run format:check`, which reads YAML |
@@ -244,7 +244,7 @@ imported by a route as `@/app/logger` — is the clearest sign it does not belon
      - Any `*.md` file.
      - Anything under the **repository-root** tooling-state directories `.claude/`, `.codex/`,
        `.entire/`, `.vercel/`. Root-level only: `eslint.config.mjs` anchors its ignore patterns to
-       the root, and `vitest.config.ts` collects tests from `app/` and `scripts/`,
+       the root, and `vitest.config.mts` collects tests from `app/` and `scripts/`,
        so a nested `app/.claude/` is still linted and still collected, and gets no exemption even
        though Prettier ignores it at any depth.
 

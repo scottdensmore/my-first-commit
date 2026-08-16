@@ -14,7 +14,7 @@
 //      the two places that write the chain out in order still match it.
 //
 // Inputs are therefore wider than the name suggests: AGENTS.md and the pointer files, .prettierignore,
-// eslint.config.mjs, vitest.config.ts, package.json, .github/workflows/ci.yml, docs/development.md,
+// eslint.config.mjs, vitest.config.mts, package.json, .github/workflows/ci.yml, docs/development.md,
 // and .claude/agents/verifier.md. Step 7 of AGENTS.md maps each of those to this command.
 //
 // Usage:
@@ -79,7 +79,7 @@ const IGNORE_LISTS = [
 const BROWSER_CONFIG = "playwright.config.ts";
 const WORKFLOW_DIR = ".github/workflows";
 
-const COLLECTION_FILE = "vitest.config.ts";
+const COLLECTION_FILE = "vitest.config.mts";
 const COLLECTION_ROOTS = ["app", "scripts"];
 
 // `npm run validate` is the gate. Two things have to hold for that to stay true. CI must invoke the
@@ -271,7 +271,7 @@ async function main() {
       problems.push(
         `${list.file} no longer ignores ${missing.join(", ")}. The verification exemption in ` +
           `${CANONICAL_DOC} assumes .prettierignore and eslint.config.mjs ignore the same ` +
-          "tooling-state directories, and that vitest.config.ts collects from product code only. " +
+          "tooling-state directories, and that vitest.config.mts collects from product code only. " +
           "Restore the entry, or update the exemption.",
       );
     }
