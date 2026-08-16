@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M05ZQZXEVZTBT1K35ZVX6ZQD",
+  "session_id": "a30792a4-10ae-435f-9e1e-6f180d897f24",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-16T19:11:06.250659963Z",
+  "branch": "scottdensmore/refactor/commit-result-union",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-opus-5",
+  "turn_id": "fed4a9abede0",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 1040,
+    "cache_creation_tokens": 1291268,
+    "cache_read_tokens": 170599503,
+    "output_tokens": 328510,
+    "api_call_count": 521
+  },
+  "session_metrics": {
+    "turn_count": 37
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
