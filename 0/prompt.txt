@@ -1,0 +1,73 @@
+<task-notification>
+<task-id>boekp6by0</task-id>
+<tool-use-id>toolu_01JXbtszcDQMgPs9sazqQbhX</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/boekp6by0.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for checks and report merge readiness" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+we are running multiple agents on this machine against multiple repos / projects. So I am not sure what to do about 1. Please fix number 2
+
+---
+
+ok do you think this fixes all the things we were running into? I am concerned this overcomplicates things
+
+---
+
+revert it and drop the branch
+
+---
+
+ok lets do 148
+
+---
+
+<task-notification>
+<task-id>br09dbllf</task-id>
+<tool-use-id>toolu_01AsCY8QVSL5G61EYLrWCtGF</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/br09dbllf.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for checks to settle" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Lets pick up the next work. If we can do more than one that don't overlap we can do them in parallel in worktrees.
+
+---
+
+<task-notification>
+<task-id>ac7cc952e198a422a</task-id>
+<tool-use-id>toolu_01V16b618Es3ejU3F8g4mrXc</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/ac7cc952e198a422a.output</output-file>
+<status>completed</status>
+<summary>Agent "Implement issue 141" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Done. Issue #141 is implemented, verified, and open as a PR (not merged).
+
+**PR:** https://github.com/scottdensmore/my-first-commit/pull/155 — `chore(tooling): scope unit test collection to product code`, ready for review, branch `scottdensmore/chore/scope-unit-test-collection`, commit `7e193b4`.
+
+**Approach — option 2, as the issue recommended.** `vitest.config.ts` now uses a root-anchored `include` of `app/`, `components/`, `scripts/` and no `exclude` at all. Everything the old denylist named (`tests/e2e`, `node_modules`, `.next`, the four tooling-state directories) is out of scope by construction, along with directories nobody has named yet.
+
+The list-agreement check had to change with the format, so:
+- `scripts/ignore-entries.mjs` gains `globRoots(source)` — the directory each glob-shaped string literal is anchored to. An unanchored pattern yields `**`, `.`, or an empty segment, none of which a root list contains, so a widened scope fails loudly.
+- `scripts/check-agent-docs.mjs` keeps checking `.prettierignore` and `eslint.config.mjs` entry-by-entry for the four tooling dirs, and checks `vitest.config.ts` by its scope instead: collected roots must be exactly `app, components, scripts`.
+- 9 new unit tests for `globRoots`, written red first (failed with `globRoots is not a function`), then green.
+- `AGENTS.md` and `.claude/agents/verifier.md` exemption sections reworded. **The exempt set itself is unchanged** — only Vitest's reason for not seeing those paths. I also added that being outside the unit-test scope is not on its own grounds for the exemption (every path outside the three roots now is), so `.github/hooks/` and `.github/workflows/ci.yml` still get no exemption. `CHANGELOG.md` entry added under `## Unreleased` → `### Changed`, hand-formatted; Prettier was never run over markdown.
+
+**Drift check still bites (verified both ways):** deleting `".codex/**"` from `eslint.config.mjs` → exit 1 with the ignore-list message; widening an include pattern to `**/*.{test,spec}...` → exit 1 with `collects from **, components, scripts rather than from app, components, scripts`. Deleting `include` entirely reports `no named root` and fails too.
+
+**Test counts:** before 25 files / 309 tests; after 25 files / **318 tests**. The +9 are exactly the new `globRoots` cases — the collected product file list is byte-identical.
+
+**Stray-spec proof:** with `stray-probe.test.ts`, `.verifier-probe/probe.spec.ts`, and `scratch-dir/probe.spec.ts` in the tree, `npm test` passed 25/318 and `npx vitest list --filesOnly | grep probe` returned nothing. Before the change the same probes were collected and `npm test` failed with the issue's `Playwright Test did not expect test() to be called here`. A nested `app/.claude/probe.test.ts` is still collected both before and after, so the "root-level only" sentence in the exemption stays true. All probes removed; worktree clean apart from the 7 changed files.
+
+**Gate:** `E2E_PORT=3110 npm run validate` passed end to end on the first run (audit, unit, 30 Playwright tests on :3110, lint, format:check, check:agent-docs, check:labels, build). CI `validate` on the PR is also green (1m40s), Vercel preview green, no reviewers assigned. Not merged, per instruction.
+
+**Review disclosure:** sub-agents were unavailable, so I did the `ui-review`/`verifier`/`code-review` work myself and said so at step 6 and in the PR body rather than implying they ran. ui-review equivalent: no user-visible surface.
+
+**Deliberately left alone:** `npm test` prints a Vite warning that `vitest.config.ts` uses ESM syntax in a file loaded as CommonJS (`configLoader: 'native'`) — pre-existing, unrelated. One documented limit of `globRoots` (it reads every glob literal in the file, not only those in `include`) is noted in its doc comment rather than fixed, matching that module's stated "tripwire, not a parser" scope.</result>
+<usage><subagent_tokens>97951</subagent_tokens><tool_uses>52</tool_uses><duration_ms>797051</duration_ms></usage>
+<worktree><worktreePath>/home/scottdensmore/Developer/scottdensmore/my-first-commit/.claude/worktrees/agent-ac7cc952e198a422a</worktreePath><worktreeBranch>worktree-agent-ac7cc952e198a422a</worktreeBranch></worktree>
+</task-notification>
