@@ -7,7 +7,9 @@
 //      which is exactly the drift this guards against: the check fails, and the content moves to
 //      AGENTS.md instead. .github/copilot-instructions.md must not exist, since it would outrank it.
 //   2. The tooling-state directories are ignored by every gate that reads source, which is what
-//      makes the unread-path verification exemption in AGENTS.md sound.
+//      makes the unread-path verification exemption in AGENTS.md sound. Prettier and ESLint ignore
+//      them by name; Vitest reaches the same result by collecting only from the product-code roots,
+//      so that check reads its scope rather than a list of exclusions.
 //   3. `npm run validate` is the one definition of the validation gate: CI invokes that script, and
 //      the two places that write the chain out in order still match it.
 //
@@ -24,7 +26,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { chainedCommands, gateBlock, workflowRunsScript } from "./gate-commands.mjs";
-import { hasGitignoreEntry, hasQuotedEntry } from "./ignore-entries.mjs";
+import { globRoots, hasGitignoreEntry, hasQuotedEntry } from "./ignore-entries.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CANONICAL_DOC = "AGENTS.md";
@@ -57,13 +59,20 @@ const FORBIDDEN_DOCS = [".github/copilot-instructions.md"];
 
 // Tooling state managed by external agent tools. AGENTS.md exempts changes confined to these
 // directories from local verification, which is only sound while every gate that reads source
-// ignores them. Three files must agree, so drift in one is a real failure rather than a nit.
+// ignores them. Both lists must agree, so drift in one is a real failure rather than a nit.
 const TOOLING_DIRS = [".claude", ".codex", ".entire", ".vercel"];
 const IGNORE_LISTS = [
   { file: ".prettierignore", has: (contents, dir) => hasGitignoreEntry(contents, dir) },
   { file: "eslint.config.mjs", has: (contents, dir) => hasQuotedEntry(contents, `${dir}/**`) },
-  { file: "vitest.config.ts", has: (contents, dir) => hasQuotedEntry(contents, `${dir}/**`) },
 ];
+
+// The third gate that reads source, Vitest, is checked by its scope instead. It collects from these
+// roots only, so the tooling-state directories are out of reach without being named — and so is a
+// stray spec at the repository root or in a directory nobody has thought to exclude, which is the
+// case a denylist keeps losing. Widening the scope has to happen here as well as in the config,
+// which is where the exemption in AGENTS.md gets re-read.
+const COLLECTION_FILE = "vitest.config.ts";
+const COLLECTION_ROOTS = ["app", "components", "scripts"];
 
 // `npm run validate` is the gate. Two things have to hold for that to stay true. CI must invoke the
 // script rather than inlining its own step list, or the local gate and the CI gate become two lists
@@ -253,8 +262,30 @@ async function main() {
     if (missing.length > 0) {
       problems.push(
         `${list.file} no longer ignores ${missing.join(", ")}. The verification exemption in ` +
-          `${CANONICAL_DOC} assumes .prettierignore, eslint.config.mjs, and vitest.config.ts all ` +
-          "ignore the same tooling-state directories. Restore the entry, or update the exemption.",
+          `${CANONICAL_DOC} assumes .prettierignore and eslint.config.mjs ignore the same ` +
+          "tooling-state directories, and that vitest.config.ts collects from product code only. " +
+          "Restore the entry, or update the exemption.",
+      );
+    }
+  }
+
+  const collection = await readIfPresent(join(repoRoot, COLLECTION_FILE));
+
+  if (collection === null) {
+    problems.push(`${COLLECTION_FILE} is missing. It scopes the unit test run to product code.`);
+  } else {
+    const roots = [...globRoots(collection)].sort();
+    const expected = [...COLLECTION_ROOTS].sort();
+
+    if (roots.join("\n") !== expected.join("\n")) {
+      problems.push(
+        `${COLLECTION_FILE} collects from ${roots.length > 0 ? roots.join(", ") : "no named root"} ` +
+          `rather than from ${expected.join(", ")}. Unit collection is scoped positively so that a ` +
+          "stray spec outside those roots cannot fail the gate or silently join it, and so that " +
+          `the verification exemption in ${CANONICAL_DOC} holds without naming every directory to ` +
+          "skip. A pattern reported as `**`, `.` or an empty root is not anchored to a directory " +
+          "and gives the walk the whole tree back. Update COLLECTION_ROOTS here and the exemption " +
+          `in ${CANONICAL_DOC} when a root is deliberately added.`,
       );
     }
   }

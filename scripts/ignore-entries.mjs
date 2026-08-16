@@ -85,6 +85,32 @@ export function hasGitignoreEntry(contents, entry) {
   });
 }
 
+/**
+ * The directory each glob-shaped string literal in `source` is anchored to: `"app/**\/*.test.ts"`
+ * yields `app`. Used to prove that Vitest collects from a named set of roots rather than from the
+ * whole tree, which is a claim a denylist cannot make — it can only name the directories somebody
+ * has thought of.
+ *
+ * A literal with no `*` is not a pattern and is skipped, so a config's other strings do not appear.
+ * A pattern that is not anchored to a directory — `"**\/*.test.ts"`, `"/app/**"`, `"./app/**"` —
+ * yields its leading segment verbatim (`**`, ``, `.`), which no root list contains, so the caller
+ * reports drift rather than silently accepting a widened scope.
+ *
+ * Same scope as the rest of this module: a tripwire, not a parser. It reads every pattern in the
+ * file, not only the ones in `include`, so a glob added for some unrelated option would have to be
+ * accounted for here too. In a file this small, a check that fails loudly beats one that guesses.
+ */
+export function globRoots(source) {
+  const roots = new Set();
+
+  for (const value of stringLiterals(source)) {
+    if (!value.includes("*")) continue;
+    roots.add(value.split("/")[0]);
+  }
+
+  return roots;
+}
+
 /** JavaScript or TypeScript source: a string literal equal to `entry`, in any array layout. */
 export function hasQuotedEntry(source, entry) {
   for (const value of stringLiterals(source)) {

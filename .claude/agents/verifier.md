@@ -66,16 +66,18 @@ exactly:
 - Anything under the repository-root `.claude/`, `.codex/`, `.entire/`, `.vercel/`. Root-level only —
   a nested `app/.claude/` is still linted and collected, so it gets no exemption.
 
-Those paths are ignored by configuration, not by convention: `.prettierignore` excludes them,
-`eslint.config.mjs` lists them in `globalIgnores`, and `vitest.config.ts` lists them in `exclude`.
-Lint and tests cover product code only, and `npm run check:agent-docs` fails if the three lists
-drift apart.
+Those paths are ignored by configuration, not by convention: `.prettierignore` excludes them and
+`eslint.config.mjs` lists them in `globalIgnores`. `vitest.config.ts` collects tests from `app/`,
+`components/`, and `scripts/` only, so a file outside those roots is never a unit test. Lint and
+tests cover product code only, and `npm run check:agent-docs` fails if an ignore entry disappears or
+the collection scope widens.
 
 Membership is the list above, not a tool result. `npx prettier --file-info <path>` reporting
 `"ignored": true` is a signal, not proof — `.prettierignore` also excludes `package-lock.json` and
 `next-env.d.ts`, which `npm audit` and `npm run build` do read. Agent configuration is not the
-criterion either: `.github/hooks/` is agent tooling but appears in none of the three ignore lists,
-so this mode does not apply to it.
+criterion either: `.github/hooks/` is agent tooling, but Prettier and ESLint both read it, so this
+mode does not apply to it. Nor is being outside the unit-test scope enough on its own — every path
+outside `app/`, `components/`, and `scripts/` is.
 
 `git status` may also list unrelated work that step 1 of the workflow requires be preserved. Name
 every path you excluded from the change and why. If you cannot establish that a path outside the set
