@@ -17,26 +17,42 @@
 // walk the source once and yield string literals, which neither of those confuses.
 
 /**
- * Yields the value of every string literal in `source`, skipping comments. A `/*` or `//` inside a
- * string is literal text, because a string is consumed as a unit before comment detection resumes.
+ * Walks `source` once, yielding a token for each string literal, identifier, and punctuation
+ * character, and skipping comments. A `/*` or `//` inside a string is literal text, because a
+ * string is consumed as a unit before comment detection resumes.
+ *
+ * Everything else in this module reads the config through this, so there is one place that knows
+ * how to tell a quote from a comment from a bracket. `includeLiterals` needs the punctuation to
+ * find an array; `stringLiterals` throws it away. Duplicating the walk for the two of them meant
+ * two copies of the escape and comment handling, one of which no test reached.
  *
  * This is a scanner, not a parser. It does not recognise regex literals, so an unpaired quote
  * inside one (`/'/`) shifts quote parity and can mis-tokenise the rest of the file. Neither config
  * file it reads contains a regex literal; if one ever does, prefer a real parser over patching this.
  */
-export function* stringLiterals(source) {
+function* scanTokens(source) {
   let index = 0;
+  let word = "";
+
+  const flushWord = function* () {
+    if (word !== "") {
+      yield { word };
+      word = "";
+    }
+  };
 
   while (index < source.length) {
     const character = source[index];
     const following = source[index + 1];
 
     if (character === "/" && following === "/") {
+      yield* flushWord();
       while (index < source.length && source[index] !== "\n") index += 1;
       continue;
     }
 
     if (character === "/" && following === "*") {
+      yield* flushWord();
       index += 2;
       while (index < source.length && !(source[index] === "*" && source[index + 1] === "/")) {
         index += 1;
@@ -46,6 +62,7 @@ export function* stringLiterals(source) {
     }
 
     if (character === '"' || character === "'" || character === "`") {
+      yield* flushWord();
       const quote = character;
       let value = "";
       index += 1;
@@ -62,12 +79,115 @@ export function* stringLiterals(source) {
       }
 
       index += 1;
-      yield value;
+      yield { string: value };
       continue;
     }
 
+    if (/[A-Za-z0-9_$]/.test(character)) {
+      word += character;
+      index += 1;
+      continue;
+    }
+
+    yield* flushWord();
+    yield { punctuation: character };
     index += 1;
   }
+
+  yield* flushWord();
+}
+
+/** Yields the value of every string literal in `source`, skipping comments. */
+export function* stringLiterals(source) {
+  for (const token of scanTokens(source)) {
+    if (token.string !== undefined) yield token.string;
+  }
+}
+
+/**
+ * Yields every string literal inside the `include: [ ... ]` array, and nothing outside it.
+ *
+ * Scoped to that array on purpose. Reading every literal in the file was fine while the config had
+ * one option, but a coverage block carrying `exclude: ["coverage/**"]` then registered `coverage`
+ * as a collection root and failed the gate -- correctly, since a whole-file read cannot tell a
+ * coverage pattern from a widened test scope. The cost was real: it kept the coverage
+ * configuration from being scoped at all.
+ *
+ * Brackets are counted over tokens rather than raw text, which is not a nicety. A collection
+ * pattern contains them -- `"app/**\/*.{test,spec}.?(c|m)[jt]s?(x)"` has `[jt]` -- so counting
+ * them in the source would end the array in the middle of the first pattern and report fewer roots
+ * than there are. Fewer is the dangerous direction: it is the one that lets a widened scope pass.
+ *
+ * `include` is only recognised inside `test: { ... }`, or at the top level of a bare fragment, so
+ * a coverage block's own `include` is not mistaken for the collection scope. A computed key or a
+ * spread array is not recognised at all, and the caller then sees no roots and reports drift
+ * rather than guessing.
+ */
+export function* includeLiterals(source) {
+  let pendingKey = "";
+  let depth = 0;
+  const objectKeys = [];
+
+  const inCollectionObject = () =>
+    objectKeys.length === 0 || objectKeys[objectKeys.length - 1] === "test";
+
+  for (const token of scanTokens(source)) {
+    if (token.string !== undefined) {
+      if (depth > 0) yield token.string;
+      pendingKey = "";
+      continue;
+    }
+
+    if (token.word !== undefined) {
+      pendingKey = token.word;
+      continue;
+    }
+
+    switch (token.punctuation) {
+      case ":":
+        break;
+      case "{":
+        objectKeys.push(pendingKey);
+        pendingKey = "";
+        break;
+      case "}":
+        objectKeys.pop();
+        pendingKey = "";
+        break;
+      case "[":
+        if (depth > 0) depth += 1;
+        else if (pendingKey === "include" && inCollectionObject()) depth = 1;
+        pendingKey = "";
+        break;
+      case "]":
+        if (depth > 0) depth -= 1;
+        break;
+      default:
+        if (!/\s/.test(token.punctuation)) pendingKey = "";
+    }
+  }
+}
+
+/**
+ * The directory each collection pattern is anchored to: `"app/**\/*.test.ts"` yields `app`. Used to
+ * prove that Vitest collects from a named set of roots rather than from the whole tree, which is a
+ * claim a denylist cannot make -- it can only name the directories somebody has thought of.
+ *
+ * A literal with no `*` is not a pattern and is skipped. A pattern that is not anchored to a
+ * directory -- `"**\/*.test.ts"`, `"/app/**"`, `"./app/**"` -- yields its leading segment verbatim
+ * (`**`, ``, `.`), which no root list contains, so the caller reports drift rather than silently
+ * accepting a widened scope. A config with no readable `include` yields nothing, which the caller
+ * reports as collecting from no named root rather than passing vacuously.
+ */
+export function globRoots(source) {
+  const roots = new Set();
+
+  for (const value of includeLiterals(source)) {
+    if (!value.includes("*")) continue;
+    roots.add(value.split("/")[0]);
+  }
+
+  return roots;
 }
 
 /**
@@ -83,32 +203,6 @@ export function hasGitignoreEntry(contents, entry) {
 
     return trimmed.replace(/^\//, "").replace(/\/$/, "") === entry;
   });
-}
-
-/**
- * The directory each glob-shaped string literal in `source` is anchored to: `"app/**\/*.test.ts"`
- * yields `app`. Used to prove that Vitest collects from a named set of roots rather than from the
- * whole tree, which is a claim a denylist cannot make — it can only name the directories somebody
- * has thought of.
- *
- * A literal with no `*` is not a pattern and is skipped, so a config's other strings do not appear.
- * A pattern that is not anchored to a directory — `"**\/*.test.ts"`, `"/app/**"`, `"./app/**"` —
- * yields its leading segment verbatim (`**`, ``, `.`), which no root list contains, so the caller
- * reports drift rather than silently accepting a widened scope.
- *
- * Same scope as the rest of this module: a tripwire, not a parser. It reads every pattern in the
- * file, not only the ones in `include`, so a glob added for some unrelated option would have to be
- * accounted for here too. In a file this small, a check that fails loudly beats one that guesses.
- */
-export function globRoots(source) {
-  const roots = new Set();
-
-  for (const value of stringLiterals(source)) {
-    if (!value.includes("*")) continue;
-    roots.add(value.split("/")[0]);
-  }
-
-  return roots;
 }
 
 /** JavaScript or TypeScript source: a string literal equal to `entry`, in any array layout. */
