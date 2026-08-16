@@ -21,7 +21,7 @@ My First Commit is a small Next.js App Router application. It has no database, n
 - GitHub username validation runs on both the client and server action boundary.
 - Recent searches are stored only in the user's browser under `my-first-commit:recent-searches`.
 - The app does not persist searches, users, commits, or analytics events in its own database.
-- Browsers post CSP violation reports to `/api/csp-report`. Bodies over 16 KB are rejected, reported URLs are reduced to origin and path, and `original-policy` and `script-sample` are never read.
+- Browsers post CSP violation reports to `/api/csp-report`. Only the two CSP report content types are read, bodies are rejected past 16 KB while they arrive rather than after buffering, at most ten reports are logged per request, http(s) URLs are reduced to origin and path and every other scheme to the scheme alone, and `original-policy` and `script-sample` are never read.
 
 ## Runtime Routes
 
