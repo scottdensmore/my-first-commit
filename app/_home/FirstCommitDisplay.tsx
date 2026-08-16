@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { GoGitCommit, GoRepo } from "react-icons/go";
-import type { CommitInfo } from "../app/commitTypes";
-import { githubProfileUrl, githubRepositoryUrl } from "../app/githubUrls";
+import type { CommitInfo } from "../commitTypes";
+import { githubProfileUrl, githubRepositoryUrl } from "../githubUrls";
 
 type FirstCommitDisplayProps = {
   data: CommitInfo;

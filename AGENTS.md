@@ -49,11 +49,12 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
 - `app/searchClientKey.ts` — salted per-process hash of the forwarded client address
 - `app/username.ts` — validation and normalization, used on both the client and the server action
 - `app/logger.ts` — structured warn/error logging
-- `app/_home/` — homepage search internals (hook, form, results, recent searches, analytics)
+- `app/_home/` — homepage search internals (hook, form, results, timeline card, recent searches,
+  analytics)
+- `app/_components/` — components used by something other than one feature
 - `app/api/health/route.ts` — runtime health JSON for production checks
 - `app/api/e2e-readiness/route.ts` — non-production probe telling the Playwright preflight whether
   this server was started with the fixture mocks
-- `components/FirstCommitDisplay.tsx` — result timeline rendering
 - `tests/e2e/` — Playwright specs; unit tests are colocated as `*.test.ts(x)`
 
 **A folder under `app/` that is not a route starts with `_`.** Every other directory name there
@@ -62,6 +63,14 @@ and nothing in its name says it should not be. Next.js treats a leading undersco
 [private folder](https://nextjs.org/docs/app/building-your-application/routing/colocation#private-folders)
 and excludes it from routing entirely, so `app/_home/` cannot serve `/home` however many files
 land in it. Name new internal folders the same way; a route directory keeps its bare name.
+
+**A component lives beside the feature that uses it.** Everything the homepage renders is in
+`app/_home/`; a component used by more than one feature, or by the root layout rather than a
+feature, goes in `app/_components/`. There is no root-level `components/`. The rule decides the
+import style too: relative within a feature, aliased with `@/` only across a boundary — so a
+relative import now means "same feature" rather than nothing in particular. Before adding a
+component to `app/_components/`, check that it really has more than one caller; the last occupant
+of the root `components/` directory had exactly one, three directories away.
 
 ## Gotchas
 
@@ -193,7 +202,7 @@ land in it. Name new internal folders the same way; a route directory keeps its 
 
    | Fix touches | Verifier reruns |
    | --- | --- |
-   | `app/`, `components/`, or `tests/` | `npm test`, `npm run test:e2e`, `npm run lint`, `npm run format:check`, `npm run build` |
+   | `app/` or `tests/` | `npm test`, `npm run test:e2e`, `npm run lint`, `npm run format:check`, `npm run build` |
    | a root config file | everything in the row above, plus `npm run check:agent-docs`, which reads `.prettierignore`, `eslint.config.mjs`, and `vitest.config.ts` |
    | `scripts/` | everything in the first row, plus `npm run check:agent-docs` and `npm run check:labels`, which those scripts implement |
    | `package.json` or `package-lock.json` | `npm audit` and `npm run check:agent-docs`, which reads the `validate` script, plus everything in the first row |
@@ -217,7 +226,7 @@ land in it. Name new internal folders the same way; a route directory keeps its 
      - Any `*.md` file.
      - Anything under the **repository-root** tooling-state directories `.claude/`, `.codex/`,
        `.entire/`, `.vercel/`. Root-level only: `eslint.config.mjs` anchors its ignore patterns to
-       the root, and `vitest.config.ts` collects tests from `app/`, `components/`, and `scripts/`,
+       the root, and `vitest.config.ts` collects tests from `app/` and `scripts/`,
        so a nested `app/.claude/` is still linted and still collected, and gets no exemption even
        though Prettier ignores it at any depth.
 
@@ -235,8 +244,7 @@ land in it. Name new internal folders the same way; a route directory keeps its 
      excludes `package-lock.json` and `next-env.d.ts`, each of which some gate command does read.
      Agent configuration is likewise not the criterion: `.github/hooks/` is agent tooling, but
      Prettier and ESLint both read it, so a change touching it gets no exemption. Being outside the
-     unit-test scope is not sufficient either, since every path outside `app/`, `components/`, and
-     `scripts/` is — including product-adjacent ones like `.github/workflows/ci.yml`.
+     unit-test scope is not sufficient either, since every path outside `app/` and `scripts/` is — including product-adjacent ones like `.github/workflows/ci.yml`.
 
      Enumerate with the branch diff plus `git status --short --untracked-files=all`. Step 1
      preserves unrelated work, so status may also list paths that belong to the user rather than to

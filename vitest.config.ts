@@ -16,11 +16,7 @@ export default defineConfig({
     // not collected because it was never in scope. Root-anchored on purpose; `**/` prefixes would
     // give the walk the whole tree back. scripts/check-agent-docs.mjs pins this list, so add a
     // root there and in the verification exemption in AGENTS.md when one is deliberately added.
-    include: [
-      "app/**/*.{test,spec}.?(c|m)[jt]s?(x)",
-      "components/**/*.{test,spec}.?(c|m)[jt]s?(x)",
-      "scripts/**/*.{test,spec}.?(c|m)[jt]s?(x)",
-    ],
+    include: ["app/**/*.{test,spec}.?(c|m)[jt]s?(x)", "scripts/**/*.{test,spec}.?(c|m)[jt]s?(x)"],
     setupFiles: ["./vitest.setup.ts"],
   },
 });

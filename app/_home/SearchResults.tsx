@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { GoCopy } from "react-icons/go";
-import FirstCommitDisplay from "@/components/FirstCommitDisplay";
+import FirstCommitDisplay from "./FirstCommitDisplay";
 import { githubRepositoryUrl } from "../githubUrls";
 import type { CommitInfo } from "../commitTypes";
 
