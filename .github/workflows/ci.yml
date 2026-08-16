@@ -23,8 +23,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # WebKit needs system libraries Chromium does not, which is what `--with-deps` installs.
+      # The mobile project is Chromium-backed and needs nothing extra.
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       # One step on purpose. `npm run validate` is the same gate contributors and agents run
       # locally, so the gate has one definition rather than a local list and a CI list. The two

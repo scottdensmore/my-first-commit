@@ -128,21 +128,25 @@ test("home page search field is keyboard-ready and not treated as a credential f
   await expect(page.getByText(/Release v\d+\.\d+\.\d+-/)).toBeVisible();
 });
 
-test("home page exposes accessible landmarks and privacy content", async ({ page }) => {
-  await page.goto("/");
+test(
+  "home page exposes accessible landmarks and privacy content",
+  { tag: ["@mobile"] },
+  async ({ page }) => {
+    await page.goto("/");
 
-  await expect(page.getByRole("banner", { name: "Site header" })).toBeVisible();
-  await expect(page.getByRole("main", { name: "Commit search" })).toBeVisible();
-  await expect(page.getByRole("search", { name: "GitHub commit search" })).toBeVisible();
-  await expect(
-    page.getByRole("contentinfo", { name: "Privacy and GitHub affiliation" }),
-  ).toBeVisible();
-  await expect(page.getByText(/recent searches stay in this browser only/i)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Read the privacy note" })).toHaveAttribute(
-    "href",
-    "/privacy",
-  );
-});
+    await expect(page.getByRole("banner", { name: "Site header" })).toBeVisible();
+    await expect(page.getByRole("main", { name: "Commit search" })).toBeVisible();
+    await expect(page.getByRole("search", { name: "GitHub commit search" })).toBeVisible();
+    await expect(
+      page.getByRole("contentinfo", { name: "Privacy and GitHub affiliation" }),
+    ).toBeVisible();
+    await expect(page.getByText(/recent searches stay in this browser only/i)).toBeVisible();
+    await expect(page.getByRole("link", { name: "Read the privacy note" })).toHaveAttribute(
+      "href",
+      "/privacy",
+    );
+  },
+);
 
 test("privacy page documents search and analytics handling", async ({ page }) => {
   await page.goto("/privacy");
@@ -161,35 +165,39 @@ test("privacy page documents search and analytics handling", async ({ page }) =>
   await expect(page.getByText(/never sent to the browser/i)).toBeVisible();
 });
 
-test("home page tab order keeps primary actions reachable", async ({ page }) => {
-  await page.addInitScript(() => {
-    window.localStorage.setItem("my-first-commit:recent-searches", JSON.stringify(["octocat"]));
-  });
+test(
+  "home page tab order keeps primary actions reachable",
+  { tag: ["@webkit"] },
+  async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem("my-first-commit:recent-searches", JSON.stringify(["octocat"]));
+    });
 
-  await page.goto("/");
-  await page.waitForLoadState("networkidle");
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
 
-  const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
-  const searchButton = page.getByRole("button", { name: "Search", exact: true });
-  const clearButton = page.getByRole("button", { name: "Clear recent searches" });
-  const recentSearchButton = page.getByRole("button", { name: "Search octocat again" });
+    const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+    const searchButton = page.getByRole("button", { name: "Search", exact: true });
+    const clearButton = page.getByRole("button", { name: "Clear recent searches" });
+    const recentSearchButton = page.getByRole("button", { name: "Search octocat again" });
 
-  await expect(searchBox).toBeFocused();
-  await expect(clearButton).toBeVisible();
-  await expect(recentSearchButton).toBeVisible();
+    await expect(searchBox).toBeFocused();
+    await expect(clearButton).toBeVisible();
+    await expect(recentSearchButton).toBeVisible();
 
-  await searchBox.pressSequentially("octocat");
-  await expect(searchButton).toBeEnabled();
+    await searchBox.pressSequentially("octocat");
+    await expect(searchButton).toBeEnabled();
 
-  await page.keyboard.press("Tab");
-  await expect(searchButton).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(searchButton).toBeFocused();
 
-  await page.keyboard.press("Tab");
-  await expect(clearButton).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(clearButton).toBeFocused();
 
-  await page.keyboard.press("Tab");
-  await expect(recentSearchButton).toBeFocused();
-});
+    await page.keyboard.press("Tab");
+    await expect(recentSearchButton).toBeFocused();
+  },
+);
 
 test("home page keeps the search form compact when helper text is visible", async ({ page }) => {
   await page.goto("/");
@@ -234,26 +242,33 @@ test("home page visual layout stays stable", async ({ page }) => {
   expect(formBox!.height).toBeGreaterThan(inputBox!.height);
 });
 
-test("home page blocks invalid usernames without leaving keyboard flow", async ({ page }) => {
-  await page.goto("/");
+test(
+  "home page blocks invalid usernames without leaving keyboard flow",
+  { tag: ["@mobile"] },
+  async ({ page }) => {
+    await page.goto("/");
 
-  const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
-  // Same hydration barrier as searchForUsername: a pre-hydration fill leaves React's
-  // state empty, so the validation this asserts never runs.
-  await expect(searchBox).toBeFocused();
-  const searchButton = page.getByRole("button", { name: "Search", exact: true });
+    const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+    // Same hydration barrier as searchForUsername: a pre-hydration fill leaves React's
+    // state empty, so the validation this asserts never runs.
+    await expect(searchBox).toBeFocused();
+    const searchButton = page.getByRole("button", { name: "Search", exact: true });
 
-  await searchBox.fill("octo_cat");
+    await searchBox.fill("octo_cat");
 
-  await expect(searchBox).toHaveAttribute("aria-invalid", "true");
-  await expect(searchBox).toHaveAttribute("aria-describedby", "username-hint username-validation");
-  await expect(page.getByRole("status")).toContainText("Use only letters, numbers, and hyphens.");
-  await expect(searchButton).toBeDisabled();
+    await expect(searchBox).toHaveAttribute("aria-invalid", "true");
+    await expect(searchBox).toHaveAttribute(
+      "aria-describedby",
+      "username-hint username-validation",
+    );
+    await expect(page.getByRole("status")).toContainText("Use only letters, numbers, and hyphens.");
+    await expect(searchButton).toBeDisabled();
 
-  await searchBox.press("Enter");
-  await expect(page).not.toHaveURL(/\?user=/);
-  await expect(searchBox).toBeFocused();
-});
+    await searchBox.press("Enter");
+    await expect(page).not.toHaveURL(/\?user=/);
+    await expect(searchBox).toBeFocused();
+  },
+);
 
 test("invalid shared URLs hydrate cleanly and show validation", async ({ page }) => {
   const renderErrors = captureReactRenderErrors(page);
@@ -341,7 +356,7 @@ test("app responses include baseline security headers", async ({ request }) => {
   expectSecurityHeaders(ogResponse);
 });
 
-test("unknown routes show a branded not-found page", async ({ page }) => {
+test("unknown routes show a branded not-found page", { tag: ["@webkit"] }, async ({ page }) => {
   const response = await page.goto("/missing-commit-path");
 
   expect(response?.status()).toBe(404);
@@ -479,44 +494,50 @@ test.describe("local mocked commit search states", () => {
     "mocked commit search states only run against the local Playwright server",
   );
 
-  test("valid shared URLs automatically render search results", async ({ page }) => {
-    const renderErrors = captureReactRenderErrors(page);
+  test(
+    "valid shared URLs automatically render search results",
+    { tag: ["@webkit"] },
+    async ({ page }) => {
+      const renderErrors = captureReactRenderErrors(page);
 
-    await page.goto("/?user=e2e-result");
+      await page.goto("/?user=e2e-result");
 
-    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
-    await expect(
-      page.getByText(/earliest indexed public commit for @e2e-result appears in/i),
-    ).toBeVisible();
-    await expect(page).toHaveURL(/\?user=e2e-result$/);
-    expect(renderErrors).toEqual([]);
-  });
+      await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+      await expect(
+        page.getByText(/earliest indexed public commit for @e2e-result appears in/i),
+      ).toBeVisible();
+      await expect(page).toHaveURL(/\?user=e2e-result$/);
+      expect(renderErrors).toEqual([]);
+    },
+  );
 
-  test("successful search focuses its heading and action colors meet AA contrast", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
+  test(
+    "successful search focuses its heading and action colors meet AA contrast",
+    { tag: ["@mobile", "@webkit"] },
+    async ({ page }) => {
+      await page.goto("/");
+      await page.waitForLoadState("networkidle");
 
-    // Same hydration barrier as searchForUsername: a pre-hydration fill leaves React's
-    // state empty, so the button never enables and this dies as an unexplained timeout.
-    const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
-    await expect(searchBox).toBeFocused();
-    await searchBox.fill("e2e-result");
-    const searchButton = page.getByRole("button", { name: "Search", exact: true });
-    await expect(searchButton).toBeEnabled();
-    expect(await getTextContrastRatio(searchButton)).toBeGreaterThanOrEqual(4.5);
+      // Same hydration barrier as searchForUsername: a pre-hydration fill leaves React's
+      // state empty, so the button never enables and this dies as an unexplained timeout.
+      const searchBox = page.getByRole("searchbox", { name: "GitHub username" });
+      await expect(searchBox).toBeFocused();
+      await searchBox.fill("e2e-result");
+      const searchButton = page.getByRole("button", { name: "Search", exact: true });
+      await expect(searchButton).toBeEnabled();
+      expect(await getTextContrastRatio(searchButton)).toBeGreaterThanOrEqual(4.5);
 
-    await searchButton.hover();
-    await expect.poll(() => getTextContrastRatio(searchButton)).toBeGreaterThanOrEqual(4.5);
-    await searchButton.click();
+      await searchButton.hover();
+      await expect.poll(() => getTextContrastRatio(searchButton)).toBeGreaterThanOrEqual(4.5);
+      await searchButton.click();
 
-    const resultHeading = page.getByRole("heading", { name: "First public commit found" });
-    await expect(resultHeading).toBeFocused();
+      const resultHeading = page.getByRole("heading", { name: "First public commit found" });
+      await expect(resultHeading).toBeFocused();
 
-    await page.getByRole("button", { name: "Search another user" }).click();
-    await expect(page.getByRole("searchbox", { name: "GitHub username" })).toBeFocused();
-  });
+      await page.getByRole("button", { name: "Search another user" }).click();
+      await expect(page.getByRole("searchbox", { name: "GitHub username" })).toBeFocused();
+    },
+  );
 
   test("search shortcuts stay disabled while a request is pending", async ({ page }) => {
     await page.addInitScript(() => {
@@ -576,6 +597,29 @@ test.describe("local mocked commit search states", () => {
     await page.getByRole("button", { name: "Copy result" }).click();
 
     await expect(page.getByRole("status")).toContainText("Result copied.");
+  });
+
+  test("copying a result always answers the visitor", { tag: ["@webkit"] }, async ({ page }) => {
+    // The sibling test above grants clipboard permissions and asserts the success message. It
+    // cannot run on WebKit at all: Playwright does not support `clipboard-read`/`clipboard-write`
+    // there, which is the whole reason this app has a fallback. So this asserts the contract that
+    // holds in every engine instead of the outcome that only holds in one -- pressing Copy always
+    // says something, and never throws.
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    await searchForUsername(page, "e2e-result");
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Copy result" }).click();
+
+    // One of the three `copyResult` outcomes: copied, refused, or unavailable. Which one depends
+    // on the engine's clipboard policy, and pinning a particular one here would assert the
+    // policy rather than the app's handling of it.
+    await expect(page.getByRole("status")).toContainText(
+      /Result copied\.|Could not copy result\.|Copy is not available in this browser\./,
+    );
+    expect(pageErrors).toEqual([]);
   });
 
   test("mixed valid and malformed commit dates render without crashing", async ({ page }) => {
@@ -710,33 +754,39 @@ test.describe("local mocked commit search states", () => {
     );
   });
 
-  test("home page renders retry guidance for rate limits", async ({ page }) => {
-    await searchForUsername(page, "e2e-rate-limit");
+  test(
+    "home page renders retry guidance for rate limits",
+    { tag: ["@mobile"] },
+    async ({ page }) => {
+      await searchForUsername(page, "e2e-rate-limit");
 
-    await expect(
-      page.getByRole("heading", { name: "GitHub is asking us to slow down." }),
-    ).toBeVisible();
-    await expect(
-      page.locator('main [role="alert"]').filter({ hasText: "GitHub is asking us to slow down." }),
-    ).toBeVisible();
-    await expect(page.getByText(/temporarily limited commit search requests/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "GitHub is asking us to slow down." }),
+      ).toBeVisible();
+      await expect(
+        page
+          .locator('main [role="alert"]')
+          .filter({ hasText: "GitHub is asking us to slow down." }),
+      ).toBeVisible();
+      await expect(page.getByText(/temporarily limited commit search requests/i)).toBeVisible();
+      await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
 
-    // This fixture answers the same way every time, so the retry lands back on this panel
-    // with the button still mounted. A `disabled` retry is blurred to <body> the moment it
-    // is pressed and nothing ever gives the focus back, so a keyboard visitor finishes the
-    // request with no place in the document. jsdom does not reproduce that blur, which is
-    // why this assertion lives in a real browser.
-    const retryButton = page.getByRole("button", { name: "Try again" });
-    // Activated from the keyboard, which is both the affected path and the one that does
-    // not depend on a platform's click-to-focus behaviour. The pending label is
-    // deliberately not asserted: the fixture answers immediately, so that window is a race.
-    await retryButton.focus();
-    await page.keyboard.press("Enter");
+      // This fixture answers the same way every time, so the retry lands back on this panel
+      // with the button still mounted. A `disabled` retry is blurred to <body> the moment it
+      // is pressed and nothing ever gives the focus back, so a keyboard visitor finishes the
+      // request with no place in the document. jsdom does not reproduce that blur, which is
+      // why this assertion lives in a real browser.
+      const retryButton = page.getByRole("button", { name: "Try again" });
+      // Activated from the keyboard, which is both the affected path and the one that does
+      // not depend on a platform's click-to-focus behaviour. The pending label is
+      // deliberately not asserted: the fixture answers immediately, so that window is a race.
+      await retryButton.focus();
+      await page.keyboard.press("Enter");
 
-    await expect(retryButton).toBeVisible();
-    await expect(retryButton).toBeFocused();
-  });
+      await expect(retryButton).toBeVisible();
+      await expect(retryButton).toBeFocused();
+    },
+  );
 
   test("home page renders retry guidance when GitHub is unavailable", async ({ page }) => {
     await searchForUsername(page, "e2e-unavailable");
