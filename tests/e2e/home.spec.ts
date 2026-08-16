@@ -403,6 +403,36 @@ test("csp report endpoint accepts a violation report", async ({ request }) => {
   expect(response.status()).toBe(204);
 });
 
+test("a maximum-length handle does not scroll the page sideways at 320px", async ({ page }) => {
+  // 39 characters is the longest handle GitHub issues, and #102 made that bound real by
+  // validating on read, so this is the widest label the row can ever hold.
+  const longestHandle = "a".repeat(39);
+  await page.addInitScript((handle) => {
+    window.localStorage.setItem("my-first-commit:recent-searches", JSON.stringify([handle]));
+  }, longestHandle);
+
+  // 320px is also what 200% zoom produces on a 640px window, which is the WCAG 1.4.10
+  // reflow condition: content must reflow rather than require two-dimensional scrolling.
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+
+  const shortcut = page.getByRole("button", { name: `Search ${longestHandle} again` });
+  await expect(shortcut).toBeVisible();
+
+  // Two assertions, because the page-level one alone is not enough. Capping the button at
+  // `max-w-full` stops the page scrolling while the label still overruns its own padding and
+  // renders across the border, which looks broken and is not the reflow 1.4.10 asks for.
+  const overflow = await shortcut.evaluate((button) => ({
+    labelOverflowsButton: button.scrollWidth > button.clientWidth,
+    pageScrollWidth: document.documentElement.scrollWidth,
+    pageClientWidth: document.documentElement.clientWidth,
+  }));
+
+  expect(overflow.labelOverflowsButton).toBe(false);
+  expect(overflow.pageScrollWidth).toBeLessThanOrEqual(overflow.pageClientWidth);
+});
+
 test.describe("local mocked commit search states", () => {
   test.skip(
     isDeployedTarget,
