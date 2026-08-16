@@ -38,10 +38,12 @@ describe("FirstCommitDisplay", () => {
     );
     expect(screen.getByRole("link", { name: "abcdef1" })).toHaveAttribute("href", commit.html_url);
     expect(screen.getByText("Add the first files")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "octo" })).toHaveAttribute(
-      "src",
-      expect.stringContaining("octo.png"),
-    );
+    // The avatar is decorative now: the author link beside it already carries the login, so
+    // naming the image made every card announce it twice. Queried directly because a presentational
+    // image has no role to find it by, which is the point.
+    const avatar = document.querySelector("img");
+    expect(avatar).toHaveAttribute("src", expect.stringContaining("octo.png"));
+    expect(avatar).toHaveAttribute("alt", "");
     expect(screen.getByText("Jan 1, 2024")).toBeInTheDocument();
     expect(screen.getByText(/commit age/i)).toBeInTheDocument();
     expect(screen.getByText(/source repository/i)).toBeInTheDocument();

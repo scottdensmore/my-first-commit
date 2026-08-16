@@ -622,6 +622,39 @@ test.describe("local mocked commit search states", () => {
     expect(pageErrors).toEqual([]);
   });
 
+  test(
+    "the commit timeline is an ordered list that survives long content at 320px",
+    { tag: ["@mobile", "@webkit"] },
+    async ({ page }) => {
+      await page.setViewportSize({ width: 320, height: 720 });
+      await searchForUsername(page, "e2e-long-data");
+
+      await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+
+      // List semantics, so assistive technology announces "list, 2 items" instead of reading two
+      // indistinguishable card-shaped groups of divs.
+      const timeline = page.getByRole("list", { name: /earliest public commits/i });
+      await expect(timeline).toBeVisible();
+      await expect(timeline.getByRole("listitem")).toHaveCount(2);
+
+      // Nothing may escape the page, and no card may overrun its own box. The page check alone
+      // passes while a card clips its content internally, which is the defect here.
+      const overflow = await page.evaluate(() => {
+        const cards = [...document.querySelectorAll("[data-commit-card]")];
+        return {
+          pageScrollWidth: document.documentElement.scrollWidth,
+          pageClientWidth: document.documentElement.clientWidth,
+          overflowingCards: cards.filter((card) => card.scrollWidth > card.clientWidth).length,
+          cardCount: cards.length,
+        };
+      });
+
+      expect(overflow.pageScrollWidth).toBeLessThanOrEqual(overflow.pageClientWidth);
+      expect(overflow.cardCount).toBe(2);
+      expect(overflow.overflowingCards).toBe(0);
+    },
+  );
+
   test("mixed valid and malformed commit dates render without crashing", async ({ page }) => {
     const renderErrors = captureReactRenderErrors(page);
 
