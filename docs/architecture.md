@@ -10,9 +10,10 @@ My First Commit is a small Next.js App Router application. It has no database, n
 4. The client calls the `getCommits` server action in `app/actions.ts`.
 5. The server action queries GitHub's public commit search through Octokit.
 6. Successful and empty GitHub search results are cached briefly in memory by normalized username to reduce repeated API calls. Concurrent requests for the same username share one upstream search rather than each issuing their own, since the cache cannot help until the first one finishes. That sharing is per server instance, like the cache, so the ceiling is one concurrent search per username per instance rather than globally. Results GitHub marked `incomplete_results` are never cached, so a retry can reach a complete answer.
-7. The server action maps GitHub results into the app's `CommitData` shape.
-8. The client renders the first public commit and the next several commits in `FirstCommitDisplay`.
-9. Successful searches are stored in browser `localStorage` as recent-search shortcuts.
+7. Searches that survive the cache are bounded per client by a rolling window of 30 a minute, keyed by a salted hash of the forwarded client address. Anything past the window is answered with the existing rate-limit result instead of reaching GitHub. The window lives in one server instance's memory and resets on a cold start, so it lowers what a burst from one client costs; it is not a global ceiling on the shared GitHub token. See the [rate-limit runbook section](production.md#bounding-search-bursts).
+8. The server action maps GitHub results into the app's `CommitData` shape.
+9. The client renders the first public commit and the next several commits in `FirstCommitDisplay`.
+10. Successful searches are stored in browser `localStorage` as recent-search shortcuts.
 
 ## Data Boundaries
 
@@ -21,6 +22,7 @@ My First Commit is a small Next.js App Router application. It has no database, n
 - GitHub username validation runs on both the client and server action boundary.
 - Recent searches are stored only in the user's browser under `my-first-commit:recent-searches`.
 - The app does not persist searches, users, commits, or analytics events in its own database.
+- Rate limiting holds a salted SHA-256 hash of the forwarded client address in server memory, never the address itself, and never alongside the username that was searched. The salt is random per process and is never written down, so the hashes mean nothing outside the instance that made them or after it restarts. Entries are dropped once a client has been quiet for longer than the window, and the map is capped so a flood of distinct addresses cannot grow it without bound.
 - Browsers post CSP violation reports to `/api/csp-report`. Only the two CSP report content types are read, bodies are rejected past 16 KB while they arrive rather than after buffering, at most ten reports are logged per request, http(s) URLs are reduced to origin and path and every other scheme to the scheme alone, and `original-policy` and `script-sample` are never read.
 
 ## Runtime Routes
@@ -40,6 +42,7 @@ GitHub API failures are normalized in `app/actions.ts`:
 - Empty public search results show a polite empty state.
 - GitHub sets `incomplete_results` when a commit search times out before scanning every commit, and still returns `200` with a partial item list. Those results carry `incomplete: true` through `CommitData`: the UI presents them as the earliest commit found so far rather than the first commit and offers a retry, and the cache refuses to store them so that a retry can reach a complete answer. A retry that fails keeps the partial result on screen rather than replacing it, since the visitor took an action the page offered. An incomplete search that returned no items is reported as an unfinished search, never as an absence of commits.
 - Rate limits, timeouts, unavailable GitHub services, validation failures, and unknown errors show recovery-focused copy.
+- A client past the per-client window gets the same `rate_limit` result GitHub's own rate limiting produces, so the screen, the retry, and the copy the visitor sees are identical. Only the unrendered `error` string and the log event differ, so neither claims GitHub refused a search the app refused itself.
 - Server-side failures are logged with structured event names and sanitized fields only, without usernames, tokens, or raw Octokit error objects.
 
 ## Operational Checks

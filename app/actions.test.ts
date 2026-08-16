@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearCommitSearchCache } from "./commitSearchCache";
 import { clearInFlightCommitSearches } from "./commitSearchInFlight";
+import {
+  COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES,
+  COMMIT_SEARCH_RATE_LIMIT_WINDOW_MS,
+  clearCommitSearchRateLimit,
+  trackedCommitSearchClientKeys,
+} from "./commitSearchRateLimit";
+import { hashClientIdentifier } from "./searchClientKey";
 import { getCommits } from "./actions";
 
 const invokeGetCommits = getCommits as unknown as (
@@ -10,6 +17,21 @@ const invokeGetCommits = getCommits as unknown as (
 const { searchCommits } = vi.hoisted(() => ({
   searchCommits: vi.fn(),
 }));
+
+const { headers } = vi.hoisted(() => ({
+  headers: vi.fn(),
+}));
+
+vi.mock("next/headers", () => ({
+  headers,
+}));
+
+/** Makes the next searches look like they came from `address`, or from an unknown client. */
+function requestsFromClient(address: string | null) {
+  headers.mockResolvedValue({
+    get: (name: string) => (name === "x-vercel-forwarded-for" ? address : null),
+  });
+}
 
 vi.mock("octokit", () => ({
   Octokit: vi.fn(function Octokit() {
@@ -53,7 +75,10 @@ describe("getCommits", () => {
   beforeEach(() => {
     clearCommitSearchCache();
     clearInFlightCommitSearches();
+    clearCommitSearchRateLimit();
     searchCommits.mockReset();
+    headers.mockReset();
+    requestsFromClient(null);
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
   });
@@ -679,6 +704,94 @@ describe("getCommits", () => {
       event: "github_commit_search_failed",
       status: undefined,
       errorKind: "unknown",
+    });
+  });
+
+  describe("per-client burst limit", () => {
+    const CLIENT_ADDRESS = "203.0.113.7";
+
+    /** Distinct usernames, so every search is a genuine cache and coalescer miss. */
+    function distinctUsernames(count: number) {
+      return Array.from({ length: count }, (_unused, index) => `octo${index}`);
+    }
+
+    async function searchEach(usernames: string[]) {
+      const results = [];
+      for (const username of usernames) {
+        results.push(await getCommits(username));
+      }
+      return results;
+    }
+
+    beforeEach(() => {
+      requestsFromClient(CLIENT_ADDRESS);
+      searchCommits.mockResolvedValue({ data: { items: [commitItem] } });
+    });
+
+    it("answers a burst past the bound with the existing rate-limit result", async () => {
+      await searchEach(distinctUsernames(COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES));
+      expect(searchCommits).toHaveBeenCalledTimes(COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES);
+
+      await expect(getCommits("one-too-many")).resolves.toEqual({
+        found: false,
+        error: "Too many searches at once. Please wait a moment and try again.",
+        errorKind: "rate_limit",
+        commits: [],
+      });
+      expect(searchCommits).toHaveBeenCalledTimes(COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES);
+    });
+
+    it("logs the refusal without the client address or the searched username", async () => {
+      await searchEach(distinctUsernames(COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES));
+      await getCommits("one-too-many");
+
+      expect(console.warn).toHaveBeenCalledWith({
+        event: "commit_search_rate_limited_client",
+        errorKind: "rate_limit",
+        limit: COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES,
+        windowMs: COMMIT_SEARCH_RATE_LIMIT_WINDOW_MS,
+      });
+    });
+
+    it("retains an opaque key for the client and nothing about the search", async () => {
+      await getCommits("octo");
+
+      const retained = trackedCommitSearchClientKeys();
+
+      expect(retained).toEqual([hashClientIdentifier(CLIENT_ADDRESS)]);
+      expect(JSON.stringify(retained)).not.toContain("octo");
+      expect(JSON.stringify(retained)).not.toContain(CLIENT_ADDRESS);
+    });
+
+    it("bounds each client separately, so one burst cannot refuse another visitor", async () => {
+      await searchEach(distinctUsernames(COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES));
+      await expect(getCommits("one-too-many")).resolves.toMatchObject({
+        errorKind: "rate_limit",
+      });
+
+      requestsFromClient("198.51.100.4");
+
+      await expect(getCommits("one-too-many")).resolves.toMatchObject({ found: true });
+    });
+
+    it("does not spend a client's allowance on a search the cache answers", async () => {
+      const repeatedSearches = COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES + 10;
+      for (let index = 0; index < repeatedSearches; index += 1) {
+        await expect(getCommits("octo")).resolves.toMatchObject({ found: true });
+      }
+
+      expect(searchCommits).toHaveBeenCalledTimes(1);
+    });
+
+    it("bounds nothing when the request carries no client address", async () => {
+      requestsFromClient(null);
+
+      const results = await searchEach(
+        distinctUsernames(COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES + 5),
+      );
+
+      expect(results.every((result) => result.found)).toBe(true);
+      expect(trackedCommitSearchClientKeys()).toEqual([]);
     });
   });
 });

@@ -4,9 +4,15 @@ import { Octokit } from "octokit";
 import type { CommitData, CommitErrorKind, CommitInfo } from "./commitTypes";
 import { getCachedCommitSearch, setCachedCommitSearch } from "./commitSearchCache";
 import { coalesceCommitSearch } from "./commitSearchInFlight";
+import {
+  COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES,
+  COMMIT_SEARCH_RATE_LIMIT_WINDOW_MS,
+  allowCommitSearch,
+} from "./commitSearchRateLimit";
 import { commitSearchMocksEnabled } from "./e2eCommitSearchMocks";
 import { githubProfileUrl } from "./githubUrls";
 import { logger } from "./logger";
+import { getSearchClientKey } from "./searchClientKey";
 import { getUsernameValidationMessage, normalizeGitHubUsername } from "./username";
 
 const octokit = new Octokit({
@@ -345,6 +351,28 @@ export async function getCommits(username: string): Promise<CommitData> {
   const cacheKey = normalizedUsername.toLowerCase();
   const cachedCommitSearch = getCachedCommitSearch(cacheKey);
   if (cachedCommitSearch) return cachedCommitSearch;
+
+  // Only searches that can still reach GitHub are counted, so an answer the cache already
+  // holds costs a visitor nothing. A flood of distinct usernames is all misses, which is
+  // exactly the traffic this bounds. The result is the ordinary rate-limit one: the visitor is
+  // being asked to slow down either way, and the screen that says so already offers a retry.
+  const clientKey = await getSearchClientKey();
+  if (clientKey && !allowCommitSearch(clientKey)) {
+    logger.warn({
+      event: "commit_search_rate_limited_client",
+      fields: {
+        errorKind: "rate_limit",
+        limit: COMMIT_SEARCH_RATE_LIMIT_MAX_SEARCHES,
+        windowMs: COMMIT_SEARCH_RATE_LIMIT_WINDOW_MS,
+      },
+    });
+    // Not shown to anyone: the rate-limit screen's copy comes from the error kind, so this
+    // stays accurate about which limit was reached rather than blaming GitHub for ours.
+    return commitSearchError(
+      "Too many searches at once. Please wait a moment and try again.",
+      "rate_limit",
+    );
+  }
 
   // The cache only helps after a search finishes; concurrent misses for the same username
   // would each call GitHub against one shared quota.
