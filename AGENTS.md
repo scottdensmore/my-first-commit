@@ -88,7 +88,7 @@ imported by a route as `@/app/logger` — is the clearest sign it does not belon
 - **E2E mocks.** `E2E_COMMIT_SEARCH_MOCKS=1` makes `app/_lib/actions.ts` return fixtures for the reserved
   usernames `e2e-result`, `e2e-slow-result`, `e2e-reject-once-*`, `e2e-malformed-dates`,
   `e2e-incomplete`, `e2e-incomplete-once-*`, `e2e-incomplete-then-error-*`, `e2e-incomplete-empty`,
-  `e2e-long-data`,
+  `e2e-long-data`, `e2e-timeout`, `e2e-unknown`, `e2e-validation`,
   `e2e-empty`, `e2e-rate-limit`, and `e2e-unavailable`. Playwright sets this automatically and runs
   the app on port **3100**, not 3000; set `E2E_PORT` when that port is taken. Add new fixture cases
   in `app/_lib/actions.ts` when adding browser coverage for a new state. The `*-once-*` and
