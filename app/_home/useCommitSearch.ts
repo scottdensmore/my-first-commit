@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import type { CommitData } from "../commitTypes";
+import type { CommitData } from "../_lib/commitTypes";
 import { clearStoredRecentSearches, getStoredRecentSearches } from "./recentSearches";
 import { getRetryFailureMessage } from "./resultMessages";
 import { runCommitSearch } from "./searchExecution";

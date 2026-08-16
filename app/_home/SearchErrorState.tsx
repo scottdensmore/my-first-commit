@@ -1,4 +1,4 @@
-import type { CommitData } from "../commitTypes";
+import type { CommitData } from "../_lib/commitTypes";
 import {
   canRetryCommitSearch,
   getResultMessage,

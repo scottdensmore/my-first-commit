@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import FirstCommitDisplay from "./FirstCommitDisplay";
-import type { CommitInfo } from "../commitTypes";
+import type { CommitInfo } from "../_lib/commitTypes";
 
 const commit: CommitInfo = {
   message: "Initial commit\n\nAdd the first files",

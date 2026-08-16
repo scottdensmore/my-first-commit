@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CommitData, CommitErrorKind } from "../commitTypes";
+import type { CommitData, CommitErrorKind } from "../_lib/commitTypes";
 import {
   canRetryCommitSearch,
   getResultMessage,

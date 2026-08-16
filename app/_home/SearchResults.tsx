@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { GoCopy } from "react-icons/go";
 import FirstCommitDisplay from "./FirstCommitDisplay";
-import { githubRepositoryUrl } from "../githubUrls";
-import type { CommitInfo } from "../commitTypes";
+import { githubRepositoryUrl } from "../_lib/githubUrls";
+import type { CommitInfo } from "../_lib/commitTypes";
 
 const PARTIAL_RESULT_HEADING_ID = "partial-result-heading";
 const PARTIAL_RESULT_DESCRIPTION_ID = "partial-result-description";

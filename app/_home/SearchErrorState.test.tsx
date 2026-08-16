@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { CommitData } from "../commitTypes";
+import type { CommitData } from "../_lib/commitTypes";
 import SearchErrorState from "./SearchErrorState";
 
 function renderSearchErrorState(result: CommitData, isPending = false) {

@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction, TransitionStartFunction } from "react";
-import { getCommits } from "../actions";
-import type { CommitData } from "../commitTypes";
-import { getUsernameValidationMessage, normalizeGitHubUsername } from "../username";
+import { getCommits } from "../_lib/actions";
+import type { CommitData } from "../_lib/commitTypes";
+import { getUsernameValidationMessage, normalizeGitHubUsername } from "../_lib/username";
 import { trackAppEvent } from "./analytics";
 import { MAX_RECENT_SEARCHES } from "./constants";
 import { saveStoredRecentSearches } from "./recentSearches";

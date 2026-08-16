@@ -234,7 +234,7 @@ unauthenticated. That is the real ceiling every visitor shares, and one script a
 of distinct usernames can spend it in seconds: each one is a cache miss and a coalescer miss, so
 each one reaches GitHub.
 
-The app bounds this per client, in `app/commitSearchRateLimit.ts`: **30 searches per rolling
+The app bounds this per client, in `app/_lib/commitSearchRateLimit.ts`: **30 searches per rolling
 60 seconds**, counted only for searches that would reach GitHub, with anything past that answered
 by the existing rate-limit screen.
 

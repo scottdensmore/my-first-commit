@@ -1,4 +1,4 @@
-import { getUsernameValidationMessage, normalizeGitHubUsername } from "../username";
+import { getUsernameValidationMessage, normalizeGitHubUsername } from "../_lib/username";
 import { MAX_RECENT_SEARCHES, RECENT_SEARCHES_STORAGE_KEY } from "./constants";
 
 // Recent searches are a best-effort convenience. Reading or writing them can

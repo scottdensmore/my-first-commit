@@ -1,4 +1,4 @@
-import type { CommitData } from "../commitTypes";
+import type { CommitData } from "../_lib/commitTypes";
 
 export function updateSharedSearchUrl(username: string) {
   const url = new URL(window.location.href);

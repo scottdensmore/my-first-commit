@@ -1,12 +1,12 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "./page";
-import { getCommits } from "./actions";
-import type { CommitData } from "./commitTypes";
+import { getCommits } from "./_lib/actions";
+import type { CommitData } from "./_lib/commitTypes";
 import { track } from "@vercel/analytics";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("./actions", () => ({
+vi.mock("./_lib/actions", () => ({
   getCommits: vi.fn(),
 }));
 
