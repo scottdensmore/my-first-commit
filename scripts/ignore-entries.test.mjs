@@ -145,6 +145,52 @@ describe("globRoots", () => {
     expect([...globRoots(`include: ["${pattern}"]`)]).toEqual([root]);
   });
 
+  it("reads the collection scope out of a real config shape", () => {
+    const source = [
+      "export default defineConfig({",
+      "  test: {",
+      '    environment: "jsdom",',
+      '    include: ["app/**/*.{test,spec}.?(c|m)[jt]s?(x)", "scripts/**/*.{test,spec}.?(c|m)[jt]s?(x)"],',
+      '    setupFiles: ["./vitest.setup.ts"],',
+      "  },",
+      "});",
+    ].join("\n");
+
+    expect([...globRoots(source)].sort()).toEqual(["app", "scripts"]);
+  });
+
+  it("ignores a coverage block carrying its own patterns", () => {
+    // The reason this function was rescoped. Reading every literal in the file made a coverage
+    // exclusion register as a collection root, which is what kept coverage from being scoped.
+    const source = [
+      "export default defineConfig({",
+      "  test: {",
+      '    include: ["app/**/*.test.ts"],',
+      "    coverage: {",
+      '      provider: "v8",',
+      '      include: ["app/**", "components/**"],',
+      '      exclude: ["coverage/**", "**/*.config.*"],',
+      "    },",
+      "  },",
+      "});",
+    ].join("\n");
+
+    expect([...globRoots(source)]).toEqual(["app"]);
+  });
+
+  it("does not end the array on a bracket inside a pattern", () => {
+    // `[jt]` lives inside the first pattern. Counting brackets in the raw text ends the array
+    // there and reports one root where there are two -- and under-reporting is the direction
+    // that lets a widened scope through.
+    const source = 'include: ["app/**/*.?(c|m)[jt]s?(x)", "scripts/**/*.test.mjs"]';
+
+    expect([...globRoots(source)].sort()).toEqual(["app", "scripts"]);
+  });
+
+  it("ignores an include that belongs to some other block", () => {
+    expect([...globRoots('coverage: { include: ["app/**"] }')]).toEqual([]);
+  });
+
   it("reports each root once", () => {
     const source = 'include: ["app/**/*.test.ts", "app/**/*.spec.ts"]';
 
