@@ -92,8 +92,36 @@ Playwright needs its browser binaries once per machine, and again after a Playwr
 These are the same browsers CI installs:
 
 ```bash
-npx playwright install --with-deps chromium
+npx playwright install --with-deps chromium webkit
 ```
+
+WebKit needs system libraries Chromium does not. `--with-deps` installs them and needs `sudo`; on
+a machine where the browsers are already present, `sudo npx playwright install-deps webkit` adds
+just the libraries. WebKit downloads but refuses to launch without them, so the symptom is a
+missing-dependencies error at launch rather than a failed download.
+
+### Browser projects
+
+The suite runs three, and two of them are deliberately selective so extra coverage costs a few
+runs rather than tripling the suite:
+
+| Project | Engine | Viewport | Runs |
+| --- | --- | --- | --- |
+| `chromium` | Desktop Chrome | 1280×720 | every spec |
+| `mobile-chrome` | Chromium (Galaxy S9+) | 320×658 | specs tagged `@mobile` |
+| `webkit` | Desktop Safari | 1280×720 | specs tagged `@webkit` |
+
+Tag with `test("name", { tag: ["@mobile"] }, ...)`. Tag a spec when the extra project changes
+something it actually exercises — viewport and touch for mobile, a different engine for WebKit.
+320px is both the narrowest realistic phone and what 200% zoom produces on a 640px window, which
+is the WCAG 1.4.10 reflow condition.
+
+One constraint worth knowing before tagging: **Playwright cannot grant clipboard permissions on
+WebKit**, so a spec calling `context.grantPermissions` with a clipboard permission must stay
+untagged. The copy path is covered on WebKit by a separate spec that asserts the visitor always
+gets an answer rather than asserting one particular outcome.
+
+Run one project with `npx playwright test --project=webkit`.
 
 If that download is blocked by network policy, `npm run test:e2e` cannot run locally. Because it is
 third in the chain, `npm run validate` then stops there and never reaches lint, formatting, the

@@ -96,6 +96,16 @@ land in it. Name new internal folders the same way; a route directory keeps its 
   so the only effect was a build that failed whenever Google Fonts was unreachable. Do not reach for
   `next/font/google` — a font the design actually needs belongs in the repository and is loaded with
   `next/font/local`, so a clean build never depends on a font host.
+- **Three browser projects, two of them selective.** `chromium` (Desktop Chrome) runs every spec.
+  `mobile-chrome` (Galaxy S9+, 320px, Chromium-backed) runs only specs tagged `@mobile`, and
+  `webkit` (Desktop Safari) only those tagged `@webkit` — tag with
+  `test("name", { tag: ["@mobile"] }, ...)`. Tag a spec when the extra project changes something
+  it actually exercises: viewport and touch for mobile, a different engine for WebKit. Tagging
+  everything would triple the suite for little signal. WebKit needs system libraries Chromium
+  does not; CI installs them with `--with-deps`, and locally
+  `sudo npx playwright install-deps webkit` does the same. **Playwright cannot grant clipboard
+  permissions on WebKit at all**, so a spec that calls `context.grantPermissions` with a
+  clipboard permission must stay untagged.
 - **Prettier ignores `*.md`.** Prose is formatted by hand. Do not run the formatter over docs, and do
   not reflow markdown as part of an unrelated change.
 - **The commit cache is per-process.** It is a plain `Map`, so it resets on every serverless cold
