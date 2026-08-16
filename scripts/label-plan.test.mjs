@@ -56,6 +56,16 @@ describe("validateLabels", () => {
     expect(problems[0]).toContain("[1]");
   });
 
+  // GitHub cannot hold both, so a file asking for both is a duplicate however differently it reads.
+  it("rejects two names differing only in case", () => {
+    const problems = validateLabels([label({ name: "Bug" }), label({ name: "bug" })]);
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('duplicate label name "bug"');
+    expect(problems[0]).toContain('differs from "Bug" only in case');
+    expect(problems[0]).toContain("[1]");
+  });
+
   it("does not report a second blank name as a duplicate of the first", () => {
     const problems = validateLabels([label({ name: "" }), label({ name: "" })]);
 
@@ -180,7 +190,7 @@ describe("planLabelSync", () => {
     const plan = planLabelSync({ desired: [label()], existing: [existing({ color: "000000" })] });
 
     expect(plan.updated).toEqual([
-      { name: "bug", color: "d73a4a", description: "Something is broken." },
+      { name: "bug", color: "d73a4a", description: "Something is broken.", currentName: "bug" },
     ]);
     expect(plan.unchanged).toEqual([]);
   });
@@ -211,19 +221,64 @@ describe("planLabelSync", () => {
     expect(plan.updated).toEqual([]);
   });
 
-  // Names are matched exactly, so a case variant reads as a different label: the desired one is
-  // created and the existing one is extra. GitHub rejects the create with a 422 rather than making
-  // a second label, which is the loud failure. Prune would delete the variant.
-  it("matches names exactly, so a case variant on GitHub is a different label", () => {
+  // GitHub label names are unique case-insensitively, so `Bug` on GitHub and `bug` in the file are
+  // one label whose name has drifted, not two labels. Planning it as a create plus an extra used to
+  // mean a 422 on the create and, under --prune, deleting the very label the file lists.
+  it("matches an existing name case-insensitively and corrects it with an update", () => {
     const plan = planLabelSync({
       desired: [label()],
       existing: [existing({ name: "Bug" })],
       prune: true,
     });
 
-    expect(plan.created.map((entry) => entry.name)).toEqual(["bug"]);
-    expect(plan.extra).toEqual(["Bug"]);
-    expect(plan.deleted).toEqual(["Bug"]);
+    expect(plan.updated).toEqual([
+      { name: "bug", color: "d73a4a", description: "Something is broken.", currentName: "Bug" },
+    ]);
+    expect(plan.created).toEqual([]);
+    expect(plan.unchanged).toEqual([]);
+    expect(plan.extra).toEqual([]);
+    expect(plan.deleted).toEqual([]);
+  });
+
+  it("never plans deleting a label a desired entry matches only by case", () => {
+    const plan = planLabelSync({
+      desired: [label(), label({ name: "feature", color: "0e8a16" })],
+      existing: [
+        existing({ name: "BUG" }),
+        existing({ name: "Feature", color: "0e8a16" }),
+        existing({ name: "wontfix" }),
+      ],
+      prune: true,
+    });
+
+    expect(plan.deleted).toEqual(["wontfix"]);
+    expect(plan.extra).toEqual(["wontfix"]);
+    expect(plan.created).toEqual([]);
+    expect(plan.updated.map((entry) => [entry.currentName, entry.name])).toEqual([
+      ["BUG", "bug"],
+      ["Feature", "feature"],
+    ]);
+  });
+
+  it("corrects the name and the color together", () => {
+    const plan = planLabelSync({
+      desired: [label()],
+      existing: [existing({ name: "Bug", color: "000000" })],
+    });
+
+    expect(plan.updated).toEqual([
+      { name: "bug", color: "d73a4a", description: "Something is broken.", currentName: "Bug" },
+    ]);
+  });
+
+  it("carries the existing name on every update, matched or drifted", () => {
+    const plan = planLabelSync({
+      desired: [label()],
+      existing: [existing({ color: "000000" })],
+    });
+
+    expect(plan.updated[0].currentName).toBe("bug");
+    expect(Object.keys(plan.updated[0])).toEqual(["name", "color", "description", "currentName"]);
   });
 
   it("reports a label missing from the file as extra", () => {
@@ -360,6 +415,32 @@ describe("formatPlanReport", () => {
     expect(lines).toContain("would delete: wontfix, duplicate, invalid");
   });
 
+  it("shows both names when an update is correcting the case of one", () => {
+    const lines = report({
+      plan: { ...plan, updated: [{ ...label({ name: "bug" }), currentName: "Bug" }] },
+    });
+
+    expect(lines).toContain("updated: Bug -> bug");
+  });
+
+  it("shows the rename a dry run would make", () => {
+    const lines = report({
+      dryRun: true,
+      plan: { ...plan, updated: [{ ...label({ name: "bug" }), currentName: "Bug" }] },
+    });
+
+    expect(lines).toContain("would update: Bug -> bug");
+  });
+
+  it("names an update once when only its color or description drifted", () => {
+    const lines = report({
+      plan: { ...plan, updated: [{ ...label({ name: "feature" }), currentName: "feature" }] },
+    });
+
+    expect(lines).toContain("updated: feature");
+    expect(lines).not.toContain("->");
+  });
+
   it("counts unchanged labels rather than listing them", () => {
     expect(report()).toContain("unchanged: 1");
   });
@@ -437,7 +518,10 @@ describe("applyLabelPlan", () => {
     const { calls, request } = recorder();
 
     await applyLabelPlan(
-      { ...emptyPlan, updated: [{ name: "bug", color: "d73a4a", description: "Broken." }] },
+      {
+        ...emptyPlan,
+        updated: [{ name: "bug", color: "d73a4a", description: "Broken.", currentName: "bug" }],
+      },
       { ...repository, request },
     );
 
@@ -454,6 +538,49 @@ describe("applyLabelPlan", () => {
         },
       },
     ]);
+  });
+
+  it("renames a label whose case drifted, addressing it by the name GitHub has", async () => {
+    const { calls, request } = recorder();
+
+    await applyLabelPlan(
+      {
+        ...emptyPlan,
+        updated: [{ name: "bug", color: "d73a4a", description: "Broken.", currentName: "Bug" }],
+      },
+      { ...repository, request },
+    );
+
+    expect(calls).toEqual([
+      {
+        route: "PATCH /repos/{owner}/{repo}/labels/{name}",
+        parameters: {
+          owner: "scottdensmore",
+          repo: "my-first-commit",
+          name: "Bug",
+          new_name: "bug",
+          color: "d73a4a",
+          description: "Broken.",
+        },
+      },
+    ]);
+  });
+
+  // The whole point of issue #160, end to end: with --prune set, a label differing only in case is
+  // renamed in place. Nothing is deleted, so it keeps every issue and pull request carrying it.
+  it("deletes nothing for a case-only difference, even with prune", async () => {
+    const { calls, request } = recorder();
+    const plan = planLabelSync({
+      desired: [label()],
+      existing: [{ name: "Bug", color: "d73a4a", description: "Something is broken." }],
+      prune: true,
+    });
+
+    await applyLabelPlan(plan, { ...repository, request });
+
+    expect(
+      calls.map((call) => [call.route, call.parameters.name, call.parameters.new_name]),
+    ).toEqual([["PATCH /repos/{owner}/{repo}/labels/{name}", "Bug", "bug"]]);
   });
 
   it("deletes each planned label", async () => {

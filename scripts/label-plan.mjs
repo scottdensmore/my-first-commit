@@ -19,6 +19,15 @@ export const MAX_DESCRIPTION_LENGTH = 100;
 const HEX_COLOR = /^[0-9a-f]{6}$/;
 
 /**
+ * The identity a label name has on GitHub.
+ *
+ * GitHub label names are unique case-insensitively — a repository cannot hold both `Bug` and `bug`
+ * — so `Bug` on GitHub and `bug` in the file are one label with a drifted name, not two labels.
+ * Everything that matches or de-duplicates a name here goes through this.
+ */
+const nameKey = (name) => name.toLowerCase();
+
+/**
  * Every problem with a parsed label file, as human-readable lines; empty when the file is valid.
  *
  * Returns problems rather than exiting, and reports all of them rather than the first, so one run
@@ -30,7 +39,7 @@ export function validateLabels(labels, labelsFile = LABELS_FILE) {
   }
 
   const problems = [];
-  const seen = new Set();
+  const seen = new Map();
 
   for (const [index, label] of labels.entries()) {
     const at = `${labelsFile}[${index}]`;
@@ -44,10 +53,19 @@ export function validateLabels(labels, labelsFile = LABELS_FILE) {
 
     if (typeof name !== "string" || name.trim() === "") {
       problems.push(`${at}: name is required.`);
-    } else if (seen.has(name)) {
-      problems.push(`${at}: duplicate label name "${name}".`);
+    } else if (seen.has(nameKey(name))) {
+      // GitHub could not hold both, so two entries differing only in case are as duplicate as two
+      // identical ones — and less obviously so, which is why that case says which name it collides
+      // with rather than repeating the one the reader is already looking at.
+      const first = seen.get(nameKey(name));
+
+      problems.push(
+        first === name
+          ? `${at}: duplicate label name "${name}".`
+          : `${at}: duplicate label name "${name}", which differs from "${first}" only in case; GitHub label names are case-insensitive.`,
+      );
     } else {
-      seen.add(name);
+      seen.set(nameKey(name), name);
     }
 
     if (typeof color === "number") {
@@ -81,21 +99,24 @@ function payload(label) {
 /**
  * What reconciling `existing` GitHub labels with the `desired` file would do.
  *
- * `created`, `updated`, and `unchanged` hold the desired label as `{ name, color, description }`,
- * which is exactly what `applyLabelPlan` sends. `extra` and `deleted` hold names, since a label
- * being removed needs nothing else. `extra` is everything on GitHub that the file does not list;
+ * `created` and `unchanged` hold the desired label as `{ name, color, description }`. `updated`
+ * holds that plus `currentName`, the name the label has on GitHub right now, which is what
+ * `applyLabelPlan` addresses the request to. `extra` and `deleted` hold names, since a label being
+ * removed needs nothing else. `extra` is everything on GitHub that the file does not list;
  * `deleted` is the subset that would actually be deleted, so it is empty unless `prune` is set.
  *
- * Names are matched exactly. A label on GitHub differing only in case is a different label here,
- * so it is planned as a create plus an extra rather than as an update — GitHub then rejects the
- * create with a 422 instead of quietly making a second label.
+ * Names are matched case-insensitively, because that is how GitHub decides two labels are the same
+ * one. So a label differing from the file only in case is an update that renames it, never a create
+ * plus an extra: that pair used to mean a 422 on the create, since the old name still existed, and
+ * under `prune` the deletion of the very label the file asks to keep — taking the label off every
+ * issue and pull request carrying it.
  */
 export function planLabelSync({ desired, existing, prune = false }) {
-  const existingByName = new Map(existing.map((label) => [label.name, label]));
+  const existingByKey = new Map(existing.map((label) => [nameKey(label.name), label]));
   const plan = { created: [], updated: [], unchanged: [], deleted: [], extra: [] };
 
   for (const label of desired) {
-    const current = existingByName.get(label.name);
+    const current = existingByKey.get(nameKey(label.name));
 
     if (!current) {
       plan.created.push(payload(label));
@@ -103,18 +124,24 @@ export function planLabelSync({ desired, existing, prune = false }) {
     }
 
     // GitHub returns the color without a `#` but in whatever case it was created with, and null
-    // rather than an empty string for a label with no description.
+    // rather than an empty string for a label with no description. The name is compared exactly,
+    // since matching it loosely is what leaves a case difference to correct.
     const drifted =
+      current.name !== label.name ||
       (current.color ?? "").toLowerCase() !== label.color ||
       (current.description ?? "") !== label.description;
 
-    plan[drifted ? "updated" : "unchanged"].push(payload(label));
+    if (drifted) {
+      plan.updated.push({ ...payload(label), currentName: current.name });
+    } else {
+      plan.unchanged.push(payload(label));
+    }
   }
 
-  const desiredNames = new Set(desired.map((label) => label.name));
+  const desiredKeys = new Set(desired.map((label) => nameKey(label.name)));
 
   for (const label of existing) {
-    if (desiredNames.has(label.name)) continue;
+    if (desiredKeys.has(nameKey(label.name))) continue;
 
     plan.extra.push(label.name);
 
@@ -130,7 +157,8 @@ export function planLabelSync({ desired, existing, prune = false }) {
  * Dry-run wording is conditional throughout, and the deletion line lists the same names
  * `applyLabelPlan` would send, so a dry run previews the destructive step rather than summarizing
  * it. Without `prune`, extras are still named: silence there would read as "the file matches
- * GitHub" when it does not.
+ * GitHub" when it does not. An update that renames a label shows both names for the same reason —
+ * `bug` alone would not say that anything about the name is changing.
  */
 export function formatPlanReport({
   owner,
@@ -143,11 +171,19 @@ export function formatPlanReport({
   const tense = (applied, pending) => (dryRun ? pending : applied);
   const list = (names) => names.join(", ") || "none";
   const named = (entries) => list(entries.map((entry) => entry.name));
+  const namedUpdates = (entries) =>
+    list(
+      entries.map((entry) =>
+        entry.currentName && entry.currentName !== entry.name
+          ? `${entry.currentName} -> ${entry.name}`
+          : entry.name,
+      ),
+    );
 
   const lines = [
     `${owner}/${repo}${dryRun ? " (dry run, nothing changed)" : ""}`,
     `  ${tense("created", "would create")}: ${named(plan.created)}`,
-    `  ${tense("updated", "would update")}: ${named(plan.updated)}`,
+    `  ${tense("updated", "would update")}: ${namedUpdates(plan.updated)}`,
     `  unchanged: ${plan.unchanged.length}`,
   ];
 
@@ -181,10 +217,13 @@ export async function applyLabelPlan(plan, { owner, repo, request, dryRun = fals
   }
 
   for (const label of plan.updated) {
+    // `currentName` is where the label is now and `name` is where the file wants it. They differ
+    // only when the case drifted, and sending `new_name` is what corrects it in place rather than
+    // leaving the file permanently unenforced. An entry carrying no `currentName` renames nothing.
     await request("PATCH /repos/{owner}/{repo}/labels/{name}", {
       owner,
       repo,
-      name: label.name,
+      name: label.currentName ?? label.name,
       new_name: label.name,
       color: label.color,
       description: label.description,

@@ -53,6 +53,17 @@ YAML reads an unquoted `5319e7` as scientific notation and `000000` as the integ
 silently stops being a string. Every color in `.github/labels.yml` is quoted, and the validator
 rejects one that is not with a message naming the problem.
 
+### Names Are Matched Case-Insensitively
+
+GitHub label names are unique without regard to case: a repository cannot hold both `Bug` and
+`bug`. A sync matches the file against GitHub the same way, so a label renamed by hand in the
+GitHub UI to a different capitalization is one label whose name has drifted, not a missing label
+plus a stray one. It is corrected with an update that renames it back, which a dry run shows as
+`would update: Bug -> bug`, and `--prune` never deletes it.
+
+For the same reason, two entries in `.github/labels.yml` whose names differ only in case are
+rejected by `npm run check:labels` as duplicates. GitHub could not hold both.
+
 ### Deleting Labels
 
 Syncing never deletes anything by default. Deleting a label removes it from every issue and pull
