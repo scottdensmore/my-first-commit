@@ -4,6 +4,7 @@ import { Octokit } from "octokit";
 import type { CommitData, CommitErrorKind, CommitInfo } from "./commitTypes";
 import { getCachedCommitSearch, setCachedCommitSearch } from "./commitSearchCache";
 import { coalesceCommitSearch } from "./commitSearchInFlight";
+import { commitSearchMocksEnabled } from "./e2eCommitSearchMocks";
 import { githubProfileUrl } from "./githubUrls";
 import { logger } from "./logger";
 import { getUsernameValidationMessage, normalizeGitHubUsername } from "./username";
@@ -13,7 +14,7 @@ const octokit = new Octokit({
 });
 
 const GITHUB_SEARCH_TIMEOUT_MS = 10_000;
-const E2E_COMMIT_SEARCH_MOCKS_ENABLED = process.env.E2E_COMMIT_SEARCH_MOCKS === "1";
+const E2E_COMMIT_SEARCH_MOCKS_ENABLED = commitSearchMocksEnabled();
 const E2E_SLOW_SEARCH_DELAY_MS = 750;
 const E2E_REJECT_ONCE_USERNAME_PREFIX = "e2e-reject-once-";
 const e2eRejectedUsernames = new Set<string>();

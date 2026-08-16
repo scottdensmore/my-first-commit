@@ -110,7 +110,11 @@ Local Playwright runs start the app with `E2E_COMMIT_SEARCH_MOCKS=1` so result a
 
 Before any spec runs, a global setup asks `/api/health` on that port whether it is this application. Playwright's `reuseExistingServer` only checks that the port answers, so an unrelated app left running there would otherwise be adopted and every spec would fail against the wrong site. The run now stops with one error naming the port and what was found there — a different service, an unexpected status, an unreadable response, a dropped connection, or silence.
 
-The check confirms identity, not freshness: a server of this app left on the port by an interrupted run still passes, even if it is serving another branch or was started without `E2E_COMMIT_SEARCH_MOCKS=1`, in which case the fixture-dependent specs fail. Stop it and let Playwright start its own if a run looks inexplicably wrong.
+Identity alone would let a stale server through, so a second probe follows it. A server of this app left on the port by an interrupted run answers the identity probe perfectly, and if that run started it without `E2E_COMMIT_SEARCH_MOCKS=1` every reserved `e2e-*` username reaches real GitHub and nearly every spec fails for a reason that has nothing to do with the branch. `/api/e2e-readiness` reports whether the fixture mocks are on, and the run stops naming the flag when they are not. A server too old to serve that route, or a production build where it is deliberately absent, is rejected the same way.
+
+That route exists for this check alone. It reports one boolean and returns `404` whenever `NODE_ENV` is `production`, so it is absent from `next start` and from every Vercel deployment, preview included. `/api/health` is public and uncached and its ceiling is what a production operator needs; a flag about test configuration would be harmless there today only because it is never set in production, and that is not a precedent worth setting for the next flag.
+
+Neither probe checks which branch the server is running, so a stale server of the right shape from another checkout still passes. Stop it and let Playwright start its own if a run looks inexplicably wrong.
 
 Playwright starts or adopts its web server before that hook runs, so the check reports the problem rather than preventing the connection. That is enough: it turns a suite-wide wall of misleading failures into one accurate error in a few seconds. It never stops the other process — the port may belong to another checkout or another person's work.
 
