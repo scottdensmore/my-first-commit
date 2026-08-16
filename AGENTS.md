@@ -324,6 +324,16 @@ imported by a route as `@/app/logger` — is the clearest sign it does not belon
 11. **Merge only clean, passing pull requests.** Merge only after GitHub reports a clean merge state
     and every configured check passes. Never bypass a failing or pending required check. Use squash
     merge for short-lived development branches to keep `main` linear, then delete the merged branch.
+    - **The branch must be up to date with `main` before it can merge.** Protection requires the
+      required check to have run against the current base, so a branch that fell behind reports
+      `BEHIND` rather than `CLEAN` and merging is blocked until it is updated and CI reruns. This
+      is the common case when two pull requests are open at once: the second one goes stale the
+      moment the first merges. Rebase onto the updated `main`, rerun the gate commands the change
+      can affect, push, and wait for the fresh run — a green check from before the rebase does not
+      carry over, because it never saw the code that will land.
+    - **Review conversations must be resolved**, and `main` requires linear history, which squash
+      merging already produces.
+    - Protection is enforced for administrators too, so none of the above can be clicked past.
     - **Check for an assigned reviewer before merging.** After opening the pull request, check whether
       a reviewer or team was assigned by repository rules, automation, or a human. Use `gh pr view
       <n> --json reviewRequests,reviews` to see both pending requests and submitted reviews.
