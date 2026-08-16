@@ -16,6 +16,7 @@ is no database, no accounts, and no server-side storage of searches.
 npm run dev              # localhost:3000
 npm audit                # dependency vulnerability gate
 npm test                 # vitest run (jsdom)
+npm run test:coverage    # vitest run with V8 coverage; the gate's unit step, thresholds included
 npm run test:watch
 npm run lint             # eslint
 npm run format           # prettier --write
@@ -219,7 +220,7 @@ imported by a route as `@/app/logger` — is the clearest sign it does not belon
 
    | Fix touches | Verifier reruns |
    | --- | --- |
-   | `app/` or `tests/` | `npm test`, `npm run test:e2e`, `npm run lint`, `npm run format:check`, `npm run build` |
+   | `app/` or `tests/` | `npm run test:coverage`, `npm run test:e2e`, `npm run lint`, `npm run format:check`, `npm run build` |
    | a root config file | everything in the row above, plus `npm run check:agent-docs`, which reads `.prettierignore`, `eslint.config.mjs`, and `vitest.config.ts` |
    | `scripts/` | everything in the first row, plus `npm run check:agent-docs` and `npm run check:labels`, which those scripts implement |
    | `package.json` or `package-lock.json` | `npm audit` and `npm run check:agent-docs`, which reads the `validate` script, plus everything in the first row |

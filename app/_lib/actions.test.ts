@@ -84,6 +84,9 @@ describe("getCommits", () => {
   });
 
   afterEach(() => {
+    // A no-op unless a test installed the fake clock, and the one thing restoreAllMocks does not
+    // undo. Leaving it installed would hand the next test file a frozen Date.
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -563,6 +566,83 @@ describe("getCommits", () => {
     expect(serializedLogs).not.toContain("ghp_headerSecret456");
   });
 
+  // The search is given ten seconds. Spelled out rather than imported, so a change to the constant
+  // has to be made here too instead of quietly moving the deadline these tests claim to pin.
+  const GITHUB_SEARCH_TIMEOUT_MS = 10_000;
+
+  /**
+   * Makes the next search hang like a request that never gets a response: it settles only when the
+   * signal it was handed aborts, which is what Octokit does with an aborted request.
+   */
+  function hangingSearchUntilAborted() {
+    let searchSignal: AbortSignal | undefined;
+
+    searchCommits.mockImplementation((options: { request?: { signal?: AbortSignal } }) => {
+      searchSignal = options.request?.signal;
+
+      return new Promise((_resolve, reject) => {
+        searchSignal?.addEventListener("abort", () => {
+          const error = new Error("The operation was aborted");
+          error.name = "AbortError";
+          reject(error);
+        });
+      });
+    });
+
+    return {
+      get signal() {
+        return searchSignal;
+      },
+    };
+  }
+
+  it("aborts a hanging GitHub search at the ten-second deadline", async () => {
+    vi.useFakeTimers();
+    const search = hangingSearchUntilAborted();
+
+    let settled = false;
+    const pending = getCommits("octo").then((result) => {
+      settled = true;
+      return result;
+    });
+
+    await vi.advanceTimersByTimeAsync(GITHUB_SEARCH_TIMEOUT_MS - 1);
+
+    // One millisecond short of the deadline the request is still outstanding. Without this the
+    // test would pass just as well against a search aborted immediately.
+    expect(searchCommits).toHaveBeenCalledTimes(1);
+    expect(search.signal?.aborted).toBe(false);
+    expect(settled).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(search.signal?.aborted).toBe(true);
+    await expect(pending).resolves.toEqual({
+      found: false,
+      error: "GitHub took too long to respond. Please try again.",
+      errorKind: "timeout",
+      commits: [],
+    });
+    expect(console.warn).toHaveBeenCalledWith({
+      event: "github_commit_search_timeout",
+      status: undefined,
+      errorKind: "timeout",
+    });
+  });
+
+  it("does not leave the timeout timer pending after a search that answers in time", async () => {
+    vi.useFakeTimers();
+    searchCommits.mockResolvedValue({ data: { items: [commitItem] } });
+
+    await getCommits("octo");
+
+    // The abort timer is cleared when the search settles. A leaked one would fire ten seconds
+    // later against a controller nobody is listening to, and keeps a Node process alive.
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  // Complements the deadline test above: this one pins how an AbortError is reported, whatever
+  // aborted the request, without waiting on the timer.
   it("returns a friendly timeout message when GitHub does not respond in time", async () => {
     const error = new Error("The operation was aborted");
     error.name = "AbortError";

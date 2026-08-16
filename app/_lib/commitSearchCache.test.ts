@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import type { CommitData } from "./commitTypes";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CommitData, CommitErrorKind } from "./commitTypes";
 import {
   clearCommitSearchCache,
   getCachedCommitSearch,
@@ -32,6 +32,21 @@ function makeCommitSearchResult(): CommitData {
     ],
   };
 }
+
+/** The shape of the empty state the server action caches for a user with no public commits. */
+function makeEmptyResult(): CommitData {
+  return {
+    found: false,
+    error: "No public commits found for this user (or indexing is delayed).",
+    errorKind: "empty",
+    commits: [],
+  };
+}
+
+// Spelled out rather than imported from the module under test. The five-minute lifetime is the
+// contract callers and the runbook rely on, so a test that read the constant back would move with
+// a change to it and report nothing.
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 describe("commit search cache", () => {
   beforeEach(() => {
@@ -94,5 +109,123 @@ describe("commit search cache", () => {
 
     expect(getCachedCommitSearch("octo-0", 1_300)).toEqual(makeCommitSearchResult());
     expect(getCachedCommitSearch("octo-1", 1_300)).toBeNull();
+  });
+
+  // These run on a fake clock and call the cache without the `now` argument, so they exercise the
+  // `Date.now()` default the server action actually uses. Passing timestamps in, as the tests
+  // above do, proves the comparison but never that the default reads the clock at all.
+  describe("five-minute expiry", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2024-01-02T03:04:05.000Z"));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("serves an entry one millisecond before the deadline", () => {
+      setCachedCommitSearch("octo", makeCommitSearchResult());
+
+      vi.advanceTimersByTime(CACHE_TTL_MS - 1);
+
+      expect(getCachedCommitSearch("octo")).toEqual(makeCommitSearchResult());
+    });
+
+    it("drops an entry once the deadline is reached", () => {
+      setCachedCommitSearch("octo", makeCommitSearchResult());
+
+      vi.advanceTimersByTime(CACHE_TTL_MS);
+
+      expect(getCachedCommitSearch("octo")).toBeNull();
+    });
+
+    it("does not extend the deadline when an entry is read inside it", () => {
+      setCachedCommitSearch("octo", makeCommitSearchResult());
+
+      // A read refreshes eviction order, which must not also refresh the lifetime: a popular
+      // username would otherwise be served from a cache entry that never expires.
+      vi.advanceTimersByTime(CACHE_TTL_MS - 1);
+      expect(getCachedCommitSearch("octo")).toEqual(makeCommitSearchResult());
+
+      vi.advanceTimersByTime(1);
+      expect(getCachedCommitSearch("octo")).toBeNull();
+    });
+
+    it("starts a fresh deadline when an entry is written again", () => {
+      setCachedCommitSearch("octo", makeCommitSearchResult());
+
+      vi.advanceTimersByTime(CACHE_TTL_MS - 1);
+      setCachedCommitSearch("octo", makeCommitSearchResult());
+
+      vi.advanceTimersByTime(CACHE_TTL_MS - 1);
+      expect(getCachedCommitSearch("octo")).toEqual(makeCommitSearchResult());
+    });
+
+    it("keeps an expired entry gone when a later search is cached", () => {
+      setCachedCommitSearch("octo", makeCommitSearchResult());
+
+      vi.advanceTimersByTime(CACHE_TTL_MS);
+      setCachedCommitSearch("hubot", makeCommitSearchResult());
+
+      expect(getCachedCommitSearch("octo")).toBeNull();
+      expect(getCachedCommitSearch("hubot")).toEqual(makeCommitSearchResult());
+    });
+  });
+
+  describe("which results are cacheable", () => {
+    it("caches an empty result, so a user with no commits is not searched again", () => {
+      setCachedCommitSearch("ghost", makeEmptyResult(), 1_000);
+
+      expect(getCachedCommitSearch("ghost", 1_100)).toEqual(makeEmptyResult());
+    });
+
+    it("expires an empty result on the same five-minute deadline", () => {
+      setCachedCommitSearch("ghost", makeEmptyResult(), 1_000);
+
+      expect(getCachedCommitSearch("ghost", 1_000 + CACHE_TTL_MS - 1)).toEqual(makeEmptyResult());
+      expect(getCachedCommitSearch("ghost", 1_000 + CACHE_TTL_MS)).toBeNull();
+    });
+
+    it("returns a copy of an empty result rather than the stored value", () => {
+      const storedResult = makeEmptyResult();
+      setCachedCommitSearch("ghost", storedResult, 1_000);
+
+      storedResult.error = "mutated";
+
+      expect(getCachedCommitSearch("ghost", 1_100)).toEqual(makeEmptyResult());
+    });
+
+    // Every failure other than "empty" is about GitHub or the request, not about the username, so
+    // caching one would keep answering a transient outage for the whole TTL.
+    it.each<CommitErrorKind>(["rate_limit", "timeout", "unavailable", "validation", "unknown"])(
+      "never caches a %s failure",
+      (errorKind) => {
+        setCachedCommitSearch(
+          "octo",
+          { found: false, error: "Something went wrong.", errorKind, commits: [] },
+          1_000,
+        );
+
+        expect(getCachedCommitSearch("octo", 1_100)).toBeNull();
+      },
+    );
+
+    it("never caches a failure with no error kind at all", () => {
+      setCachedCommitSearch("octo", { found: false, commits: [] }, 1_000);
+
+      expect(getCachedCommitSearch("octo", 1_100)).toBeNull();
+    });
+
+    it("does not let a failure evict a cached result for the same user", () => {
+      setCachedCommitSearch("octo", makeCommitSearchResult(), 1_000);
+      setCachedCommitSearch(
+        "octo",
+        { found: false, error: "Something went wrong.", errorKind: "unavailable", commits: [] },
+        1_100,
+      );
+
+      expect(getCachedCommitSearch("octo", 1_200)).toEqual(makeCommitSearchResult());
+    });
   });
 });
