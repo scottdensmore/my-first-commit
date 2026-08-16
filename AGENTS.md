@@ -100,6 +100,13 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
    quick rollback.
 
 4. **Use test-driven development when behavior or structure is testable.**
+   - **When the change replaces an existing contract, find the tests that pin the old one first.**
+     A new failing test proves the new behavior is missing; it says nothing about the tests already
+     asserting the behavior being removed. Search for assertions on the symbol, attribute, label,
+     or role being changed — `disabled` becoming `aria-disabled`, a renamed button label, a
+     narrowed return type — and update them inside the same red/green loop, not after the gate
+     finds them. Skipping this is silently safe: the new test goes green, the loop looks complete,
+     and the contradiction only surfaces in step 7, one full gate cycle later.
    - The main agent adds or updates a focused test before implementation.
    - For unit coverage, the main agent runs only the exact test it authored or changed, filtered by
      file and test name, and confirms that it fails for the expected reason.
@@ -273,7 +280,13 @@ staged, unstaged, and untracked file. Plain `git status --short` can collapse a 
 directory to one entry, so use `--untracked-files=all` to see the files inside it.
 
 Agents that cannot invoke sub-agents must perform the equivalent work themselves and say so
-explicitly rather than skipping the step.
+explicitly rather than skipping the step. **Say so on reaching step 6, not in the final report.**
+The fallback keeps the work moving, but it collapses three independent reviews into one agent
+reviewing its own change, and it is the weakest form of every step it stands in for — a
+self-review cannot supply the second opinion these steps exist to provide. Announcing it at the
+end tells the user only after the work has been reviewed that way, when re-running the sub-agents
+means redoing the review rather than doing it right. The restriction is usually a session setting
+rather than anything in this repository, so surfacing it early is often all it takes to lift it.
 
 ### Untrusted content
 
