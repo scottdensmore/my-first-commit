@@ -81,6 +81,12 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
   Vercel deployment. Test and harness state stays off `/api/health`, which is public, uncached, and
   capped at what a production operator needs. Read `app/api/e2e-readiness/route.ts` before adding a
   field to either one.
+- **No web fonts.** Typography is the system UI stack defined by `--font-sans` and `--font-mono` in
+  `app/globals.css`, which is what every `font-sans` and `font-mono` utility resolves to. The layout
+  used to also load Geist through `next/font/google`; nothing referenced the variables it generated,
+  so the only effect was a build that failed whenever Google Fonts was unreachable. Do not reach for
+  `next/font/google` — a font the design actually needs belongs in the repository and is loaded with
+  `next/font/local`, so a clean build never depends on a font host.
 - **Prettier ignores `*.md`.** Prose is formatted by hand. Do not run the formatter over docs, and do
   not reflow markdown as part of an unrelated change.
 - **The commit cache is per-process.** It is a plain `Map`, so it resets on every serverless cold
