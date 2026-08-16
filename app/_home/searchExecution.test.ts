@@ -152,7 +152,12 @@ describe("runCommitSearch", () => {
   });
 
   it("does not record recent searches for unsuccessful results", async () => {
-    vi.mocked(getCommits).mockResolvedValue({ found: false, errorKind: "empty", commits: [] });
+    vi.mocked(getCommits).mockResolvedValue({
+      found: false,
+      errorKind: "empty",
+      error: "No public commits found.",
+      commits: [],
+    });
     const { handlers, settle } = createHandlers();
 
     runCommitSearch("octocat", {}, handlers);

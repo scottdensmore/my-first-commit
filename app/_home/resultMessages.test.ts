@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CommitData, CommitErrorKind } from "../_lib/commitTypes";
+import type { CommitErrorKind, CommitSearchFailure } from "../_lib/commitTypes";
 import {
   canRetryCommitSearch,
   getResultMessage,
@@ -7,7 +7,13 @@ import {
   isEmptyCommitSearchResult,
 } from "./resultMessages";
 
-function errorResult(errorKind?: CommitErrorKind, error?: string): CommitData {
+// `errorKind` and `error` are required on a failure now, so the factory supplies both. The
+// previous signature made them optional, which let a test build a failure the server action
+// cannot produce and assert on how the code handled it.
+function errorResult(
+  errorKind: CommitErrorKind = "unknown",
+  error = "GitHub commit search failed. Please try again.",
+): CommitSearchFailure {
   return { found: false, errorKind, error, commits: [] };
 }
 

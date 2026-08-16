@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CommitData, CommitErrorKind } from "./commitTypes";
+import type {
+  CommitData,
+  CommitErrorKind,
+  CommitSearchFailure,
+  CommitSearchSuccess,
+} from "./commitTypes";
 import {
   clearCommitSearchCache,
   getCachedCommitSearch,
@@ -9,7 +14,7 @@ import {
 // A factory, not a shared const. A test that mutates a cached result must not be able to reach
 // the value it then compares against, or a broken copy moves both sides of the comparison
 // together and the assertion cannot fail.
-function makeCommitSearchResult(): CommitData {
+function makeCommitSearchResult(): CommitSearchSuccess {
   return {
     found: true,
     commits: [
@@ -34,7 +39,7 @@ function makeCommitSearchResult(): CommitData {
 }
 
 /** The shape of the empty state the server action caches for a user with no public commits. */
-function makeEmptyResult(): CommitData {
+function makeEmptyResult(): CommitSearchFailure {
   return {
     found: false,
     error: "No public commits found for this user (or indexing is delayed).",
@@ -57,11 +62,10 @@ describe("commit search cache", () => {
     setCachedCommitSearch("octo", makeCommitSearchResult(), 1_000);
 
     const cachedResult = getCachedCommitSearch("octo", 1_100);
-    cachedResult?.commits.push({
-      ...makeCommitSearchResult().commits[0]!,
-      sha: "mutated",
-    });
-    if (cachedResult?.commits[0]) {
+    // Narrowed before mutating: `commits` is a tuple on the success and empty on the failure, so
+    // `push` on the un-narrowed union takes `never`.
+    if (cachedResult?.found) {
+      cachedResult.commits.push({ ...makeCommitSearchResult().commits[0], sha: "mutated" });
       cachedResult.commits[0].repository.name = "mutated";
     }
 
@@ -191,7 +195,7 @@ describe("commit search cache", () => {
       const storedResult = makeEmptyResult();
       setCachedCommitSearch("ghost", storedResult, 1_000);
 
-      storedResult.error = "mutated";
+      if (!storedResult.found) storedResult.error = "mutated";
 
       expect(getCachedCommitSearch("ghost", 1_100)).toEqual(makeEmptyResult());
     });
@@ -212,7 +216,12 @@ describe("commit search cache", () => {
     );
 
     it("never caches a failure with no error kind at all", () => {
-      setCachedCommitSearch("octo", { found: false, commits: [] }, 1_000);
+      // The union makes this state unrepresentable, so the cast is the point rather than a
+      // shortcut: it keeps the runtime guard covered for data the compiler can no longer vouch
+      // for -- a result deserialized from an older cached payload, or from a future variant that
+      // forgets a kind. Deleting the test would leave that branch of `setCachedCommitSearch`
+      // untested and looking dead.
+      setCachedCommitSearch("octo", { found: false, commits: [] } as unknown as CommitData, 1_000);
 
       expect(getCachedCommitSearch("octo", 1_100)).toBeNull();
     });

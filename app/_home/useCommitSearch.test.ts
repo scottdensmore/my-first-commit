@@ -307,7 +307,9 @@ describe("useCommitSearch retry", () => {
 
     // Preservation is for a result worth keeping; there is none here, so the new error
     // must replace the old one rather than leaving stale copy on screen.
-    expect(result.current.result?.errorKind).toBe("unavailable");
+    const settled = result.current.result;
+    expect(settled?.found).toBe(false);
+    expect(settled && !settled.found ? settled.errorKind : null).toBe("unavailable");
     expect(result.current.retryError).toBe("");
   });
 

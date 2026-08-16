@@ -1,11 +1,15 @@
-import type { CommitData } from "../_lib/commitTypes";
+import type { CommitSearchFailure } from "../_lib/commitTypes";
+
+// Every helper here takes a failure rather than a result. They are only ever reached from the
+// error panel and the failed-retry path, and taking the union would mean each one re-deciding what
+// a success means -- which is what let `errorKind` be read off a successful result at all.
 
 type ResultMessage = {
   title: string;
   description: string;
 };
 
-export function getResultMessage(result: CommitData): ResultMessage {
+export function getResultMessage(result: CommitSearchFailure): ResultMessage {
   switch (result.errorKind) {
     case "rate_limit":
       return {
@@ -48,7 +52,7 @@ export function getResultMessage(result: CommitData): ResultMessage {
     default:
       return {
         title: "We could not complete that search.",
-        description: result.error ?? "GitHub commit search failed. Please try again.",
+        description: result.error,
       };
   }
 }
@@ -59,7 +63,7 @@ export function getResultMessage(result: CommitData): ResultMessage {
  * so it runs to several sentences and its empty-search wording claims nothing came
  * back -- which would contradict the commits rendered directly below the message.
  */
-export function getRetryFailureMessage(result: CommitData): string {
+export function getRetryFailureMessage(result: CommitSearchFailure): string {
   switch (result.errorKind) {
     case "rate_limit":
       return "GitHub is rate limiting searches right now, so wait a few minutes before searching again.";
@@ -74,7 +78,7 @@ export function getRetryFailureMessage(result: CommitData): string {
   }
 }
 
-export function canRetryCommitSearch(result: CommitData | null) {
+export function canRetryCommitSearch(result: CommitSearchFailure | null) {
   return (
     Boolean(result?.incomplete) ||
     result?.errorKind === "rate_limit" ||
@@ -84,6 +88,6 @@ export function canRetryCommitSearch(result: CommitData | null) {
   );
 }
 
-export function isEmptyCommitSearchResult(result: CommitData | null) {
+export function isEmptyCommitSearchResult(result: CommitSearchFailure | null) {
   return result?.errorKind === "empty";
 }

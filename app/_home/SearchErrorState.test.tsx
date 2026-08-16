@@ -1,10 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { CommitData } from "../_lib/commitTypes";
+import type { CommitSearchFailure } from "../_lib/commitTypes";
 import SearchErrorState from "./SearchErrorState";
 
-function renderSearchErrorState(result: CommitData, isPending = false) {
+function renderSearchErrorState(result: CommitSearchFailure, isPending = false) {
   const onRetry = vi.fn();
   const errorState = (pending: boolean) => (
     <SearchErrorState
@@ -27,14 +27,25 @@ function renderSearchErrorState(result: CommitData, isPending = false) {
 
 describe("SearchErrorState", () => {
   it("suggests other profiles when a finished search found nothing", () => {
-    renderSearchErrorState({ found: false, errorKind: "empty", commits: [] });
+    renderSearchErrorState({
+      found: false,
+      errorKind: "empty",
+      error: "No public commits found.",
+      commits: [],
+    });
 
     expect(screen.getByRole("heading", { name: "No public commits found." })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Check a known public profile" })).toBeVisible();
   });
 
   it("does not suggest other profiles when the search never finished", () => {
-    renderSearchErrorState({ found: false, errorKind: "empty", incomplete: true, commits: [] });
+    renderSearchErrorState({
+      found: false,
+      errorKind: "empty",
+      error: "GitHub could not finish this search.",
+      incomplete: true,
+      commits: [],
+    });
 
     expect(
       screen.getByRole("heading", { name: "GitHub could not finish this search." }),
@@ -50,6 +61,7 @@ describe("SearchErrorState", () => {
     const { rerender } = renderSearchErrorState({
       found: false,
       errorKind: "rate_limit",
+      error: "GitHub is rate limiting searches.",
       commits: [],
     });
 
@@ -73,7 +85,12 @@ describe("SearchErrorState", () => {
   it("refuses a second retry while one is running", async () => {
     const user = userEvent.setup();
     const { onRetry } = renderSearchErrorState(
-      { found: false, errorKind: "rate_limit", commits: [] },
+      {
+        found: false,
+        errorKind: "rate_limit",
+        error: "GitHub is rate limiting searches.",
+        commits: [],
+      },
       true,
     );
 

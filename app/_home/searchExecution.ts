@@ -74,7 +74,7 @@ export function runCommitSearch(
     applyResult(data);
     trackAppEvent("search_completed", {
       found: data.found,
-      error_kind: data.errorKind ?? "none",
+      error_kind: data.found ? "none" : data.errorKind,
       commit_count: data.commits.length,
       incomplete: Boolean(data.incomplete),
     });

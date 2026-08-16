@@ -1,4 +1,4 @@
-import type { CommitData } from "./commitTypes";
+import type { CommitData, CommitInfo } from "./commitTypes";
 
 const COMMIT_SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
 const COMMIT_SEARCH_CACHE_MAX_ENTRIES = 100;
@@ -16,14 +16,22 @@ const commitSearchCache = new Map<string, CacheEntry>();
  * other holders of it.
  */
 export function copyCommitSearchResult(result: CommitData): CommitData {
-  return {
-    ...result,
-    commits: result.commits.map((commit) => ({
-      ...commit,
-      repository: { ...commit.repository },
-      author: { ...commit.author },
-    })),
-  };
+  // Copied per variant rather than by spreading the union. `commits.map` returns a plain array,
+  // which is no longer assignable to either variant's tuple, and the narrowing is what tells the
+  // compiler which shape it is rebuilding -- a success keeps at least one commit, a failure stays
+  // empty. Spreading the union and patching `commits` would need a cast to compile, and a cast
+  // here is exactly the promise this refactor removes.
+  const copyCommit = (commit: CommitInfo): CommitInfo => ({
+    ...commit,
+    repository: { ...commit.repository },
+    author: { ...commit.author },
+  });
+
+  if (!result.found) return { ...result, commits: [] };
+
+  const [first, ...rest] = result.commits;
+
+  return { ...result, commits: [copyCommit(first), ...rest.map(copyCommit)] };
 }
 
 function pruneExpiredEntries(now: number) {
