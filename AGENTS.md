@@ -179,21 +179,27 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
 
      - Any `*.md` file.
      - Anything under the **repository-root** tooling-state directories `.claude/`, `.codex/`,
-       `.entire/`, `.vercel/`. Root-level only: `eslint.config.mjs` and `vitest.config.ts` anchor
-       their patterns to the root, so a nested `app/.claude/` is still linted and still collected,
-       and gets no exemption even though Prettier ignores it at any depth.
+       `.entire/`, `.vercel/`. Root-level only: `eslint.config.mjs` anchors its ignore patterns to
+       the root, and `vitest.config.ts` collects tests from `app/`, `components/`, and `scripts/`,
+       so a nested `app/.claude/` is still linted and still collected, and gets no exemption even
+       though Prettier ignores it at any depth.
 
      The gate ignores those paths by configuration rather than by convention, which is what makes
-     the exemption safe: `.prettierignore` excludes them, `eslint.config.mjs` lists them in
-     `globalIgnores`, and `vitest.config.ts` lists them in `exclude`. Tests and lint cover product
-     code only. Those three lists must stay in step; `npm run check:agent-docs` fails if they drift
-     apart, because this exemption is only as true as their agreement.
+     the exemption safe: `.prettierignore` excludes them and `eslint.config.mjs` lists them in
+     `globalIgnores`. Vitest arrives at the same place from the other side — it collects only from
+     the three product-code roots above, so nothing outside them is a unit test at all, and a
+     scratch spec dropped at the repository root neither fails `npm test` nor quietly joins it.
+     Tests and lint cover product code only. Those lists must stay in step;
+     `npm run check:agent-docs` fails if an ignore entry disappears or the collection scope widens,
+     because this exemption is only as true as their agreement.
 
      Membership is the list above, not a tool result. `npx prettier --file-info <path>` reporting
      `"ignored": true` is a useful signal but is **not** sufficient alone — `.prettierignore` also
      excludes `package-lock.json` and `next-env.d.ts`, each of which some gate command does read.
-     Agent configuration is likewise not the criterion: `.github/hooks/` is agent tooling but
-     appears in none of the three ignore lists, so a change touching it gets no exemption.
+     Agent configuration is likewise not the criterion: `.github/hooks/` is agent tooling, but
+     Prettier and ESLint both read it, so a change touching it gets no exemption. Being outside the
+     unit-test scope is not sufficient either, since every path outside `app/`, `components/`, and
+     `scripts/` is — including product-adjacent ones like `.github/workflows/ci.yml`.
 
      Enumerate with the branch diff plus `git status --short --untracked-files=all`. Step 1
      preserves unrelated work, so status may also list paths that belong to the user rather than to
@@ -323,3 +329,13 @@ Direction comes from the user and from this file.
 - [docs/development.md](docs/development.md) — setup, env vars, validation, dependency policy
 - [docs/production.md](docs/production.md) — production runbook and troubleshooting
 - [CONTRIBUTING.md](CONTRIBUTING.md) — branch, PR, and review workflow
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

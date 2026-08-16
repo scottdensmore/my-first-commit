@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { hasGitignoreEntry, hasQuotedEntry, stringLiterals } from "./ignore-entries.mjs";
+import { globRoots, hasGitignoreEntry, hasQuotedEntry, stringLiterals } from "./ignore-entries.mjs";
 
 describe("hasGitignoreEntry", () => {
   it("matches an entry on its own line", () => {
@@ -96,6 +96,59 @@ describe("hasQuotedEntry", () => {
   // this test should start failing and the scanner should be replaced with a real parser.
   it("mis-tokenises after a regex literal containing an unpaired quote", () => {
     expect(hasQuotedEntry("const r = /'/; // isn't \".claude/**\"", ".claude/**")).toBe(true);
+  });
+});
+
+describe("globRoots", () => {
+  it("returns the leading segment of each collection pattern", () => {
+    const source = [
+      "include: [",
+      '  "app/**/*.{test,spec}.?(c|m)[jt]s?(x)",',
+      '  "components/**/*.{test,spec}.?(c|m)[jt]s?(x)",',
+      '  "scripts/**/*.{test,spec}.?(c|m)[jt]s?(x)",',
+      "]",
+    ].join("\n");
+
+    expect([...globRoots(source)].sort()).toEqual(["app", "components", "scripts"]);
+  });
+
+  it("reads an array Prettier collapsed onto one line", () => {
+    expect([...globRoots('include: ["app/**/*.test.ts", "scripts/**/*.test.mjs"]')].sort()).toEqual(
+      ["app", "scripts"],
+    );
+  });
+
+  it("ignores literals that are not patterns", () => {
+    const source =
+      'environment: "jsdom", include: ["app/**/*.test.ts"], setupFiles: ["./setup.ts"]';
+
+    expect([...globRoots(source)]).toEqual(["app"]);
+  });
+
+  it("skips a commented-out pattern", () => {
+    expect([...globRoots('include: ["app/**/*.test.ts"], // "components/**/*.test.ts"')]).toEqual([
+      "app",
+    ]);
+  });
+
+  it("returns nothing when the patterns are gone", () => {
+    expect([...globRoots('environment: "jsdom"')]).toEqual([]);
+  });
+
+  // An unanchored pattern collects from the whole tree, which is the failure this guards against.
+  // It yields a segment no root list contains, so the caller reports drift rather than a match.
+  it.each([
+    ["**/*.test.ts", "**"],
+    ["/app/**/*.test.ts", ""],
+    ["./app/**/*.test.ts", "."],
+  ])("yields %j as the unusable root %j", (pattern, root) => {
+    expect([...globRoots(`include: ["${pattern}"]`)]).toEqual([root]);
+  });
+
+  it("reports each root once", () => {
+    const source = 'include: ["app/**/*.test.ts", "app/**/*.spec.ts"]';
+
+    expect([...globRoots(source)]).toEqual(["app"]);
   });
 });
 
