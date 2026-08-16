@@ -1,12 +1,17 @@
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_PORT,
   DEFAULT_WORKERS,
   HEALTH_PATH,
   MAX_REPORTED_SERVICE_LENGTH,
+  READINESS_PATH,
   SERVICE_NAME,
   findForeignServer,
   findLocalServerProblem,
+  findStaleServer,
   resolveLocalBaseUrl,
   resolveTargets,
   resolveWorkerCount,
@@ -18,9 +23,29 @@ function fetchReturning(response) {
   return vi.fn(async () => response);
 }
 
-function jsonResponse(payload, ok = true) {
-  return { ok, status: ok ? 200 : 404, headers: { get: () => null }, json: async () => payload };
+function jsonResponse(payload, ok = true, status = ok ? 200 : 404) {
+  return { ok, status, headers: { get: () => null }, json: async () => payload };
 }
+
+/**
+ * The preflight makes two requests to two different paths, so a single canned response cannot
+ * express "identity passed, freshness failed". Routing by path also fails loudly on an
+ * unexpected probe rather than answering it.
+ */
+function fetchByPath(responses) {
+  return vi.fn(async (url) => {
+    const { pathname } = new URL(url);
+    const response = responses[pathname];
+
+    if (!response) throw new Error(`unexpected probe of ${pathname}`);
+
+    return typeof response === "function" ? response() : response;
+  });
+}
+
+const healthyIdentity = jsonResponse({ status: "ok", service: SERVICE_NAME });
+const mocksEnabled = jsonResponse({ service: SERVICE_NAME, commitSearchMocks: true });
+const mocksDisabled = jsonResponse({ service: SERVICE_NAME, commitSearchMocks: false });
 
 describe("findForeignServer", () => {
   it("accepts a server that identifies itself as this app", async () => {
@@ -72,6 +97,112 @@ describe("findForeignServer", () => {
     expect(problem).toMatch(/E2E_PORT/);
     // Never suggest killing it: the port may belong to a colleague's or another agent's work.
     expect(problem).not.toMatch(/\bkill\b/i);
+  });
+});
+
+describe("findStaleServer", () => {
+  it("accepts a server started with the fixture mocks enabled", async () => {
+    const fetchImpl = fetchReturning(mocksEnabled);
+
+    await expect(findStaleServer(baseUrl, fetchImpl)).resolves.toBeNull();
+    expect(fetchImpl).toHaveBeenCalledWith(`${baseUrl}${READINESS_PATH}`, expect.any(Object));
+  });
+
+  it("rejects a server of this app started without the fixture mocks", async () => {
+    const fetchImpl = fetchReturning(mocksDisabled);
+
+    const problem = await findStaleServer(baseUrl, fetchImpl);
+
+    // The whole point of the check: the message has to name the flag, or the operator is back to
+    // guessing why every fixture spec failed.
+    expect(problem).toMatch(/E2E_COMMIT_SEARCH_MOCKS/);
+    expect(problem).toMatch(/3100/);
+    expect(problem).toMatch(/E2E_PORT/);
+    expect(problem).not.toMatch(/\bkill\b/i);
+  });
+
+  it("rejects a server that does not serve the readiness probe at all", async () => {
+    // A build from before this check, or a production build, where the probe is deliberately 404.
+    const fetchImpl = fetchReturning(jsonResponse({}, false, 404));
+
+    const problem = await findStaleServer(baseUrl, fetchImpl);
+
+    expect(problem).toMatch(new RegExp(READINESS_PATH));
+    expect(problem).toMatch(/404/);
+    expect(problem).toMatch(/3100/);
+  });
+
+  it.each(["ECONNREFUSED", "ENOTFOUND", "EHOSTUNREACH", "EAI_AGAIN"])(
+    "treats %s as a free port, so Playwright can still start its own server",
+    async (code) => {
+      const fetchImpl = vi.fn(async () => {
+        throw transportFailure(code);
+      });
+
+      await expect(findStaleServer(baseUrl, fetchImpl)).resolves.toBeNull();
+    },
+  );
+
+  it("reports a readiness probe that drops the connection", async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw transportFailure("UND_ERR_SOCKET");
+    });
+
+    await expect(findStaleServer(baseUrl, fetchImpl)).resolves.toMatch(/could not be confirmed/i);
+  });
+
+  it("reports a readiness probe that never answers", async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw Object.assign(new Error("The operation was aborted"), { name: "TimeoutError" });
+    });
+
+    await expect(findStaleServer(baseUrl, fetchImpl)).resolves.toMatch(/did not respond/i);
+  });
+
+  it("reports a readiness probe whose response is not JSON", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => null },
+      json: async () => {
+        throw new SyntaxError("Unexpected token < in JSON");
+      },
+    }));
+
+    await expect(findStaleServer(baseUrl, fetchImpl)).resolves.toMatch(/not JSON/i);
+  });
+
+  it("rejects a readiness payload that omits the flag rather than assuming it is enabled", async () => {
+    // An older build could answer the path with something else. Absent is not enabled.
+    const fetchImpl = fetchReturning(jsonResponse({ service: SERVICE_NAME }));
+
+    await expect(findStaleServer(baseUrl, fetchImpl)).resolves.toMatch(/E2E_COMMIT_SEARCH_MOCKS/);
+  });
+
+  it("rejects a readiness payload claiming to be a different service", async () => {
+    const fetchImpl = fetchReturning(
+      jsonResponse({ service: "contoso-outdoors", commitSearchMocks: true }),
+    );
+
+    await expect(findStaleServer(baseUrl, fetchImpl)).resolves.toMatch(/could not be confirmed/i);
+  });
+});
+
+describe("the readiness probe path", () => {
+  it("points at a route the app actually serves", () => {
+    // The path is a string here and a directory name there. Moving the route without this test
+    // would make every local run reject its own freshly started server. Resolved through
+    // `fileURLToPath` rather than `new URL`, because the jsdom environment's `URL` global
+    // resolves a relative reference against the jsdom document, not the `file:` base given here.
+    const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+    expect(existsSync(join(repoRoot, "app", READINESS_PATH, "route.ts"))).toBe(true);
+  });
+
+  it("matches what that route reports as its service", async () => {
+    const { buildReadinessPayload } = await import("../app/api/e2e-readiness/route.ts");
+
+    expect(buildReadinessPayload({}).service).toBe(SERVICE_NAME);
   });
 });
 
@@ -196,6 +327,42 @@ describe("findLocalServerProblem", () => {
       `http://127.0.0.1:${DEFAULT_PORT}${HEALTH_PATH}`,
       expect.any(Object),
     );
+  });
+
+  it("accepts a server that is this app and was started for this suite", async () => {
+    const fetchImpl = fetchByPath({
+      [HEALTH_PATH]: healthyIdentity,
+      [READINESS_PATH]: mocksEnabled,
+    });
+
+    await expect(findLocalServerProblem({}, fetchImpl)).resolves.toBeNull();
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects a stale server of this app that the identity check alone would accept", async () => {
+    const fetchImpl = fetchByPath({
+      [HEALTH_PATH]: healthyIdentity,
+      [READINESS_PATH]: mocksDisabled,
+    });
+
+    await expect(findLocalServerProblem({}, fetchImpl)).resolves.toMatch(/E2E_COMMIT_SEARCH_MOCKS/);
+  });
+
+  it("reports a foreign server without asking it for readiness", async () => {
+    // Identity first: a stranger on the port gets the #109 message, not a confusing complaint
+    // about a probe it was never going to serve.
+    const fetchImpl = fetchByPath({ [HEALTH_PATH]: jsonResponse({ service: "contoso-outdoors" }) });
+
+    await expect(findLocalServerProblem({}, fetchImpl)).resolves.toMatch(/contoso-outdoors/);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves a free port free, so Playwright starts its own server", async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw transportFailure("ECONNREFUSED");
+    });
+
+    await expect(findLocalServerProblem({}, fetchImpl)).resolves.toBeNull();
   });
 });
 

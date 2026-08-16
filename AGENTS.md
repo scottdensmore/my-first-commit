@@ -49,6 +49,8 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
 - `app/logger.ts` — structured warn/error logging
 - `app/home/` — homepage search internals (hook, form, results, recent searches, analytics)
 - `app/api/health/route.ts` — runtime health JSON for production checks
+- `app/api/e2e-readiness/route.ts` — non-production probe telling the Playwright preflight whether
+  this server was started with the fixture mocks
 - `components/FirstCommitDisplay.tsx` — result timeline rendering
 - `tests/e2e/` — Playwright specs; unit tests are colocated as `*.test.ts(x)`
 
@@ -63,13 +65,22 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
   `*-then-error-*` fixtures are stateful per process, so a test can prove a retry re-issued the
   search rather than re-rendered: give each such test a unique username, as the existing ones do
   with the Playwright worker index.
-- **The browser suite refuses a foreign server.** Playwright's `reuseExistingServer` only checks
-  that the port answers, so an unrelated app left on 3100 used to be adopted silently and every
-  spec failed as if the branch were broken. A global setup now probes `/api/health` for this
-  app's `service` name and stops the run with one clear error instead. Set `E2E_PORT` to use a
-  different port; nothing is ever killed, since the port may belong to another session. It checks
-  identity, not freshness: a stale server of this app from an interrupted run still passes, and
-  its fixtures will not match if it started without `E2E_COMMIT_SEARCH_MOCKS=1`.
+- **The browser suite refuses a foreign or stale server.** Playwright's `reuseExistingServer` only
+  checks that the port answers, so an unrelated app left on 3100 used to be adopted silently and
+  every spec failed as if the branch were broken. A global setup now probes the port twice and
+  stops the run with one clear error instead. First `/api/health` for this app's `service` name,
+  which rejects a different application; then `/api/e2e-readiness`, which rejects a server of this
+  app that was started without `E2E_COMMIT_SEARCH_MOCKS=1` and would send every reserved `e2e-*`
+  username to real GitHub — the usual leftover from an interrupted run. A server too old to serve
+  that route, or a production build where it is deliberately absent, is rejected too. Set
+  `E2E_PORT` to use a different port; nothing is ever killed, since the port may belong to another
+  session. Neither probe checks which branch the server is running, so a stale server of the right
+  shape from another checkout still passes.
+- **`/api/e2e-readiness` exists for that check and nothing else.** It reports one boolean, and it
+  is `404` whenever `NODE_ENV` is `production`, so it is absent from `next start` and from every
+  Vercel deployment. Test and harness state stays off `/api/health`, which is public, uncached, and
+  capped at what a production operator needs. Read `app/api/e2e-readiness/route.ts` before adding a
+  field to either one.
 - **Prettier ignores `*.md`.** Prose is formatted by hand. Do not run the formatter over docs, and do
   not reflow markdown as part of an unrelated change.
 - **The commit cache is per-process.** It is a plain `Map`, so it resets on every serverless cold

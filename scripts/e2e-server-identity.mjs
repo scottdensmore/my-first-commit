@@ -5,10 +5,21 @@
 // runs against it: every selector misses, and the failure reads as a broken branch rather than as
 // the wrong server. That has happened repeatedly here with an unrelated app on 3100.
 //
-// The check is identity, not liveness: `/api/health` reports a `service` name, so a one-request
-// probe distinguishes "our app" from "something else" from "nothing listening".
+// The first check is identity, not liveness: `/api/health` reports a `service` name, so a
+// one-request probe distinguishes "our app" from "something else" from "nothing listening".
+//
+// Identity alone is not enough, which is why a second check follows it. A server of this app left
+// behind by an interrupted run answers the identity probe perfectly while having been started
+// without `E2E_COMMIT_SEARCH_MOCKS=1`, in which case every reserved `e2e-*` username reaches real
+// GitHub and the suite fails wholesale -- the same wall of misleading failures the identity check
+// was built to eliminate. Only the server can report how it was started: the preflight did not
+// launch it (`reuseExistingServer` means the web-server command never ran) and has no view into
+// another process's environment, so anything this side passes in would describe this run's
+// intent rather than that process's reality. Hence `/api/e2e-readiness`, which exists only outside
+// production and reports exactly one thing.
 
 export const HEALTH_PATH = "/api/health";
+export const READINESS_PATH = "/api/e2e-readiness";
 export const DEFAULT_PORT = 3100;
 export const LOOPBACK_HOST = "127.0.0.1";
 export const DEFAULT_WORKERS = 4;
@@ -102,7 +113,15 @@ export function resolveTargets(env = process.env) {
 export async function findLocalServerProblem(env = process.env, fetchImpl = fetch) {
   if (env.PLAYWRIGHT_BASE_URL) return null;
 
-  return findForeignServer(resolveLocalBaseUrl(env), fetchImpl);
+  const baseUrl = resolveLocalBaseUrl(env);
+
+  // Identity first, and only then freshness. A stranger on the port gets the message about being
+  // the wrong application rather than a complaint about a readiness probe it was never going to
+  // serve, and the second request is never sent to a server that is not ours.
+  const foreign = await findForeignServer(baseUrl, fetchImpl);
+  if (foreign) return foreign;
+
+  return findStaleServer(baseUrl, fetchImpl);
 }
 
 function remedies(port) {
@@ -117,10 +136,10 @@ function isProbeTimeout(error) {
   return error?.name === "TimeoutError" || error?.name === "AbortError";
 }
 
-function timedOutProblem(port) {
+function timedOutProblem(port, path = HEALTH_PATH) {
   return (
     `Port ${port} is in use by a server that accepted the connection but did not respond to ` +
-    `${HEALTH_PATH} in time, so it could not be confirmed as this application. ${remedies(port)}`
+    `${path} in time, so it could not be confirmed as this application. ${remedies(port)}`
   );
 }
 
@@ -208,5 +227,84 @@ export async function findForeignServer(baseUrl, fetchImpl = fetch) {
   return (
     `Port ${port} is in use by ${found}, not ${SERVICE_NAME}. Running here would test the wrong ` +
     `application. ${remedies(port)}`
+  );
+}
+
+/**
+ * Resolves to a human-readable problem description when the server at `baseUrl` is this
+ * application but was not started for this suite, or `null` when it was -- or when the port is
+ * free.
+ *
+ * Call only after `findForeignServer` has cleared the port. This probe asks a question a stranger
+ * has no reason to answer, so its failures are only meaningful once identity is established.
+ *
+ * The body is read without the size cap `findForeignServer` applies, deliberately: identity has
+ * already proved the responder is this application, whose readiness payload is two fields.
+ */
+export async function findStaleServer(baseUrl, fetchImpl = fetch) {
+  const port = portOf(baseUrl);
+  let response;
+
+  try {
+    response = await fetchImpl(`${baseUrl}${READINESS_PATH}`, {
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (isProbeTimeout(error)) return timedOutProblem(port, READINESS_PATH);
+
+    // Same rule as the identity probe: only "nothing is listening" is safe to wave through. The
+    // server can legitimately disappear between the two requests -- an interrupted run's process
+    // being reaped is exactly the situation this check is about -- and a port with nothing on it
+    // is one Playwright can serve itself.
+    const code = error?.cause?.code ?? error?.code;
+    if (NOTHING_LISTENING_CODES.has(code)) return null;
+
+    return (
+      `Port ${port} is in use by a server whose ${READINESS_PATH} request failed ` +
+      `(${code ?? "unknown transport error"}), so it could not be confirmed as a server started ` +
+      `for this suite. ${remedies(port)}`
+    );
+  }
+
+  if (!response.ok) {
+    return (
+      `Port ${port} is in use by ${SERVICE_NAME}, but it does not serve ${READINESS_PATH} ` +
+      `(HTTP ${response.status}). That route is missing from builds older than this check, and ` +
+      `absent from production builds on purpose, so this server could not be confirmed as one ` +
+      `started for this suite. ${remedies(port)}`
+    );
+  }
+
+  let payload;
+
+  try {
+    payload = await response.json();
+  } catch (error) {
+    if (isProbeTimeout(error)) return timedOutProblem(port, READINESS_PATH);
+
+    return (
+      `Port ${port} is in use by a server whose ${READINESS_PATH} response is not JSON, so it ` +
+      `could not be confirmed as a server started for this suite. ${remedies(port)}`
+    );
+  }
+
+  if (payload?.service !== SERVICE_NAME) {
+    // `/api/health` and this route disagreeing about who they are means something is proxying or
+    // multiplexing the port. Whatever it is, it is not one server this suite can trust.
+    return (
+      `Port ${port} answers ${HEALTH_PATH} and ${READINESS_PATH} as different services, so it ` +
+      `could not be confirmed as a server started for this suite. ${remedies(port)}`
+    );
+  }
+
+  // Strictly `true`. An older payload that omits the field, or any other shape, is not evidence
+  // the fixtures are on, and guessing wrong here costs a whole misleading suite run.
+  if (payload.commitSearchMocks === true) return null;
+
+  return (
+    `Port ${port} is in use by ${SERVICE_NAME}, but it was started without ` +
+    `E2E_COMMIT_SEARCH_MOCKS=1, so the reserved e2e-* usernames would reach real GitHub instead ` +
+    `of the fixtures and nearly every spec would fail for a reason that has nothing to do with ` +
+    `this branch. This is usually a server left behind by an interrupted run. ${remedies(port)}`
   );
 }
