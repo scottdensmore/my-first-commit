@@ -32,6 +32,9 @@ Thanks for helping improve My First Commit. Keep changes small, tested, and easy
 ## Dependency Updates
 
 Dependabot opens dependency PRs. Review and merge them one at a time when possible, after CI passes.
+Because `main` requires a branch to be up to date before merging, merging one of them puts the rest
+behind, and each needs its branch updated and CI rerun before it can merge in turn. Comment
+`@dependabot rebase` on a stale one rather than closing and reopening it.
 
 Major upgrades are handled manually as planned maintenance. Use the [development guide](docs/development.md#dependency-update-policy) before upgrading major versions.
 
