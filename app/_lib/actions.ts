@@ -220,6 +220,14 @@ function getE2eCommitSearchResult(username: string): CommitData | null {
         "GitHub is temporarily unavailable. Please try again soon.",
         "unavailable",
       );
+    case "e2e-timeout":
+      return commitSearchError("GitHub took too long to respond. Please try again.", "timeout");
+    case "e2e-unknown":
+      return commitSearchError("GitHub commit search failed. Please try again.", "unknown");
+    // GitHub rejecting the search itself, which the client's own username validation cannot
+    // produce -- the handle is well-formed, and the refusal comes back from the search.
+    case "e2e-validation":
+      return commitSearchError("GitHub rejected that search.", "validation");
     default:
       return null;
   }

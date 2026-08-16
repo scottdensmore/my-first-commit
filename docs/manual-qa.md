@@ -2,8 +2,9 @@
 
 **In the local mocked run**, existing unit and Playwright coverage already asserts search,
 validation, empty and error states, landmarks, tab order, focus behavior, security headers, the
-branded 404 page, and `/api/health` in `tests/e2e/home.spec.ts`, plus rerunning and clearing recent
-searches in `app/page.test.tsx`. Do not re-test those by hand locally; if one of them can regress
+branded 404 page, and `/api/health` in `tests/e2e/home.spec.ts`. Browser coverage now also runs the
+shared-URL round trip, the recent-searches lifecycle from creation through rerun to clearing, the
+timeout, unknown and validation failures, and the clipboard fallback. Do not re-test those by hand locally; if one of them can regress
 unnoticed, add coverage instead of a checklist item.
 
 **Against a deployed target the commit-search states are not covered.** They live in one
@@ -35,7 +36,9 @@ Validate after changing metadata, branding, generated image routes, or homepage 
 For larger UI changes, on real devices rather than an emulated viewport:
 
 1. Confirm the layout holds from a narrow phone through a wide desktop window.
-2. Confirm long usernames, long commit messages, and browser zoom to 200% do not break the timeline.
+2. Confirm browser zoom to 200% does not break the timeline. A 320px viewport with a
+   maximum-length handle, an unbroken commit subject and a long URL is asserted automatically, so
+   what is left here is what a real browser's zoom does that a narrow viewport does not.
 3. The app is light-only, with no `dark:` variants and a single `:root` palette. Confirm it stays
    legible when the operating system is in dark mode and under forced-colors mode.
 

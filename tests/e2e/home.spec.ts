@@ -655,6 +655,108 @@ test.describe("local mocked commit search states", () => {
     },
   );
 
+  test("a successful search puts the user in the URL and starting another clears it", async ({
+    page,
+  }) => {
+    await searchForUsername(page, "e2e-result");
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+
+    // The URL is the share link, so it has to carry the handle that was searched.
+    await expect(page).toHaveURL(/[?&]user=e2e-result\b/);
+
+    await page.getByRole("button", { name: "Search another user" }).click();
+
+    // Leaving the result has to take the handle back out, or the next copy of the URL shares a
+    // search the visitor has moved on from.
+    await expect(page).not.toHaveURL(/[?&]user=/);
+    await expect(page.getByRole("searchbox", { name: "GitHub username" })).toBeFocused();
+    await expect(page.getByRole("searchbox", { name: "GitHub username" })).toHaveValue("");
+  });
+
+  test("a completed search can be rerun from recent searches and then cleared", async ({
+    page,
+  }) => {
+    await searchForUsername(page, "e2e-result");
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+    await page.getByRole("button", { name: "Search another user" }).click();
+
+    const shortcut = page.getByRole("button", { name: "Search e2e-result again" });
+    await expect(shortcut).toBeVisible();
+
+    await shortcut.click();
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+    await expect(page).toHaveURL(/[?&]user=e2e-result\b/);
+
+    await page.getByRole("button", { name: "Search another user" }).click();
+    await page.getByRole("button", { name: "Clear recent searches" }).click();
+
+    await expect(shortcut).toHaveCount(0);
+    // Cleared in the browser too, not just removed from the screen.
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          JSON.parse(window.localStorage.getItem("my-first-commit:recent-searches") ?? "[]"),
+        ),
+      )
+      .toEqual([]);
+  });
+
+  test.describe("failures that offer a retry", () => {
+    for (const [username, title] of [
+      ["e2e-timeout", "GitHub took too long to respond."],
+      ["e2e-unknown", "We could not complete that search."],
+    ] as const) {
+      test(`${username} explains itself and offers a retry`, async ({ page }) => {
+        await searchForUsername(page, username);
+
+        await expect(page.getByRole("heading", { name: title })).toBeVisible();
+        await expect(page.locator('main [role="alert"]')).toBeVisible();
+        await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+        // Nothing to suggest checking a different profile: the search never reached an answer
+        // about this one.
+        await expect(
+          page.getByRole("heading", { name: "Check a known public profile" }),
+        ).toHaveCount(0);
+      });
+    }
+  });
+
+  test("a search GitHub refuses is reported as a rejected search, not an empty one", async ({
+    page,
+  }) => {
+    await searchForUsername(page, "e2e-validation");
+
+    await expect(
+      page.getByRole("heading", { name: "GitHub could not validate that search." }),
+    ).toBeVisible();
+    // A validation failure is not retryable -- retrying the identical search gets the identical
+    // refusal -- so the panel offers the way out instead.
+    await expect(page.getByRole("button", { name: "Try again" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Edit username" })).toBeVisible();
+  });
+
+  test("a clipboard that refuses to write says so instead of claiming success", async ({
+    page,
+  }) => {
+    // Forced rather than hoped for: the browser's own clipboard policy decides whether a real
+    // write succeeds, so the fallback path is unreachable from a test that does not cause it.
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: { writeText: () => Promise.reject(new Error("denied")) },
+      });
+    });
+
+    await searchForUsername(page, "e2e-result");
+    await expect(page.getByRole("heading", { name: "First public commit found" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Copy result" }).click();
+
+    await expect(page.getByRole("status")).toContainText(
+      "Could not copy result. Use the commit link instead.",
+    );
+  });
+
   test("mixed valid and malformed commit dates render without crashing", async ({ page }) => {
     const renderErrors = captureReactRenderErrors(page);
 
