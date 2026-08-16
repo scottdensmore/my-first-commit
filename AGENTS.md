@@ -45,6 +45,8 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
 - `app/actions.ts` — `getCommits` server action; Octokit search plus error normalization
 - `app/commitSearchCache.ts` — in-memory TTL cache (5 minutes, 100 entries)
 - `app/commitSearchInFlight.ts` — shares one upstream search between concurrent identical requests
+- `app/commitSearchRateLimit.ts` — per-client rolling window over the searches that reach GitHub
+- `app/searchClientKey.ts` — salted per-process hash of the forwarded client address
 - `app/username.ts` — validation and normalization, used on both the client and the server action
 - `app/logger.ts` — structured warn/error logging
 - `app/_home/` — homepage search internals (hook, form, results, recent searches, analytics)
@@ -100,6 +102,18 @@ land in it. Name new internal folders the same way; a route directory keeps its 
   start and is not shared between instances. Never treat it as durable storage. The in-flight map
   in `app/commitSearchInFlight.ts` has the same scope: it coalesces the requests one instance is
   serving, not requests across instances.
+- **The per-client search limit is per-process, and never a quota guarantee.** The rolling window
+  in `app/commitSearchRateLimit.ts` is another plain `Map`, so a limit of 30 searches a minute is
+  really 30 per client **per instance**, and a cold start hands the client a fresh allowance.
+  Never document or reason about it as a global ceiling for the shared GitHub token; the cache and
+  the in-flight map are what actually cut upstream calls. It counts only searches that reach
+  GitHub, so anything the cache answers is free. What it keeps per client is a salted hash from
+  `app/searchClientKey.ts` and the times of searches inside the current window — never an address,
+  never a username, and never the two together. Keep it that way: the limiter is handed an opaque
+  key precisely so nothing here can log or key on who searched what. The map is capped, because a
+  map keyed by client is a memory-exhaustion vector otherwise, and eviction must only ever forget
+  a client — forgetting refills an allowance, while inheriting one would let a spoofed forwarded
+  header refuse service to somebody else.
 - **Logging is sanitized on purpose.** `app/logger.ts` takes an event name plus scalar fields. Never
   log usernames, tokens, or raw Octokit error objects.
 - **`GITHUB_TOKEN` is server-only.** Never expose it as a `NEXT_PUBLIC_*` variable. The app works

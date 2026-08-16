@@ -200,6 +200,13 @@ GitHub API failures are logged with structured event names:
 - `github_commit_search_failed`
 - `github_commit_search_malformed_item`
 - `github_commit_search_incomplete`
+- `commit_search_rate_limited_client`
+
+`commit_search_rate_limited_client` is this app refusing a search, not GitHub refusing one. See
+[Bounding Search Bursts](#bounding-search-bursts). It carries the `limit` and `windowMs` in force
+and nothing that identifies the client or the search, so the event counts refusals and cannot be
+used to trace one. A steady trickle is ordinary internet background noise; a sustained rise means
+one or more clients are searching far faster than a person can, on at least one instance.
 
 `github_commit_search_incomplete` is not a failure. GitHub returned `incomplete_results`, meaning it
 abandoned the search before scanning every commit and returned whatever it had indexed. The app
@@ -219,6 +226,85 @@ Useful fields include:
 Upstream error messages are used only to classify failures and are not logged. Rate-limit metadata
 is logged only when header values are valid non-negative integers. Search usernames, request URLs,
 tokens, and raw upstream error details should not appear in logs.
+
+## Bounding Search Bursts
+
+GitHub's Search API allows **30 requests per minute** for an authenticated token, and 10 per minute
+unauthenticated. That is the real ceiling every visitor shares, and one script asking for thousands
+of distinct usernames can spend it in seconds: each one is a cache miss and a coalescer miss, so
+each one reaches GitHub.
+
+The app bounds this per client, in `app/commitSearchRateLimit.ts`: **30 searches per rolling
+60 seconds**, counted only for searches that would reach GitHub, with anything past that answered
+by the existing rate-limit screen.
+
+### Read This As A Cost, Not A Quota
+
+The window is a `Map` in one server instance, exactly like the commit cache and the in-flight map.
+So:
+
+- The limit is 30 per client **per instance**. Vercel scales instances with load, so the app-wide
+  effect is 30 x however many instances are running.
+- A cold start resets it. A burst spread across cold starts is barely limited at all.
+- It therefore **cannot** defend the shared 30/minute GitHub ceiling and must not be described as
+  if it does. What actually removes upstream calls is the cache and the request coalescing: a
+  repeated username costs nothing, and concurrent readers of one shared link cost one search.
+
+What it does buy is that abuse stops being free. A single client cannot walk a username list at
+machine speed through one instance, and the traffic that gets through is shaped like traffic from
+many separate clients rather than one.
+
+A real global ceiling is platform configuration, not code — a Vercel Firewall rate-limit rule on
+the app, keyed by IP, the same lever the [CSP report section](#rate-limiting-csp-reports)
+describes. Nothing in this repository configures or reads it. If one is added, note it here.
+
+### Why 30 A Minute
+
+A person types a distinct valid GitHub handle every few seconds at the very fastest, and a visitor
+clicking every recent-search shortcut they have stored produces five requests and then stops to
+read. Thirty a minute, sustained, is one every two seconds for a full minute; no visitor reaches
+it, so the threshold does not need traffic data to justify and lowering it would only start
+catching people. It is also the documented authenticated search ceiling, so a client past it is by
+itself capable of spending the whole shared per-minute allowance.
+
+A visitor who somehow does reach it sees the ordinary "GitHub is asking us to slow down" screen
+with its retry, and is under the limit again within a minute.
+
+### What Is Held In Memory, And For How Long
+
+Per client, until the client has been quiet for longer than the window:
+
+- A salted SHA-256 hash of the forwarded client address.
+- The timestamps of that client's searches inside the current 60-second window, at most 30 of them.
+
+Nothing else. The searched username never reaches the limiter — it is handed an opaque key — so no
+username is stored, logged, or associated with a client anywhere in this path. The salt is 32
+random bytes generated per process and never persisted.
+
+A memory dump of a running instance would show the salt, those hashes, and those timestamps. With
+the salt in hand, an investigator could confirm whether an address they already suspected was
+among the clients active in the last minute; they could not read the addresses out, correlate them
+with another instance or with the same instance before a restart, or learn anything at all about
+what was searched.
+
+### The Forwarded Header Is Untrusted Input
+
+The client key comes from `x-vercel-forwarded-for`, falling back to `x-forwarded-for`. Vercel sets
+both itself and overwrites `x-forwarded-for` from the connecting socket precisely so it cannot be
+spoofed, so on this deployment neither is attacker-controlled. `x-vercel-forwarded-for` is
+preferred because it is the one a proxy placed in front of Vercel could not overwrite either.
+
+Behind some other proxy that forwards a client's header verbatim, a spoofer could:
+
+- **Split their own traffic** across many fabricated addresses and get a fresh allowance for each.
+  This weakens the limit to the cost of forging headers. It cannot exhaust memory: idle clients are
+  dropped and the map is capped, and eviction under a flood only ever *forgets* a client, which
+  refills an allowance rather than refusing anyone.
+- **Spend another client's allowance** by sending that client's address, refusing them for up to
+  one window. The blast radius is one minute, one instance, and one address the attacker had to
+  know already; nothing is revealed to them, and nothing persists.
+
+They cannot learn who else has searched, what anyone searched for, or read any stored key back.
 
 ## Security Headers
 
@@ -334,6 +420,8 @@ This powers the recent-search shortcuts. Clearing browser site data removes the 
 
 Successful and empty GitHub search results may also be cached briefly in server memory by normalized username to reduce repeated GitHub API calls. This cache is ephemeral and is not a database.
 
+Rate limiting holds a salted hash of each recent client's forwarded address, and the times of that client's searches in the last minute, in the same ephemeral server memory. No address and no username is stored, and the two are never held together. See [Bounding Search Bursts](#bounding-search-bursts).
+
 ## Troubleshooting
 
 ### Production Health Check Fails With `401`
@@ -363,6 +451,14 @@ curl -s https://my-first-commit-eta.vercel.app/api/health
 `checks.githubToken.configured: false` means the variable is missing from the deployment, usually
 because it was changed without redeploying. `true` with rate limiting means the token is set but
 expired, revoked, or genuinely over its limit.
+
+### Visitors Report Rate Limiting But GitHub Is Not Rate Limiting
+
+Check whether the logs show `commit_search_rate_limited_client` rather than
+`github_commit_search_rate_limited`. The first is this app's own per-client bound, the second is
+GitHub's. The visitor sees the same screen either way, which is deliberate, so the log is what
+tells the two apart. See [Bounding Search Bursts](#bounding-search-bursts) for the threshold and
+why a person is not expected to reach it.
 
 ### GitHub Searches Fail With Validation Errors
 
