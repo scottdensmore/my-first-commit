@@ -17,6 +17,13 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Changed
 
+- The repository front door now leads with the live product, current build and release status, an
+  accurate screenshot, a concise local quick start, and a compact guide to the rest of the
+  documentation. Detailed capabilities, privacy boundaries, and GitHub search limitations moved to
+  a dedicated product guide, and a contributors page now explains project acknowledgement. The
+  initial screenshot showed a profile-heavy interface the current app no longer renders; it has
+  been replaced with the actual commit-results experience.
+
 - Development dependencies updated: `eslint-config-next` to 16.3.1 and `@testing-library/user-event` to 14.6.4. The lint config is the half of the Next.js 16.3.1 release that governs linting, and is pinned to the same exact version as Next.js itself, so it moves with it rather than drifting a release behind. The testing library fixes the `repeat` property on synthesized keyboard events, which no test here reads. Neither package ships in the application, so nothing a visitor loads changed; `npm run lint` passes unchanged against the new config, which is the check a lint-config bump can actually break.
 
 - Next.js updated from 16.3.0 to 16.3.1, a patch release of backported fixes. Two of them reach this app: `headers()` regains its live view of the incoming request, which is what the per-client search limit reads to identify a caller, and image optimization preserves the response it produced, which is how commit author avatars are served. The rest of the release covers Turbopack internals and features this app does not use — `'use cache'`, `unstable_cache`, middleware, i18n, and the Pages Router. The full validation suite passes on the new version, including the browser journeys that exercise both changed paths, and the version bump carried no unrelated lockfile churn: only Next.js itself, its platform build binaries, and its own transitive helpers moved.
