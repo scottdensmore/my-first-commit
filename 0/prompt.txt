@@ -1,0 +1,11 @@
+<task-notification>
+<task-id>bzutfj5z4</task-id>
+<tool-use-id>toolu_01RR3mC8SMEKa1ThuCT7G7gr</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/bzutfj5z4.output</output-file>
+<status>failed</status>
+<summary>Background command "Poll CI for PR 188" failed with exit code 1</summary>
+</task-notification>
+
+---
+
+Ok lets do it
