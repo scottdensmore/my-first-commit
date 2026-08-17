@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M089926EXFHER6NYHYA7WQC9",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/test/scope-coverage",
+  "checkpoints_count": 8,
+  "files_touched": [
+    "vitest.config.mts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1334,
+    "cache_creation_tokens": 3458495,
+    "cache_read_tokens": 267843683,
+    "output_tokens": 440685,
+    "api_call_count": 668,
+    "subagent_tokens": {
+      "input_tokens": 1036,
+      "cache_creation_tokens": 898782,
+      "cache_read_tokens": 45614107,
+      "output_tokens": 323094,
+      "api_call_count": 518
+    }
+  }
+}
