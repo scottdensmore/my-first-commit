@@ -1,0 +1,11 @@
+<task-notification>
+<task-id>b7po30k9g</task-id>
+<tool-use-id>toolu_01XCFL7GJ6fvd7gkk7DouvCX</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/b7po30k9g.output</output-file>
+<status>completed</status>
+<summary>Background command "Poll CI for PR 192" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Lets fix up all of this.
