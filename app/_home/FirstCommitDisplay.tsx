@@ -9,22 +9,25 @@ type FirstCommitDisplayProps = {
   isMain?: boolean;
 };
 
-function formatCommitDate(date: Date) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(date);
-}
+// Built once at module scope rather than on every call. `Intl.DateTimeFormat` is among the more
+// expensive constructors the platform offers -- it resolves a locale and builds a pattern each time
+// -- and a rendered result was constructing eleven of them: the hover title on each of the ten
+// commit cards, plus the summary date on the main one, repeated on every re-render a retry or a
+// share status caused. Both configurations are constant, and both are deliberately pinned to `en`
+// and UTC so a commit reads the same date wherever it is viewed, so there is nothing per-call to
+// close over and nothing a shared instance can leak between cards.
+const commitDateFormat = new Intl.DateTimeFormat("en", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
-function formatCommitDateTime(date: Date) {
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "UTC",
-  }).format(date);
-}
+const commitDateTimeFormat = new Intl.DateTimeFormat("en", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "UTC",
+});
 
 export default function FirstCommitDisplay({ data, isMain = true }: FirstCommitDisplayProps) {
   const parsedDate = new Date(data.date);
@@ -111,7 +114,7 @@ export default function FirstCommitDisplay({ data, isMain = true }: FirstCommitD
               </a>
               <span>committed</span>
               {dateObj ? (
-                <time dateTime={data.date} title={formatCommitDateTime(dateObj)}>
+                <time dateTime={data.date} title={commitDateTimeFormat.format(dateObj)}>
                   {formatDistanceToNow(dateObj, { addSuffix: true })}
                 </time>
               ) : (
@@ -128,7 +131,7 @@ export default function FirstCommitDisplay({ data, isMain = true }: FirstCommitD
                   <dt className="font-semibold text-[var(--github-gray-dark)]">Commit date</dt>
                   <dd className="mt-1">
                     {dateObj ? (
-                      <time dateTime={data.date}>{formatCommitDate(dateObj)}</time>
+                      <time dateTime={data.date}>{commitDateFormat.format(dateObj)}</time>
                     ) : (
                       "Date unavailable"
                     )}
