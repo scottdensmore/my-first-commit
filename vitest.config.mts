@@ -32,6 +32,8 @@ export default defineConfig({
     // it, so counting it as zero would report a hole that is not there:
     //   - the three metadata image routes are prerendered by `next build`, and a browser spec
     //     asserts each returns a PNG
+    //   - e2eCommitSearchFixtures.ts is executed by the browser suite, which the gate runs; every
+    //     case in it exists to be reached through a browser and has no unit test to lose
     //   - check-agent-docs.mjs and sync-labels.mjs are executed by `npm run check:agent-docs` and
     //     `npm run check:labels`, both links in the gate chain
     //   - verify-deployed-commit.mjs and resolve-active-deployment.mjs are executed by the
@@ -46,6 +48,7 @@ export default defineConfig({
         "app/icon.tsx",
         "app/opengraph-image.tsx",
         "app/twitter-image.tsx",
+        "app/_lib/e2eCommitSearchFixtures.ts",
         "scripts/check-agent-docs.mjs",
         "scripts/sync-labels.mjs",
         "scripts/verify-deployed-commit.mjs",
@@ -58,15 +61,20 @@ export default defineConfig({
       // change that leaves new code untested fails the gate, a change that improves coverage does
       // not silently raise the bar. Raise them when a deliberate push moves the numbers up.
       //
-      // Unchanged by the rescoping, which is the evidence the exclusions are right rather than
-      // convenient: scoped and excluded measures 93.71% statements, 89.73% branches, 98.38%
-      // functions, 94.65% lines — the same figures the default scope reported, to two decimals.
-      // Without the exclusions it reads 74.49%, and all of that gap is the seven files above.
+      // Each floor is the whole percent below its measurement, which is under a point of slack:
+      // enough that a refactor does not fail on rounding, tight enough that a few newly uncovered
+      // lines do. Measured 96.53% statements, 93.26% branches, 98.91% functions, 97.72% lines.
+      //
+      // Raised when the browser fixtures moved out of actions.ts. That was not a coverage push --
+      // it removed 173 lines no unit test could reach from a file that also holds the production
+      // search path, taking actions.ts from 76.54% to 93.33% statements. Leaving the floors where
+      // they were would have left three and a half points of slack, which is room for real
+      // regression to pass.
       thresholds: {
-        statements: 93,
-        branches: 89,
+        statements: 96,
+        branches: 93,
         functions: 98,
-        lines: 94,
+        lines: 97,
       },
     },
   },

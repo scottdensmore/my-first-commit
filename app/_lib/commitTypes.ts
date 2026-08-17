@@ -63,6 +63,32 @@ export type CommitSearchFailure = {
 export type CommitData = CommitSearchSuccess | CommitSearchFailure;
 
 /**
+ * The two failure messages the search reaches for when GitHub returns nothing usable. They live
+ * beside the constructor that carries them, and are shared rather than copied because the browser
+ * fixtures assert on the same wording: a second copy would let the real path and the fixture path
+ * describe the same outcome differently, which is the drift `commitSearchMocksEnabled` exists to
+ * prevent one level down.
+ */
+export const EMPTY_COMMIT_SEARCH_MESSAGE =
+  "No public commits found for this user (or indexing is delayed).";
+export const INCOMPLETE_COMMIT_SEARCH_MESSAGE =
+  "GitHub could not finish this search, so no commits were returned yet.";
+
+/**
+ * Builds a failure. Paired here with `toCommitSearchSuccess` below so both constructors of the
+ * union live with the union, and so callers outside the server action can build one -- a
+ * `"use server"` module cannot export a synchronous helper, which is what put this here rather
+ * than leaving it in `actions.ts`.
+ */
+export function commitSearchError(
+  error: string,
+  errorKind: CommitErrorKind,
+  incomplete = false,
+): CommitSearchFailure {
+  return { found: false, error, errorKind, ...(incomplete ? { incomplete } : {}), commits: [] };
+}
+
+/**
  * Builds a success, or returns `null` when there is nothing to succeed with.
  *
  * This exists so the non-empty invariant is established in exactly one place. TypeScript does not

@@ -183,10 +183,10 @@ Thresholds live in `vitest.config.mts` and are a **non-regression floor**, not a
 
 | Metric | Floor | Measured |
 | --- | --- | --- |
-| Statements | 93% | 93.71% |
-| Branches | 89% | 89.73% |
-| Functions | 98% | 98.38% |
-| Lines | 94% | 94.65% |
+| Statements | 96% | 96.53% |
+| Branches | 93% | 93.26% |
+| Functions | 98% | 98.91% |
+| Lines | 97% | 97.72% |
 
 Under a point of slack means a refactor does not fail on rounding while a few newly uncovered lines
 do. Raise the floors when a deliberate push moves the numbers up; do not lower one to make a change
@@ -197,14 +197,15 @@ on Vitest's default scope a module no test imports is *absent* from the report r
 zero, so the floors would catch coverage falling in already-tested code and miss code arriving
 untested. Scoped, a wholly untested new module drops the number and fails the gate.
 
-Seven files are excluded, each one the gate covers by running rather than by importing: the three
+Eight files are excluded, each one the gate covers by running rather than by importing: the browser
+fixtures in `app/_lib/e2eCommitSearchFixtures.ts`, which only Playwright reaches; the three
 metadata image routes, which `next build` prerenders and a browser spec asserts return PNGs; and the
 four CLI shells, which `npm run check:agent-docs`, `npm run check:labels`, and the production
 workflows execute. Each is a thin shell over a module that is unit tested. Add to that list only
 when another gate command genuinely covers the file, and record which one — excluding a file that
 nothing covers is how a floor starts reporting a hole that is not there.
 
-Without those exclusions the same scope reads 74.49%, and all of the gap is those seven files.
+Without those exclusions the same scope reads 74.49%, and all of the gap is those eight files.
 
 ## Deployment
 

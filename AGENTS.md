@@ -91,7 +91,8 @@ imported by a route as `@/app/logger` — is the clearest sign it does not belon
   `e2e-long-data`, `e2e-timeout`, `e2e-unknown`, `e2e-validation`,
   `e2e-empty`, `e2e-rate-limit`, and `e2e-unavailable`. Playwright sets this automatically and runs
   the app on port **3100**, not 3000; set `E2E_PORT` when that port is taken. Add new fixture cases
-  in `app/_lib/actions.ts` when adding browser coverage for a new state. The `*-once-*` and
+    in `app/_lib/e2eCommitSearchFixtures.ts` when adding browser coverage for a new state; that
+  module holds every fixture and nothing else, and `app/_lib/actions.ts` only calls into it. The `*-once-*` and
   `*-then-error-*` fixtures are stateful per process, so a test can prove a retry re-issued the
   search rather than re-rendered: give each such test a unique username, as the existing ones do
   with the Playwright worker index.
