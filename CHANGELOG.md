@@ -15,6 +15,10 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 - Partial commit results now offer a **Search again** button in place. A retry that succeeds replaces the partial result, one that comes back partial again says so, and one that fails leaves the commits on screen and explains why instead of replacing them with an error screen. Each outcome is announced to assistive technology.
 
+### Removed
+
+- Dropped the `clsx` and `tailwind-merge` dependencies, which nothing imported. Both are conventional in a Tailwind project and both arrived with the initial commit, but no revision since has ever imported either one: every component in this app composes `className` with a template literal, so neither package had a single call site in any version of this code. They shipped nothing, while each remained a package the audit gate had to keep clearing and Dependabot had to keep proposing upgrades for. Nothing else in the tree depended on them, so removing the two declarations removed them outright. No behaviour and no styling changed; a future need for conditional class composition can add one back deliberately.
+
 ### Fixed
 
 - A release tag now names a commit that was proven healthy in production, rather than one that merged and was followed by something healthy being observed. The production health check pointed a browser at a mutable alias without ever asking which commit was answering, so a deployment still in flight — or a failed one leaving the previous build live — produced a green run that said nothing about the code it was supposed to be checking. The run now asks `/api/health` what is deployed and stops in seconds if it is not the commit that triggered it. Promotion had a related gap from the other side: it decided whether a deployment had been overtaken by comparing against the tip of `main`, which advances at merge, while a deployment becomes live later and may never — so a newer commit that was still deploying, or that failed, suppressed the release of the commit genuinely in production and that release was never cut. It now resolves the live deployment directly and refuses to guess when none can be found.
