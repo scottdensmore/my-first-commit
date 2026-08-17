@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M08NM824EEGBXV2WCP80J91K",
+  "session_id": "01a01143-94b4-7ff3-9b57-28bd51f76f68",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-17T20:12:28.802060604Z",
+  "branch": "scottdensmore/docs/refresh-project-front-door",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CHANGELOG.md",
+    "CONTRIBUTORS.md",
+    "README.md",
+    "docs/product.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "51533e7482f9",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 231317,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 9373440,
+    "output_tokens": 28704,
+    "api_call_count": 84
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-17T20:12:28.282061166Z",
+    "agent_lines": 163,
+    "agent_removed": 65,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 163,
+    "total_lines_changed": 228,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}

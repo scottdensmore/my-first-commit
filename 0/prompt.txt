@@ -1,0 +1,5 @@
+Lets run through the code and make sure it is following best practices etc. I want to add the build banners and other banners that would make this app more polished. Also an image and keep the README.md as the front door and move content to other docs. Also have the contributors md as well. Make sure the license makes sence. Let em know what we should do
+
+---
+
+Ok lets do it
