@@ -7,10 +7,13 @@ shared-URL round trip, the recent-searches lifecycle from creation through rerun
 timeout, unknown and validation failures, and the clipboard fallback. Do not re-test those by hand locally; if one of them can regress
 unnoticed, add coverage instead of a checklist item.
 
-**Against a deployed target the commit-search states are not covered.** They live in one
+**Against a deployed target the mocked commit-search states are not covered.** They live in one
 `test.describe` block that calls `test.skip(isDeployedTarget, …)`, so the `Production Health Check`
-workflow never exercises a result, empty, or error state in production, though it does still cover
-landmarks, tab order, focus, security headers, the 404 page, and `/api/health` there. The CSP report
+workflow never exercises the empty or error states in production, though it does still cover
+landmarks, tab order, focus, security headers, the 404 page, and `/api/health` there. One real
+search *is* covered: `tests/e2e/production-canary.spec.ts` runs only against a deployed target and
+proves the browser-to-Server-Action-to-GitHub-to-result path works, which no fixture can. Do not
+re-test a plain successful search by hand in production. The CSP report
 POST is also skipped against a deployed target, deliberately, so production logs stay clean. Use this
 checklist for the commit-search states and for the judgments automation cannot make.
 

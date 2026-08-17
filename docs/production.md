@@ -153,6 +153,41 @@ The first prints an abbreviated SHA and the second a full one. They must agree; 
 the alias and the deployment record disagree about what is live, and no release should be cut until
 they do.
 
+## The Production Search Canary
+
+`tests/e2e/production-canary.spec.ts` is the only check that exercises the whole path against real
+infrastructure: browser to Server Action to GitHub to a rendered commit. Every other search test
+uses fixtures, which is what makes them deterministic and also what makes them blind to a revoked
+token, a changed GitHub response, or a Server Action broken only in production. `/api/health`
+reports that a token is *present*, never that it works.
+
+It runs only where `PLAYWRIGHT_BASE_URL` is set, so it is automatically part of the production
+health check and of any manual run against a deployed URL, and never part of local CI. No workflow
+step configures it; the skip condition does that work.
+
+**One search per deployment, deliberately.** It is a canary rather than a suite. It is untagged, so
+it runs on Chromium only rather than once per browser project, and every additional search spends
+the shared GitHub quota that the [burst bounding](#bounding-search-bursts) exists to protect.
+
+**The handle is `torvalds` by default**, chosen for having the largest and most reliably indexed
+history on the platform, and overridable with `E2E_CANARY_USERNAME`. Override it rather than editing
+the spec if GitHub's commit search index ever stops returning results for it — the assertion depends
+on that index, which is the one part of this check nothing in this repository controls.
+
+**A partial result passes.** GitHub returning `incomplete_results` is its own load shedding, not a
+fault of this app, and failing on it would make the canary flap for a reason no deploy can fix. What
+it will not accept is an empty result, an error state, or a heading with no commit rendered.
+
+To run it by hand:
+
+```bash
+PLAYWRIGHT_BASE_URL=https://my-first-commit-eta.vercel.app \
+  npx playwright test --project=chromium production-canary
+```
+
+Confirmed to fail rather than pass vacuously: pointed at a handle with no indexed commits, it fails
+on the missing result heading instead of reporting success.
+
 ## Production Health Check Alerts
 
 When `Production Health Check` fails, GitHub Actions opens or updates a GitHub issue titled:
