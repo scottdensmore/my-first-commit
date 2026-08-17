@@ -1,4 +1,4 @@
-import type { CommitData } from "../_lib/commitTypes";
+import type { CommitSearchSuccess } from "../_lib/commitTypes";
 
 export function updateSharedSearchUrl(username: string) {
   const url = new URL(window.location.href);
@@ -19,12 +19,14 @@ export function getInitialSharedUsername() {
   return new URLSearchParams(window.location.search).get("user") ?? "";
 }
 
-export function buildResultShareText(username: string, result: CommitData) {
+/**
+ * Takes the success variant rather than the union: the only caller reaches this from behind a
+ * `result.found` guard, and the non-empty tuple then guarantees a first commit. Taking `CommitData`
+ * meant carrying a no-commits fallback that nothing could reach -- the exact defensive branch the
+ * tuple invariant in `commitTypes.ts` exists to remove.
+ */
+export function buildResultShareText(username: string, result: CommitSearchSuccess) {
   const firstCommit = result.commits[0];
-  if (!firstCommit) {
-    return `${username}'s first public commit search: ${window.location.href}`;
-  }
-
   const firstLine = firstCommit.message.split("\n")[0];
   const summary = result.incomplete
     ? `${username}'s earliest public commit found so far: ${firstLine}`

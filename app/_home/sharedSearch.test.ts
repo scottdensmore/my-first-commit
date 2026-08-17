@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { CommitData, CommitInfo } from "../_lib/commitTypes";
+import type { CommitInfo, CommitSearchSuccess } from "../_lib/commitTypes";
 import {
   buildResultShareText,
   clearSharedSearchUrl,
@@ -54,7 +54,7 @@ describe("updateSharedSearchUrl and clearSharedSearchUrl", () => {
 
 describe("buildResultShareText", () => {
   it("summarizes the first commit using only its subject line", () => {
-    const result: CommitData = { found: true, commits: [commit] };
+    const result: CommitSearchSuccess = { found: true, commits: [commit] };
     const text = buildResultShareText("octocat", result);
 
     expect(text).toContain("octocat's first public commit: Initial commit");
@@ -64,23 +64,11 @@ describe("buildResultShareText", () => {
   });
 
   it("does not call a partial result the first public commit", () => {
-    const result: CommitData = { found: true, incomplete: true, commits: [commit] };
+    const result: CommitSearchSuccess = { found: true, incomplete: true, commits: [commit] };
     const text = buildResultShareText("octocat", result);
 
     expect(text).not.toContain("octocat's first public commit:");
     expect(text).toContain("octocat's earliest public commit found so far: Initial commit");
     expect(text).toContain("GitHub search was incomplete, so an earlier commit may exist.");
-  });
-
-  it("falls back to a search summary when there are no commits", () => {
-    const result: CommitData = {
-      found: false,
-      errorKind: "empty",
-      error: "No public commits found.",
-      commits: [],
-    };
-    expect(buildResultShareText("octocat", result)).toContain(
-      "octocat's first public commit search:",
-    );
   });
 });
