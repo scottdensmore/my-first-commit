@@ -1,0 +1,5 @@
+Look through this codebase and look for any deadcode, optimizations and also ensure that the directory structure etc match best practices. Make a plan to address anything that you find.
+
+---
+
+Lets do each PR seperately
