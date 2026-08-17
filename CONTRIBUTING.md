@@ -44,3 +44,9 @@ After a PR merges to `main`, Vercel deploys production and GitHub Actions runs t
 
 Use the [production runbook](docs/production.md) for deployment checks, observability, and troubleshooting.
 Use the [manual QA checklist](docs/manual-qa.md) for larger UI, metadata, or release-verification changes.
+
+## Recognition
+
+Merged contributions are recorded in the Git history and release notes. GitHub maintains the
+project's complete [contributor history](https://github.com/scottdensmore/my-first-commit/graphs/contributors),
+so a separate contributor list does not need to be maintained by hand.
