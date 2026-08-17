@@ -17,6 +17,10 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Changed
 
+- The Entire CLI Codex stop hook now has up to 300 seconds to finish writing its checkpoint before
+  Codex terminates it, increased from 30 seconds for larger sessions that need longer to finalize.
+  Other Entire hooks retain their existing 30-second limits.
+
 - The repository front door now leads with the live product, current build and release status, an
   accurate screenshot, a concise local quick start, and a compact guide to the rest of the
   documentation. Detailed capabilities, privacy boundaries, and GitHub search limitations moved to
