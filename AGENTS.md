@@ -50,14 +50,18 @@ drift. Run the individual commands above when a scoped rerun is enough, per step
 - `app/_lib/searchClientKey.ts` — salted per-process hash of the forwarded client address
 - `app/_lib/username.ts` — validation and normalization, used on both the client and the server action
 - `app/_lib/logger.ts` — structured warn/error logging
-- `app/_home/` — homepage search internals (hook, form, results, timeline card, recent searches,
-  analytics)
+- `app/_lib/analytics.ts` — Vercel Analytics event tracking plus the URL redaction applied before
+  an event is sent; in `_lib` rather than `_home` because the root layout's analytics component
+  reads it too
+- `app/_home/` — homepage search internals (hook, form, results, timeline card, recent searches)
 - `app/_components/` — components used by something other than one feature
-- `app/_lib/` — everything above plus `commitTypes.ts`, `githubUrls.ts`, and
-  `e2eCommitSearchMocks.ts`; no route file lives here and no file here renders
+- `app/_lib/` — everything above plus `commitTypes.ts`, `githubUrls.ts`,
+  `e2eCommitSearchMocks.ts`, and `e2eCommitSearchFixtures.ts`; no route file lives here and no
+  file here renders
 - `app/api/health/route.ts` — runtime health JSON for production checks
 - `app/api/e2e-readiness/route.ts` — non-production probe telling the Playwright preflight whether
   this server was started with the fixture mocks
+- `app/api/csp-report/route.ts` — bounded, sanitized ingestion of browser CSP violation reports
 - `tests/e2e/` — Playwright specs; unit tests are colocated as `*.test.ts(x)`
 
 **A folder under `app/` that is not a route starts with `_`.** Every other directory name there
@@ -74,6 +78,15 @@ import style too: relative within a feature, aliased with `@/` only across a bou
 relative import now means "same feature" rather than nothing in particular. Before adding a
 component to `app/_components/`, check that it really has more than one caller; the last occupant
 of the root `components/` directory had exactly one, three directories away.
+
+**The same test decides where a module goes.** A module read by something other than the feature it
+sits in belongs in `app/_lib/`, and an import reaching into a feature folder from outside that
+feature is the signal that it does. A feature includes its own route file, so `app/page.tsx`
+importing from `app/_home/` is inside it; `app/_components/` and the root layout are not.
+`analytics.ts` sat in `app/_home/` while `app/_components/` imported it — so the root layout, which
+has no connection to searching for a commit, pulled a module out of the homepage feature on every
+page load. Moving it left `app/_home/` as the set of things only the homepage uses, which is what
+makes the folder name a claim worth trusting.
 
 **Directly under `app/` there are only route files.** `page.tsx`, `layout.tsx`, `error.tsx`,
 `not-found.tsx`, the metadata files, and route directories — plus their colocated tests, and

@@ -30,8 +30,8 @@ describe("GET /api/e2e-readiness", () => {
   });
 
   it("reports the same flag value the server action reads, not merely a truthy one", async () => {
-    // `app/actions.ts` serves fixtures only for exactly "1". Anything looser here would report a
-    // ready server that then hits real GitHub for every reserved username.
+    // `app/_lib/actions.ts` serves fixtures only for exactly "1". Anything looser here would
+    // report a ready server that then hits real GitHub for every reserved username.
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("E2E_COMMIT_SEARCH_MOCKS", "true");
 

@@ -14,7 +14,7 @@
 // nothing here should be read as a global ceiling. See docs/production.md.
 //
 // The limiter never learns who a client is. It is handed an opaque key -- a salted hash, from
-// app/searchClientKey.ts -- and never sees the searched username at all, so neither can reach
+// app/_lib/searchClientKey.ts -- and never sees the searched username at all, so neither can reach
 // a log line or an eviction decision from here.
 
 /**

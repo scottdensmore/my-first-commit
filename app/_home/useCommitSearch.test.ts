@@ -5,7 +5,7 @@ import type { CommitData } from "../_lib/commitTypes";
 import { useCommitSearch } from "./useCommitSearch";
 
 vi.mock("../_lib/actions", () => ({ getCommits: vi.fn() }));
-vi.mock("./analytics", () => ({ trackAppEvent: vi.fn() }));
+vi.mock("../_lib/analytics", () => ({ trackAppEvent: vi.fn() }));
 
 const mockGetCommits = vi.mocked(getCommits);
 

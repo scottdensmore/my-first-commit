@@ -15,6 +15,10 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 - Partial commit results now offer a **Search again** button in place. A retry that succeeds replaces the partial result, one that comes back partial again says so, and one that fails leaves the commits on screen and explains why instead of replacing them with an error screen. Each outcome is announced to assistive technology.
 
+### Changed
+
+- Analytics moved out of the homepage feature folder. `analytics.ts` sat in `app/_home/`, the directory for things only the homepage uses, while the root layout's analytics component imported it from outside — so every page load pulled a module out of the homepage feature to do something with no connection to searching for a commit. It now sits in `app/_lib/` with the other shared modules, which leaves `app/_home/` meaning what its name claims. The agent instructions gained the rule that decides this for the next module, and their layout list picked up the two files it had fallen behind on. Documentation and file locations only; no behaviour changed and the analytics events themselves are untouched.
+
 ### Removed
 
 - Dropped the `clsx` and `tailwind-merge` dependencies, which nothing imported. Both are conventional in a Tailwind project and both arrived with the initial commit, but no revision since has ever imported either one: every component in this app composes `className` with a template literal, so neither package had a single call site in any version of this code. They shipped nothing, while each remained a package the audit gate had to keep clearing and Dependabot had to keep proposing upgrades for. Nothing else in the tree depended on them, so removing the two declarations removed them outright. No behaviour and no styling changed; a future need for conditional class composition can add one back deliberately.

@@ -1,13 +1,14 @@
 /**
  * Whether the commit search serves browser fixtures instead of querying GitHub.
  *
- * One definition, read by two callers: `app/actions.ts`, which decides what a search returns, and
- * `app/api/e2e-readiness/route.ts`, which tells the Playwright preflight what this server will do.
- * A second copy of the comparison could drift -- accepting `"true"` in one place and only `"1"` in
- * the other -- and the failure mode is a server that reports itself ready and then sends every
+ * One definition, read by two callers: `app/_lib/actions.ts`, which decides what a search returns,
+ * and `app/api/e2e-readiness/route.ts`, which tells the Playwright preflight what this server will
+ * do. A second copy of the comparison could drift -- accepting `"true"` in one place and only `"1"`
+ * in the other -- and the failure mode is a server that reports itself ready and then sends every
  * reserved `e2e-*` username to real GitHub, which is exactly what the preflight exists to catch.
  *
- * `app/actions.ts` is a `"use server"` module, so it cannot export a synchronous predicate itself.
+ * `app/_lib/actions.ts` is a `"use server"` module, so it cannot export a synchronous predicate
+ * itself.
  */
 /**
  * An index signature rather than the one named key, so `process.env` satisfies it and a test can

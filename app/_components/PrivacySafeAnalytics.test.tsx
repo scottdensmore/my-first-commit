@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { Analytics } from "@vercel/analytics/next";
 import { describe, expect, it, vi } from "vitest";
-import { redactAnalyticsEvent } from "../_home/analytics";
+import { redactAnalyticsEvent } from "../_lib/analytics";
 import PrivacySafeAnalytics from "./PrivacySafeAnalytics";
 
 vi.mock("@vercel/analytics/next", () => ({
