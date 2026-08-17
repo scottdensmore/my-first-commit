@@ -17,6 +17,8 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Changed
 
+- The agent instructions now describe the import convention the code actually follows. They said imports were "relative within a feature, aliased with `@/` only across a boundary", which matched neither half of the codebase: all 29 relative imports of a shared module cross out of their own folder, and the 3 aliased ones are exactly the route files under `app/api/`. What decides the form is depth, not the boundary crossed — a route file sits three levels down, where the relative path counts directories instead of naming anything and quietly means a different module if the route moves. The rule now says that, so it can be checked against the code rather than read as a principle nothing obeys.
+
 - Analytics moved out of the homepage feature folder. `analytics.ts` sat in `app/_home/`, the directory for things only the homepage uses, while the root layout's analytics component imported it from outside — so every page load pulled a module out of the homepage feature to do something with no connection to searching for a commit. It now sits in `app/_lib/` with the other shared modules, which leaves `app/_home/` meaning what its name claims. The agent instructions gained the rule that decides this for the next module, and their layout list picked up the two files it had fallen behind on. Documentation and file locations only; no behaviour changed and the analytics events themselves are untouched.
 
 ### Removed

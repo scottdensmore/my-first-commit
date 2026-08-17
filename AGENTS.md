@@ -73,11 +73,20 @@ land in it. Name new internal folders the same way; a route directory keeps its 
 
 **A component lives beside the feature that uses it.** Everything the homepage renders is in
 `app/_home/`; a component used by more than one feature, or by the root layout rather than a
-feature, goes in `app/_components/`. There is no root-level `components/`. The rule decides the
-import style too: relative within a feature, aliased with `@/` only across a boundary — so a
-relative import now means "same feature" rather than nothing in particular. Before adding a
+feature, goes in `app/_components/`. There is no root-level `components/`. Before adding a
 component to `app/_components/`, check that it really has more than one caller; the last occupant
 of the root `components/` directory had exactly one, three directories away.
+
+**Depth decides the import style, not the boundary crossed.** A route file under `app/api/` reaches
+a shared module through the `@/` alias — `@/app/_lib/logger` — because it sits three levels down
+and the relative form, `../../_lib/logger`, counts directories rather than naming anything, and
+silently means a different module if the route ever moves. Everything else under `app/` sits at
+most one directory from `_lib` and imports it relatively: `../_lib/analytics` from a feature
+folder, `./_lib/username` from `app/page.tsx`. That is what the code does in all 32 places a file outside `app/_lib/` imports
+from it, and the split is worth keeping because each half is the form that stays readable at that
+depth. An earlier version of this rule said "relative within a feature, aliased with `@/` only
+across a boundary", which described neither half: all 29 relative imports cross out of their own
+folder, and the 3 aliased ones are exactly the route files.
 
 **The same test decides where a module goes.** A module read by something other than the feature it
 sits in belongs in `app/_lib/`, and an import reaching into a feature folder from outside that
