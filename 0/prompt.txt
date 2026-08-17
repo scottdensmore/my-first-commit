@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b1e9cob4k</task-id>
+<tool-use-id>toolu_01Cm5hjmPsPzSHrwJqDoU4hJ</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/b1e9cob4k.output</output-file>
+<status>completed</status>
+<summary>Background command "Poll CI for PR 194" completed (exit code 0)</summary>
+</task-notification>
