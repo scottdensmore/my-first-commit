@@ -1,0 +1,9 @@
+Ok lets do it
+
+---
+
+We should increase the stop hook for entire to 300 seconds
+
+---
+
+what is the different between CONTRIBUTING.md and CONTRIBUTORS.md we should not need both
