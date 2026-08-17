@@ -1,90 +1,77 @@
 # My First Commit
 
 [![CI](https://github.com/scottdensmore/my-first-commit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/scottdensmore/my-first-commit/actions/workflows/ci.yml)
-[![Production Health Check](https://github.com/scottdensmore/my-first-commit/actions/workflows/deployed-smoke.yml/badge.svg?branch=main)](https://github.com/scottdensmore/my-first-commit/actions/workflows/deployed-smoke.yml)
-[![Vercel](https://img.shields.io/badge/deployed%20on-Vercel-black)](https://my-first-commit-eta.vercel.app)
-[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-24.x-339933)](https://nodejs.org/)
+[![Production Health](https://github.com/scottdensmore/my-first-commit/actions/workflows/deployed-smoke.yml/badge.svg?branch=main)](https://github.com/scottdensmore/my-first-commit/actions/workflows/deployed-smoke.yml)
+[![Latest Release](https://img.shields.io/github/v/release/scottdensmore/my-first-commit?display_name=tag&sort=semver)](https://github.com/scottdensmore/my-first-commit/releases/latest)
+[![License: MIT](https://img.shields.io/github/license/scottdensmore/my-first-commit)](LICENSE)
+[![Live on Vercel](https://img.shields.io/badge/try%20it-live-238636)](https://my-first-commit-eta.vercel.app)
 
-A GitHub-themed web application that discovers your origin story on GitHub. Enter any username to see their first public commit and the nine that followed, beautifully connected in an activity-graph style timeline.
+Discover the beginning of a GitHub story. Enter a username to find that person's earliest public
+commit and the nine commits that followed it.
 
-![My First Commit app screenshot showing a GitHub username search and first commit timeline](display.png)
+**[Try My First Commit](https://my-first-commit-eta.vercel.app)**
 
-## What It Does
+![My First Commit showing the earliest public commits for a GitHub username](docs/assets/my-first-commit-results.png)
 
-My First Commit helps you find the first public GitHub commit for any user. It searches GitHub's public commit index, shows the earliest result first, and includes the next several commits so the timeline feels like a small origin story rather than a single raw link.
+## Why My First Commit?
 
-The app is intentionally small: no accounts, no database, and no server-side storage of searches. Successful searches are saved only in the user's browser as recent-search shortcuts.
+A contribution graph shows how much someone has built. My First Commit shows where their public
+history began, as a small, shareable timeline rather than a raw search result.
 
-## Features
+The app stays intentionally focused: there are no accounts, no database, and no app-owned search
+history. Recent searches remain in the visitor's browser.
 
-- **Origin Discovery:** Uses the GitHub Search API to find the earliest public commits for any user.
-- **Visual Timeline:** Displays a sequence of the first 10 commits, connected by a vertical line with GitHub-style contribution squares.
-- **Recent Searches:** Keeps successful searches as local browser shortcuts for quick reruns.
-- **Example Searches:** Offers known public GitHub profiles as quick checks for first-time use and empty-result recovery.
-- **Shareable Searches:** Updates the URL with the searched username so results can be shared.
-- **Release Visibility:** Shows the deployed release tag in the footer and links it to the matching GitHub release.
-- **GitHub Aesthetic:** Fully themed with GitHub's color palette, typography, and iconography.
-- **Responsive Design:** Optimized for both desktop and mobile viewing.
-- **Production Checks:** Uses CI, production health checks, Vercel Analytics, and structured server logs.
+## Highlights
 
-## Project Links
+- Finds the earliest public commits indexed for a GitHub user.
+- Presents the first ten results as an accessible, responsive timeline.
+- Creates shareable search URLs and copyable result summaries.
+- Keeps recent searches locally in the browser for quick reruns.
+- Handles partial results, rate limits, timeouts, and upstream failures with recovery paths.
 
-- **Live app:** [my-first-commit-eta.vercel.app](https://my-first-commit-eta.vercel.app)
-- **Development guide:** [docs/development.md](docs/development.md)
-- **Production runbook:** [docs/production.md](docs/production.md)
-- **Architecture:** [docs/architecture.md](docs/architecture.md)
-- **Manual QA checklist:** [docs/manual-qa.md](docs/manual-qa.md)
-- **Release guide:** [docs/release.md](docs/release.md)
-- **Contributing guide:** [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Agent instructions:** [AGENTS.md](AGENTS.md)
-- **Changelog:** [CHANGELOG.md](CHANGELOG.md)
-- **Label guide:** [docs/labels.md](docs/labels.md)
+Read the [product guide](docs/product.md) for the complete feature set, data boundaries, and the
+limitations of GitHub's public commit index.
 
-## How It Works
+## Quick Start
 
-The app is a Next.js App Router project. The browser collects a GitHub username, the server action queries GitHub with Octokit, and the UI renders the first commit in a GitHub-inspired timeline. Search URLs can be shared with `?user=<username>`, and recent searches are stored locally in `localStorage`.
+```bash
+git clone https://github.com/scottdensmore/my-first-commit.git
+cd my-first-commit
+nvm use
+npm ci
+npm run dev
+```
 
-## Tech Stack
-
-- **Framework:** [Next.js](https://nextjs.org/) (App Router)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Typography:** The visitor's system UI font stack, defined in `app/globals.css`. No web font is downloaded, so a build needs no font host.
-- **API Client:** [Octokit](https://github.com/octokit/octokit.js)
-- **Icons:** [React Icons](https://react-icons.github.io/react-icons/)
-- **Date Handling:** [date-fns](https://date-fns.org/)
-- **Monitoring:** [Vercel Analytics](https://vercel.com/analytics), Vercel Logs, and GitHub Actions
-- **Releases:** Automatic GitHub releases after healthy Vercel production deployments
-
-## Privacy
-
-- Usernames entered into the search field are sent to GitHub to retrieve public commit data.
-- `GITHUB_TOKEN` is used only server-side and is never exposed to the browser.
-- Recent searches are stored only in the user's browser under `my-first-commit:recent-searches`.
-- Before Vercel Analytics receives page views or product events, the app removes the shared-search `user` query parameter; event properties do not include searched usernames.
-- The app does not store searches on a server.
-
-## Limitations
-
-- GitHub commit search can lag behind newly pushed commits, so very recent history may not appear immediately.
-- Only public commits indexed by GitHub are searchable. Private commits, deleted repositories, and private forks are never included.
-- Squashed, rebased, rewritten, or force-pushed history can make a user's earliest visible public commit differ from their actual first commit.
-- Renamed users, changed author emails, bot-authored commits, and missing author metadata can affect which commits GitHub returns for an author search.
-- GitHub's public search index can miss older commits or return duplicate commit SHAs across forks and mirrored repositories.
-- Unauthenticated GitHub requests have stricter rate limits. A server-side `GITHUB_TOKEN` improves reliability but does not make private data searchable.
+Open [http://localhost:3000](http://localhost:3000). The app works without credentials, but a
+server-side `GITHUB_TOKEN` is recommended because unauthenticated GitHub searches have stricter
+limits. See the [development guide](docs/development.md) for configuration and validation.
 
 ## Documentation
 
-- Use the [development guide](docs/development.md) for local setup, environment variables, testing, and deployment commands.
-- Use the [production runbook](docs/production.md) for production checks, observability, and troubleshooting.
-- Use the [architecture note](docs/architecture.md) to understand the browser, server action, GitHub API, and UI flow.
-- Use the [manual QA checklist](docs/manual-qa.md) for release and Open Graph preview validation.
-- Use the [release guide](docs/release.md) to cut tags and GitHub releases.
-- Use the [contributing guide](CONTRIBUTING.md) for branch, PR, review, and validation workflow.
-- Use [AGENTS.md](AGENTS.md) for coding agent instructions. It is the single canonical file; `CLAUDE.md` and `GEMINI.md` are pointers to it, enforced by `npm run check:agent-docs`.
-- Use the [label guide](docs/labels.md) for issue and pull request labels.
-- Use the [changelog](CHANGELOG.md) to track user-facing changes and release notes.
+| Guide | What it covers |
+| --- | --- |
+| [Product](docs/product.md) | Capabilities, product boundaries, privacy, and limitations |
+| [Architecture](docs/architecture.md) | Request flow, data boundaries, runtime routes, and failure handling |
+| [Development](docs/development.md) | Local setup, environment variables, validation, and maintenance |
+| [Production](docs/production.md) | Deployment, observability, security headers, and troubleshooting |
+| [Manual QA](docs/manual-qa.md) | Responsive, metadata, and production spot checks |
+| [Releases](docs/release.md) | Versioning, changelog promotion, tags, and GitHub releases |
+
+Project changes are recorded in the [changelog](CHANGELOG.md). Coding agents should also read the
+canonical [agent instructions](AGENTS.md).
+
+## Contributing
+
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the branch, test, review, and
+pull-request workflow, and see [CONTRIBUTORS.md](CONTRIBUTORS.md) for project acknowledgements.
+
+## Privacy
+
+Searches send a GitHub username to GitHub's public commit index. The app does not store searches in
+a database, and analytics events exclude searched usernames. Read the
+[privacy page](https://my-first-commit-eta.vercel.app/privacy) for the full visitor-facing notice.
 
 ## License
 
-MIT
+Licensed under the [MIT License](LICENSE). My First Commit is an independent project and is not
+affiliated with GitHub.
