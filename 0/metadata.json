@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M08Q0M89Q2CBCFNV4SBJN5M0",
+  "session_id": "01a01143-94b4-7ff3-9b57-28bd51f76f68",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-17T20:36:45.168991179Z",
+  "branch": "scottdensmore/docs/remove-redundant-contributors-file",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "README.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "5140d64571ad",
+  "checkpoint_transcript_start": 947,
+  "transcript_lines_at_start": 947,
+  "compact_transcript_start": 135,
+  "token_usage": {
+    "input_tokens": 28703,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5748608,
+    "output_tokens": 5513,
+    "api_call_count": 31
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-17T20:36:44.441914871Z",
+    "agent_lines": 12,
+    "agent_removed": 4,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 12,
+    "total_lines_changed": 32,
+    "agent_percentage": 50,
+    "metric_version": 2
+  }
+}
