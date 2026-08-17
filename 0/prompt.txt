@@ -1,0 +1,5 @@
+what is the different between CONTRIBUTING.md and CONTRIBUTORS.md we should not need both
+
+---
+
+Lets increase the other hook to 300s
