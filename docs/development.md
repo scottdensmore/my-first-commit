@@ -179,22 +179,32 @@ The text summary prints in the terminal and an HTML report lands in `coverage/`,
 Prettier, and ESLint all ignore. `npm test` still runs the suite without instrumenting it, which is
 the faster loop for a single file.
 
-Thresholds live in `vitest.config.mts` and are a **non-regression floor**, not a target. They were
-set from a measurement of this suite — 93.68% statements, 89.58% branches, 98.30% functions,
-94.66% lines — and each floor is the whole percent below it:
+Thresholds live in `vitest.config.mts` and are a **non-regression floor**, not a target:
 
-| Metric | Floor | Measured when set |
+| Metric | Floor | Measured |
 | --- | --- | --- |
-| Statements | 93% | 93.68% |
-| Branches | 89% | 89.58% |
-| Functions | 98% | 98.30% |
-| Lines | 94% | 94.66% |
+| Statements | 93% | 93.71% |
+| Branches | 89% | 89.73% |
+| Functions | 98% | 98.38% |
+| Lines | 94% | 94.65% |
 
 Under a point of slack means a refactor does not fail on rounding while a few newly uncovered lines
 do. Raise the floors when a deliberate push moves the numbers up; do not lower one to make a change
-pass. Coverage measures the files the suite loads, which is Vitest's default, so a module no test
-imports at all is missing from the report rather than counted as zero — the floors cannot catch a
-wholly untested new file, and review has to.
+pass.
+
+**Coverage measures the collection roots, not just the files the suite loads.** That matters because
+on Vitest's default scope a module no test imports is *absent* from the report rather than counted as
+zero, so the floors would catch coverage falling in already-tested code and miss code arriving
+untested. Scoped, a wholly untested new module drops the number and fails the gate.
+
+Seven files are excluded, each one the gate covers by running rather than by importing: the three
+metadata image routes, which `next build` prerenders and a browser spec asserts return PNGs; and the
+four CLI shells, which `npm run check:agent-docs`, `npm run check:labels`, and the production
+workflows execute. Each is a thin shell over a module that is unit tested. Add to that list only
+when another gate command genuinely covers the file, and record which one — excluding a file that
+nothing covers is how a floor starts reporting a hole that is not there.
+
+Without those exclusions the same scope reads 74.49%, and all of the gap is those seven files.
 
 ## Deployment
 
