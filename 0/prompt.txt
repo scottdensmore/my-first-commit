@@ -1,0 +1,21 @@
+<task-notification>
+<task-id>b9gm50080</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/b9gm50080.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch CI checks for PR 187" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b325fije5</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-scottdensmore-Developer-scottdensmore-my-first-commit/c1da9815-e090-4dd4-b153-91c098723091/tasks/b325fije5.output</output-file>
+<status>completed</status>
+<summary>Background command "Poll CI until validate completes" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Ok lets do PR2
