@@ -24,9 +24,10 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 - The repository front door now leads with the live product, current build and release status, an
   accurate screenshot, a concise local quick start, and a compact guide to the rest of the
   documentation. Detailed capabilities, privacy boundaries, and GitHub search limitations moved to
-  a dedicated product guide, and a contributors page now explains project acknowledgement. The
-  initial screenshot showed a profile-heavy interface the current app no longer renders; it has
-  been replaced with the actual commit-results experience.
+  a dedicated product guide, and contributor recognition now links to GitHub's automatically
+  maintained history instead of duplicating it in a hand-maintained file. The initial screenshot
+  showed a profile-heavy interface the current app no longer renders; it has been replaced with the
+  actual commit-results experience.
 
 - Development dependencies updated: `eslint-config-next` to 16.3.1 and `@testing-library/user-event` to 14.6.4. The lint config is the half of the Next.js 16.3.1 release that governs linting, and is pinned to the same exact version as Next.js itself, so it moves with it rather than drifting a release behind. The testing library fixes the `repeat` property on synthesized keyboard events, which no test here reads. Neither package ships in the application, so nothing a visitor loads changed; `npm run lint` passes unchanged against the new config, which is the check a lint-config bump can actually break.
 

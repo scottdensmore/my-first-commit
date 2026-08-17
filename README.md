@@ -63,7 +63,8 @@ canonical [agent instructions](AGENTS.md).
 ## Contributing
 
 Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the branch, test, review, and
-pull-request workflow, and see [CONTRIBUTORS.md](CONTRIBUTORS.md) for project acknowledgements.
+pull-request workflow. GitHub maintains the project's complete
+[contributor history](https://github.com/scottdensmore/my-first-commit/graphs/contributors).
 
 ## Privacy
 
