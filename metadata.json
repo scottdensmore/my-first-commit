@@ -1,0 +1,24 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M08AN7MZ8TJPPF64H5BA8SXZ",
+  "strategy": "manual-commit",
+  "branch": "scottdensmore/refactor/extract-e2e-fixtures",
+  "checkpoints_count": 2,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1386,
+    "cache_creation_tokens": 3484629,
+    "cache_read_tokens": 287682417,
+    "output_tokens": 461087,
+    "api_call_count": 694
+  }
+}
