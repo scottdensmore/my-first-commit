@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FaGithub } from "react-icons/fa";
-import { trackAppEvent } from "./_home/analytics";
+import { trackAppEvent } from "./_lib/analytics";
 import { EXAMPLE_USERNAMES } from "./_home/constants";
 import SearchErrorState from "./_home/SearchErrorState";
 import SearchForm from "./_home/SearchForm";
