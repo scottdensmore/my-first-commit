@@ -14,18 +14,15 @@
   --github-gray-dark: #24292f;
 }
 
+/* Only the fonts are mapped into Tailwind's theme. Nine `--color-*` tokens sat here too --
+   `bg-gh-blue`, `text-gh-text-primary`, `bg-background`, and the rest -- and not one of the
+   utilities they generated was ever used: every colour in this app is applied as an arbitrary
+   value reading the `:root` custom property directly, `text-[var(--github-blue)]`. Tailwind emits
+   only the utilities a file actually references, so the tokens never reached the stylesheet and
+   removing them changes the generated CSS by zero bytes. What they cost was a reader's time, by
+   presenting a second, parallel naming scheme for the same seven colours that nothing was written
+   against. The `:root` block above stays as the single source for them. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-
-  --color-gh-blue: var(--github-blue);
-  --color-gh-gray-bg: var(--github-gray-light);
-  --color-gh-border: var(--github-border);
-  --color-gh-green: var(--github-green);
-  --color-gh-green-hover: var(--github-green-hover);
-  --color-gh-text-secondary: var(--github-gray-text);
-  --color-gh-text-primary: var(--github-gray-dark);
-
   /* Typography is the visitor's system UI stack, matching GitHub's own. These two tokens are the
      only font definitions in the app: no web font is downloaded, so nothing here or in the build
      depends on an external font host. */
