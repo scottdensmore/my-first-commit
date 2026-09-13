@@ -71,13 +71,10 @@ npm run build            # production build
 Run individual commands while developing; run `npm run validate` before pushing. The contributing
 guide, runbook, and release guide link here rather than keeping their own copies.
 
-The expanded list above and the copy in the `verifier` sub-agent definition in `.claude/agents/` are
-the only two places the chain is written out in order. The verifier keeps its own copy because agents
-follow instructions better than links, and because it needs the individual commands for the scoped
-reruns in [AGENTS.md](../AGENTS.md) step 7. Both copies are checked against the `validate` script by
-`npm run check:agent-docs`, which also fails if CI stops invoking that script, so neither the docs
-nor CI can drift from the gate silently. The `## Commands` catalogue in `AGENTS.md` lists the same
-commands individually, but as a reference of what each one does rather than as the ordered gate.
+The expanded list above is checked against the `validate` script by `npm run check:agent-docs`,
+which also fails if CI stops invoking that script, so neither the docs nor CI can drift from the
+gate silently. The `## Commands` catalogue in `AGENTS.md` lists the same commands individually,
+but as a reference of what each one does rather than as the ordered gate.
 
 `npm run check:agent-docs` keeps [AGENTS.md](../AGENTS.md) the single source of agent instructions.
 `CLAUDE.md` and `GEMINI.md` must stay byte-for-byte pointers to it, so notes captured by a coding

@@ -3,8 +3,7 @@
 //
 // Used by check-agent-docs.mjs. `CI / validate` runs `npm run validate` rather than its own step
 // list, so CI cannot drift from the script. Documentation still spells the chain out — readers need
-// to know what the gate covers, and the verifier sub-agent needs the individual commands for scoped
-// reruns — and those copies can drift, which is what these functions let the check catch.
+// to know what the gate covers — and that copy can drift, which is what these functions let the check catch.
 
 /**
  * The commands an `a && b && c` npm script runs, in order.

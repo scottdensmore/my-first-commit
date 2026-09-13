@@ -14,8 +14,7 @@
 //      the two places that write the chain out in order still match it.
 //
 // Inputs are therefore wider than the name suggests: AGENTS.md and the pointer files, .prettierignore,
-// eslint.config.mjs, vitest.config.mts, package.json, .github/workflows/ci.yml, docs/development.md,
-// and .claude/agents/verifier.md. Step 7 of AGENTS.md maps each of those to this command.
+// eslint.config.mjs, vitest.config.mts, package.json, .github/workflows/ci.yml, and docs/development.md.
 //
 // Usage:
 //   node scripts/check-agent-docs.mjs          verify (exit 1 on drift)
@@ -84,10 +83,10 @@ const COLLECTION_ROOTS = ["app", "scripts"];
 
 // `npm run validate` is the gate. Two things have to hold for that to stay true. CI must invoke the
 // script rather than inlining its own step list, or the local gate and the CI gate become two lists
-// again. And the two files that write the chain out in order — readers need to know what the gate
-// covers, and the verifier needs the individual commands for scoped reruns — must still match it.
+// again. And the documentation that writes the chain out in order — readers need to know what the gate
+// covers — must still match it.
 const GATE_SCRIPT = "validate";
-const GATE_DOCS = ["docs/development.md", ".claude/agents/verifier.md"];
+const GATE_DOCS = ["docs/development.md"];
 const GATE_WORKFLOW = ".github/workflows/ci.yml";
 
 function wrap(text, width) {
