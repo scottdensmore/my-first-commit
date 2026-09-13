@@ -6,6 +6,14 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ## Unreleased
 
+### Changed
+
+- Updated repository settings to enforce that commits to `main` come exclusively from pull requests merged via squash merge, maintaining a linear commit graph.
+
+### Removed
+
+- Removed the coding agent development workflow and sub-agent definitions (`.claude/agents/` and `.codex/agents/`).
+
 ## 0.4.0 - 2026-08-17
 
 ### Added
