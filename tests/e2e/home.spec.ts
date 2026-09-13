@@ -168,7 +168,7 @@ test("privacy page documents search and analytics handling", async ({ page }) =>
 test(
   "home page tab order keeps primary actions reachable",
   { tag: ["@webkit"] },
-  async ({ page }) => {
+  async ({ page, browserName }) => {
     await page.addInitScript(() => {
       window.localStorage.setItem("my-first-commit:recent-searches", JSON.stringify(["octocat"]));
     });
@@ -188,13 +188,16 @@ test(
     await searchBox.pressSequentially("octocat");
     await expect(searchButton).toBeEnabled();
 
-    await page.keyboard.press("Tab");
+    // On macOS, WebKit follows Safari default keyboard navigation where Tab skips buttons unless Option/Alt is held.
+    const tabKey = browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab";
+
+    await page.keyboard.press(tabKey);
     await expect(searchButton).toBeFocused();
 
-    await page.keyboard.press("Tab");
+    await page.keyboard.press(tabKey);
     await expect(clearButton).toBeFocused();
 
-    await page.keyboard.press("Tab");
+    await page.keyboard.press(tabKey);
     await expect(recentSearchButton).toBeFocused();
   },
 );
