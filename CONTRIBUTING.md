@@ -23,6 +23,7 @@ Thanks for helping improve My First Commit. Keep changes small, tested, and easy
 
 ## Pull Requests
 
+- All changes to `main` must come from pull requests merged using squash merge to ensure a linear commit graph.
 - Keep PRs focused and under roughly 400 changed lines when practical.
 - Use Conventional Commit style for titles, for example `feat(app): add runtime health endpoint`.
 - Include what changed, why it changed, and how it was tested.

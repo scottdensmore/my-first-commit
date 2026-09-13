@@ -12,6 +12,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Removed
 
+- Removed `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` coding agent instruction files.
 - Removed the coding agent development workflow and sub-agent definitions (`.claude/agents/` and `.codex/agents/`).
 
 ## 0.4.0 - 2026-08-17

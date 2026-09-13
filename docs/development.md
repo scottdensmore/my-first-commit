@@ -73,14 +73,7 @@ guide, runbook, and release guide link here rather than keeping their own copies
 
 The expanded list above is checked against the `validate` script by `npm run check:agent-docs`,
 which also fails if CI stops invoking that script, so neither the docs nor CI can drift from the
-gate silently. The `## Commands` catalogue in `AGENTS.md` lists the same commands individually,
-but as a reference of what each one does rather than as the ordered gate.
-
-`npm run check:agent-docs` keeps [AGENTS.md](../AGENTS.md) the single source of agent instructions.
-`CLAUDE.md` and `GEMINI.md` must stay byte-for-byte pointers to it, so notes captured by a coding
-agent (for example Claude Code's `#` shortcut) do not quietly accumulate in a tool-specific file.
-Move the content into `AGENTS.md`, then run `npm run check:agent-docs -- --fix` to restore the
-pointers.
+gate silently.
 
 `npm run check:labels` validates `.github/labels.yml` offline, without a token or network access. See
 [labels](labels.md) for syncing labels to GitHub.

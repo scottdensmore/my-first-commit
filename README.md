@@ -57,8 +57,7 @@ limits. See the [development guide](docs/development.md) for configuration and v
 | [Manual QA](docs/manual-qa.md) | Responsive, metadata, and production spot checks |
 | [Releases](docs/release.md) | Versioning, changelog promotion, tags, and GitHub releases |
 
-Project changes are recorded in the [changelog](CHANGELOG.md). Coding agents should also read the
-canonical [agent instructions](AGENTS.md).
+Project changes are recorded in the [changelog](CHANGELOG.md).
 
 ## Contributing
 

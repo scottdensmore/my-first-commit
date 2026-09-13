@@ -1,20 +1,14 @@
 #!/usr/bin/env node
-// Guards the three repository-level claims that nothing else can check, and that are wrong quietly
-// rather than loudly when they break:
+// Guards repository-level claims:
 //
-//   1. AGENTS.md is the single source of agent instructions. CLAUDE.md and GEMINI.md must stay
-//      byte-for-byte pointers to it. Claude Code's `#` shortcut appends learnings to CLAUDE.md,
-//      which is exactly the drift this guards against: the check fails, and the content moves to
-//      AGENTS.md instead. .github/copilot-instructions.md must not exist, since it would outrank it.
-//   2. The tooling-state directories are ignored by every gate that reads source, which is what
-//      makes the unread-path verification exemption in AGENTS.md sound. Prettier and ESLint ignore
-//      them by name; Vitest reaches the same result by collecting only from the product-code roots,
-//      so that check reads its scope rather than a list of exclusions.
+//   1. AI agent instruction files (AGENTS.md, CLAUDE.md, GEMINI.md, .github/copilot-instructions.md)
+//      must not exist.
+//   2. The tooling-state directories are ignored by every gate that reads source.
 //   3. `npm run validate` is the one definition of the validation gate: CI invokes that script, and
-//      the two places that write the chain out in order still match it.
+//      docs/development.md matches it.
 //
-// Inputs are therefore wider than the name suggests: AGENTS.md and the pointer files, .prettierignore,
-// eslint.config.mjs, vitest.config.mts, package.json, .github/workflows/ci.yml, and docs/development.md.
+// Inputs: .prettierignore, eslint.config.mjs, vitest.config.mts, package.json,
+// .github/workflows/ci.yml, and docs/development.md.
 //
 // Usage:
 //   node scripts/check-agent-docs.mjs          verify (exit 1 on drift)
@@ -29,33 +23,14 @@ import { globRoots, hasGitignoreEntry, hasQuotedEntry } from "./ignore-entries.m
 import { installedBrowsers, requiredEngines, runsBrowserSuite } from "./browser-projects.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const CANONICAL_DOC = "AGENTS.md";
+const CANONICAL_DOC = null;
 const MIN_CANONICAL_LINES = 20;
 const WRAP_COLUMNS = 100;
 
-// `link` is the path to AGENTS.md relative to the pointer file's own directory. Both current
-// pointers sit at the repo root, so both use "AGENTS.md"; a pointer added under a subdirectory
-// needs its own relative path, for example "../AGENTS.md".
-const POINTER_DOCS = [
-  {
-    file: "CLAUDE.md",
-    title: "Claude Code",
-    link: "AGENTS.md",
-    note: "Anything captured with the `#` shortcut during a session belongs in",
-  },
-  {
-    file: "GEMINI.md",
-    title: "Gemini CLI",
-    link: "AGENTS.md",
-    note: "Anything worth remembering belongs in",
-  },
-];
+const POINTER_DOCS = [];
 
-// Files that must not exist. GitHub ranks .github/copilot-instructions.md above AGENTS.md, so a
-// regenerated one would quietly become the highest-precedence instruction source and AGENTS.md
-// would no longer be canonical. Copilot is not used here, and its CLI, cloud agent, and code
-// review read AGENTS.md natively.
-const FORBIDDEN_DOCS = [".github/copilot-instructions.md"];
+// Files that must not exist in this repository.
+const FORBIDDEN_DOCS = [".github/copilot-instructions.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md"];
 
 // Tooling state managed by external agent tools. AGENTS.md exempts changes confined to these
 // directories from local verification, which is only sound while every gate that reads source
@@ -150,22 +125,21 @@ async function main() {
   const fix = process.argv.includes("--fix");
   const problems = [];
 
-  const canonical = await readIfPresent(join(repoRoot, CANONICAL_DOC));
-  if (canonical === null) {
-    problems.push(`${CANONICAL_DOC} is missing. It holds the canonical agent instructions.`);
-  } else if (canonical.trim().split("\n").length < MIN_CANONICAL_LINES) {
-    problems.push(
-      `${CANONICAL_DOC} looks empty or stubbed out. Agent instructions belong there, not in the ` +
-        "pointer files.",
-    );
+  if (CANONICAL_DOC !== null) {
+    const canonical = await readIfPresent(join(repoRoot, CANONICAL_DOC));
+    if (canonical === null) {
+      problems.push(`${CANONICAL_DOC} is missing. It holds the canonical agent instructions.`);
+    } else if (canonical.trim().split("\n").length < MIN_CANONICAL_LINES) {
+      problems.push(
+        `${CANONICAL_DOC} looks empty or stubbed out. Agent instructions belong there, not in the ` +
+          "pointer files.",
+      );
+    }
   }
 
   for (const file of FORBIDDEN_DOCS) {
     if ((await readIfPresent(join(repoRoot, file))) === null) continue;
-    problems.push(
-      `${file} exists. It outranks ${CANONICAL_DOC}, so it would quietly become the highest-` +
-        `precedence instruction source. Move its content into ${CANONICAL_DOC} and delete it.`,
-    );
+    problems.push(`${file} exists. It must not exist in this repository. Delete it.`);
   }
 
   let pointerDrifted = false;
