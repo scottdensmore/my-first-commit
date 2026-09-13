@@ -68,6 +68,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  agentRules: false,
   env: {
     NEXT_PUBLIC_APP_RELEASE: appRelease,
     NEXT_PUBLIC_APP_RELEASE_URL: appReleaseUrl,
