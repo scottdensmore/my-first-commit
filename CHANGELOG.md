@@ -8,7 +8,7 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ### Changed
 
-- Updated Next.js and its ESLint configuration to 16.4.0, sharp to 0.35.5, and compatible brace-expansion, undici, and source-map-js dependencies to address published security advisories. Refreshed Playwright, Node types, and Prettier in the same dependency batch.
+- Updated React and React DOM to 19.3.0 and refreshed Playwright, Node types, and Prettier. Retained the Next.js 16.4.2 security updates, sharp 0.35.5, and patched dependency overrides already on main.
 
 - Updated repository settings to enforce that commits to `main` come exclusively from pull requests merged via squash merge, maintaining a linear commit graph.
 
