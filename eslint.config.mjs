@@ -22,7 +22,6 @@ const eslintConfig = defineConfig([
     // would be linted as project source.
     ".claude/**",
     ".codex/**",
-    ".entire/**",
     ".vercel/**",
   ]),
 ]);

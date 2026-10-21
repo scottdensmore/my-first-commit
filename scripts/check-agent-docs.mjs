@@ -35,7 +35,7 @@ const FORBIDDEN_DOCS = [".github/copilot-instructions.md", "AGENTS.md", "CLAUDE.
 // Tooling state managed by external agent tools. AGENTS.md exempts changes confined to these
 // directories from local verification, which is only sound while every gate that reads source
 // ignores them. Both lists must agree, so drift in one is a real failure rather than a nit.
-const TOOLING_DIRS = [".claude", ".codex", ".entire", ".vercel"];
+const TOOLING_DIRS = [".claude", ".codex", ".vercel"];
 const IGNORE_LISTS = [
   { file: ".prettierignore", has: (contents, dir) => hasGitignoreEntry(contents, dir) },
   { file: "eslint.config.mjs", has: (contents, dir) => hasQuotedEntry(contents, `${dir}/**`) },
