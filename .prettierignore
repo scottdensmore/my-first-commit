@@ -12,7 +12,6 @@ playwright-report
 next-env.d.ts
 
 # Tooling state (managed by external tools)
-.entire
 .codex
 .claude
 .vercel
