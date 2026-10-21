@@ -32,3 +32,10 @@ updates:
       time: "09:15"
       timezone: America/Los_Angeles
     open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
