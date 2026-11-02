@@ -38,4 +38,27 @@ jobs:
       # `npm run` prints its own banner; and the browser install above now runs before the fast
       # checks, so a job that fails on lint still paid for it.
       - name: Validate
+        id: gate
         run: npm run validate
+
+      # Preserve the failed gate while collecting repair evidence if audit stops it early.
+      # These checks use the already installed dependencies; they do not waive the audit.
+      - name: Vendored braces regression diagnostics
+        if: failure() && steps.gate.outcome == 'failure'
+        run: |
+          npm run check:vendored-braces
+          node node_modules/vitest/vitest.mjs run scripts/check-vendored-braces.test.mjs
+
+      - name: Repair lint diagnostics
+        if: failure() && steps.gate.outcome == 'failure'
+        run: node node_modules/eslint/bin/eslint.js scripts/check-vendored-braces*.mjs
+
+      - name: Repair formatting diagnostics
+        if: failure() && steps.gate.outcome == 'failure'
+        run: |
+          node node_modules/prettier/bin/prettier.cjs --check \
+            package.json package-lock.json scripts/check-vendored-braces*.mjs .github/workflows/ci.yml
+
+      - name: Gate documentation diagnostics
+        if: failure() && steps.gate.outcome == 'failure'
+        run: npm run check:agent-docs
