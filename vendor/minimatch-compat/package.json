@@ -1,0 +1,37 @@
+{
+  "name": "@scottdensmore/minimatch-compat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Private legacy API adapter delegating matching to unmodified minimatch 11.0.1",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./index.cjs",
+  "types": "./index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.mts",
+        "default": "./index.mjs"
+      },
+      "require": {
+        "types": "./index.d.cts",
+        "default": "./index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.cjs",
+    "index.mjs",
+    "index.d.cts",
+    "index.d.mts",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": "18 || 20 || >=22"
+  },
+  "dependencies": {
+    "upstream-minimatch": "npm:minimatch@11.0.1"
+  }
+}
