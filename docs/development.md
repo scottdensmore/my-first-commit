@@ -263,3 +263,16 @@ verifies the retained archive's SHA-256 and SHA-512, and exercises the installed
 expansion and brace/parenthesis nesting limits. It fails if an option can disable the depth guard.
 The URL adds a GitHub download dependency during installation; the retained archive remains
 available for inspection. A future patch update must deliberately update these pins and tests.
+
+### Minimatch compatibility and audit
+
+The minimatch override uses a small private adapter over the unmodified npm release 11.0.1,
+which fixes GHSA-g3hv-75wg-m249. This restores the callable CommonJS export and makeRe/defaults
+helpers needed by older ESLint plugins while also exporting the modern named and ESM APIs.
+The upstream package remains visible as minimatch 11.0.1 under the upstream-minimatch npm alias;
+no advisory is suppressed, package version disguised, or audit threshold relaxed.
+
+Source is in `vendor/minimatch-compat/`. Its deterministic archive is pinned to a full Git commit
+and lockfile integrity. The wrapper contains no matching algorithm. The existing braces archive
+and integrity are independent and unchanged. Compatibility tests cover actual plugin consumers,
+default factories, CommonJS/ESM/types and the upstream preprocessing amplification bounds.

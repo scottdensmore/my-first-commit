@@ -54,6 +54,7 @@
   "overrides": {
     "braces": "https://raw.githubusercontent.com/scottdensmore/my-first-commit/03ff3e222cab6e2534b94d2eca7a2698b8ae53a0/vendor/braces-3.0.4.tgz",
     "postcss": "8.5.25",
-    "sharp": "0.35.5"
+    "sharp": "0.35.5",
+    "minimatch": "https://raw.githubusercontent.com/scottdensmore/my-first-commit/662b148395f256220048f729fc6d6c26fa289a0c/vendor/minimatch-compat-1.0.0.tgz"
   }
 }

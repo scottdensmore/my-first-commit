@@ -20,6 +20,19 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      # Temporary preparation run: capture the generated lock, then commit it and remove this step.
+      # A run that rewrites the lock is not treated as final-head validation.
+      - name: Prepare minimatch compatibility lockfile
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          node --input-type=commonjs - <<'NODE'
+          const fs = require('node:fs');
+          const data = fs.readFileSync('package-lock.json').toString('base64');
+          console.log('MINIMATCH_LOCK_BEGIN');
+          console.log(data.match(/.{1,120}/g).join('\n'));
+          console.log('MINIMATCH_LOCK_END');
+          NODE
+
       - name: Install dependencies
         run: npm ci
 
@@ -47,17 +60,18 @@ jobs:
         if: failure() && steps.gate.outcome == 'failure'
         run: |
           npm run check:vendored-braces
-          node node_modules/vitest/vitest.mjs run scripts/check-vendored-braces.test.mjs
+          node node_modules/vitest/vitest.mjs run scripts/check-vendored-braces.test.mjs scripts/minimatch-compat.test.mjs
 
       - name: Repair lint diagnostics
         if: failure() && steps.gate.outcome == 'failure'
-        run: node node_modules/eslint/bin/eslint.js scripts/check-vendored-braces*.mjs
+        run: node node_modules/eslint/bin/eslint.js scripts/check-vendored-braces*.mjs scripts/minimatch-compat* vendor/minimatch-compat
 
       - name: Repair formatting diagnostics
         if: failure() && steps.gate.outcome == 'failure'
         run: |
           node node_modules/prettier/bin/prettier.cjs --check \
-            package.json package-lock.json scripts/check-vendored-braces*.mjs .github/workflows/ci.yml
+            package.json package-lock.json scripts/check-vendored-braces*.mjs \
+            scripts/minimatch-compat* vendor/minimatch-compat .github/workflows/ci.yml
 
       - name: Gate documentation diagnostics
         if: failure() && steps.gate.outcome == 'failure'
