@@ -6,6 +6,12 @@ This project follows a lightweight, human-curated changelog. Keep the newest cha
 
 ## Unreleased
 
+### Fixed
+
+- Route legacy and modern minimatch callers through a private compatibility adapter over fixed upstream 11.0.1, preserving callable plugin APIs and leaving the vendored braces patch unchanged.
+
+- Keep the patched braces archive and integrity pin while giving npm's dependency updater an immutable archive URL, avoiding a relative-path failure beneath `micromatch`. Add validation of the archive and installed nesting-depth guard.
+
 ### Changed
 
 - Updated repository settings to enforce that commits to `main` come exclusively from pull requests merged via squash merge, maintaining a linear commit graph.

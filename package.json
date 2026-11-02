@@ -20,7 +20,8 @@
     "test:e2e:deployed": "PLAYWRIGHT_BASE_URL=https://my-first-commit-eta.vercel.app playwright test",
     "check:labels": "node scripts/sync-labels.mjs --check",
     "sync:labels": "node scripts/sync-labels.mjs",
-    "validate": "npm audit && npm run test:coverage && npm run test:e2e && npm run lint && npm run format:check && npm run check:agent-docs && npm run check:labels && npm run build"
+    "validate": "npm audit && npm run check:vendored-braces && npm run test:coverage && npm run test:e2e && npm run lint && npm run format:check && npm run check:agent-docs && npm run check:labels && npm run build",
+    "check:vendored-braces": "node scripts/check-vendored-braces.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -48,11 +49,13 @@
     "prettier": "3.9.10",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "@scottdensmore/minimatch-compat": "https://raw.githubusercontent.com/scottdensmore/my-first-commit/c0e4d986ea9c65a23fce7c26da3986fedd53f385/vendor/minimatch-compat-1.0.0.tgz"
   },
   "overrides": {
-    "braces": "file:vendor/braces-3.0.4.tgz",
+    "braces": "https://raw.githubusercontent.com/scottdensmore/my-first-commit/03ff3e222cab6e2534b94d2eca7a2698b8ae53a0/vendor/braces-3.0.4.tgz",
     "postcss": "8.5.25",
-    "sharp": "0.35.5"
+    "sharp": "0.35.5",
+    "minimatch": "$@scottdensmore/minimatch-compat"
   }
 }

@@ -59,6 +59,7 @@ failure:
 
 ```bash
 npm audit                # dependency vulnerability gate
+npm run check:vendored-braces # archive integrity and installed nesting-depth guard
 npm run test:coverage    # vitest run (jsdom) with V8 coverage and its thresholds
 npm run test:e2e         # playwright; boots its own dev server on :3100 (E2E_PORT to override)
 npm run lint             # eslint
@@ -248,3 +249,36 @@ For major upgrades:
 3. Upgrade the package and lockfile together.
 4. Run `npm run validate`, the full [validation suite](#validation).
 5. Update docs, runbook notes, or the changelog when behavior, commands, Node requirements, or deployment assumptions change.
+
+### Vendored braces security patch
+
+The braces override retains the custom 3.0.4 archive with the nesting-depth guard for
+GHSA-vfj7-8cjw-p6xm. Its source stays in `vendor/braces-3.0.4.tgz`. The override uses the archive URL
+at its full introducing commit, rather than `file:vendor/...`: npm's Dependabot lockfile updater
+resolved that relative override beneath `node_modules/micromatch/` and failed with `ENOENT`.
+The lockfile keeps the same SHA-512 integrity; no package bytes or versions change.
+
+`npm run check:vendored-braces` checks that the manifest and lockfile use that immutable URL,
+verifies the retained archive's SHA-256 and SHA-512, and exercises the installed package's normal
+expansion and brace/parenthesis nesting limits. It fails if an option can disable the depth guard.
+The URL adds a GitHub download dependency during installation; the retained archive remains
+available for inspection. A future patch update must deliberately update these pins and tests.
+
+### Minimatch compatibility and audit
+
+The minimatch override uses a small private adapter over the unmodified npm release 11.0.1,
+which fixes GHSA-g3hv-75wg-m249. This restores the callable CommonJS export and makeRe/defaults
+helpers needed by older ESLint plugins while also exporting the modern named and ESM APIs.
+The upstream package remains visible as minimatch 11.0.1 under the upstream-minimatch npm alias;
+no advisory is suppressed, package version disguised, or audit threshold relaxed.
+
+Source is in `vendor/minimatch-compat/`. Its deterministic archive is pinned to a full Git commit
+and lockfile integrity. The wrapper contains no matching algorithm. The existing braces archive
+and integrity are independent and unchanged. Compatibility tests cover actual plugin consumers,
+default factories, CommonJS/ESM/types and the upstream preprocessing amplification bounds.
+
+The private adapter's makeRe compatibility is deliberately limited to a `.test(path)` predicate,
+which is the only surface the locked import/no-internal-modules rule uses. It delegates to the
+fixed matcher; it does not emulate general RegExp source/exec behavior. Real rule tests cover this
+path, so a newly enabled import policy retains its behavior. Future consumers needing a genuine
+RegExp compiler need a separate compatibility review.
