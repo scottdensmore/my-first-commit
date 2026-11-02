@@ -21,7 +21,10 @@ declare namespace matcher {
   const escape: typeof upstream.escape;
   const unescape: typeof upstream.unescape;
   function defaults(options?: upstream.MinimatchOptions): typeof matcher;
-  function makeRe(pattern: string, options?: upstream.MinimatchOptions): RegExp | false;
+  interface MatchPredicate {
+    test(path: string): boolean;
+  }
+  function makeRe(pattern: string, options?: upstream.MinimatchOptions): MatchPredicate;
 }
 
 export = matcher;

@@ -11,7 +11,11 @@ function legacy(matcher) {
   wrappers.set(matcher, callable);
   Object.assign(callable, upstream, matcher);
   callable.minimatch = callable;
-  callable.makeRe = (pattern, options) => new matcher.Minimatch(pattern, options).makeRe();
+  // The locked legacy rule uses only makeRe(...).test(...); v11 has no regex compiler.
+  callable.makeRe = (pattern, options) => {
+    const compiled = new matcher.Minimatch(pattern, options);
+    return Object.freeze({ test: (path) => compiled.match(path) });
+  };
   callable.defaults = (options) => legacy(matcher.defaults(options));
   return callable;
 }
