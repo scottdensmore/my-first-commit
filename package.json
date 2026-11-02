@@ -50,7 +50,7 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11",
-    "@scottdensmore/minimatch-compat": "https://raw.githubusercontent.com/scottdensmore/my-first-commit/7b52b524f8559ad89563be62677c7c7f7479a124/vendor/minimatch-compat-1.0.0.tgz"
+    "@scottdensmore/minimatch-compat": "https://raw.githubusercontent.com/scottdensmore/my-first-commit/c0e4d986ea9c65a23fce7c26da3986fedd53f385/vendor/minimatch-compat-1.0.0.tgz"
   },
   "overrides": {
     "braces": "https://raw.githubusercontent.com/scottdensmore/my-first-commit/03ff3e222cab6e2534b94d2eca7a2698b8ae53a0/vendor/braces-3.0.4.tgz",

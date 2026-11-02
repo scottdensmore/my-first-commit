@@ -6,7 +6,7 @@ const results: boolean[] = [
   minimatch("file.js", "*.js"),
   new Minimatch("*.js").match("file.js"),
   defaults({ nocase: true })("FILE.JS", "*.js"),
-  defaults({ nocase: true }).makeRe("*.js") !== false,
-  makeRe("*.js") !== false,
+  defaults({ nocase: true }).makeRe("*.js").test("FILE.JS"),
+  makeRe("*.js").test("file.js"),
 ];
 void results;

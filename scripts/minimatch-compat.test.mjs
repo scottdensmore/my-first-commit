@@ -7,7 +7,8 @@ const adapterRequire = createRequire(require.resolve("@scottdensmore/minimatch-c
 
 describe("fixed minimatch compatibility", () => {
   it("keeps the actual fixed upstream package visible without modifying its version", () => {
-    expect(require("@scottdensmore/minimatch-compat/package.json").name).toBe("@scottdensmore/minimatch-compat");
+    const metadata = require("@scottdensmore/minimatch-compat/package.json");
+    expect(metadata.name).toBe("@scottdensmore/minimatch-compat");
     const upstream = adapterRequire("upstream-minimatch/package.json");
     expect(upstream.name).toBe("minimatch");
     expect(upstream.version).toBe("11.0.1");
@@ -62,6 +63,20 @@ describe("fixed minimatch compatibility", () => {
       },
     ]);
     expect(messages).toEqual([]);
+  });
+
+  it("preserves the real no-internal-modules rule's makeRe(...).test(...) behavior", () => {
+    const { Linter } = require("eslint");
+    const plugin = require("eslint-plugin-import");
+    const messages = new Linter().verify("import value from './private/file.js';", [
+      {
+        languageOptions: { ecmaVersion: 2022, sourceType: "module" },
+        plugins: { import: plugin },
+        rules: { "import/no-internal-modules": ["error", { forbid: ["private/**"] }] },
+      },
+    ]);
+    expect(messages).toHaveLength(1);
+    expect(messages[0].ruleId).toBe("import/no-internal-modules");
   });
 
   it("bounds the advisory's first phase pattern amplification", () => {

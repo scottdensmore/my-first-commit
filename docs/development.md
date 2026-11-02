@@ -276,3 +276,9 @@ Source is in `vendor/minimatch-compat/`. Its deterministic archive is pinned to 
 and lockfile integrity. The wrapper contains no matching algorithm. The existing braces archive
 and integrity are independent and unchanged. Compatibility tests cover actual plugin consumers,
 default factories, CommonJS/ESM/types and the upstream preprocessing amplification bounds.
+
+The private adapter's makeRe compatibility is deliberately limited to a `.test(path)` predicate,
+which is the only surface the locked import/no-internal-modules rule uses. It delegates to the
+fixed matcher; it does not emulate general RegExp source/exec behavior. Real rule tests cover this
+path, so a newly enabled import policy retains its behavior. Future consumers needing a genuine
+RegExp compiler need a separate compatibility review.
