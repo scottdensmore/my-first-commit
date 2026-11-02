@@ -1,5 +1,7 @@
 "use strict";
 
+// CommonJS is intentional: legacy plugins need a synchronous callable export.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const upstream = require("upstream-minimatch");
 const wrappers = new WeakMap();
 

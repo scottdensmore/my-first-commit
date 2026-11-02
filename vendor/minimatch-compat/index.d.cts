@@ -1,4 +1,4 @@
-import upstream = require("upstream-minimatch");
+import type * as upstream from "upstream-minimatch";
 
 declare function matcher(
   path: string,
