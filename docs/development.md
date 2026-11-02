@@ -59,6 +59,7 @@ failure:
 
 ```bash
 npm audit                # dependency vulnerability gate
+npm run check:vendored-braces # archive integrity and installed nesting-depth guard
 npm run test:coverage    # vitest run (jsdom) with V8 coverage and its thresholds
 npm run test:e2e         # playwright; boots its own dev server on :3100 (E2E_PORT to override)
 npm run lint             # eslint
@@ -248,3 +249,17 @@ For major upgrades:
 3. Upgrade the package and lockfile together.
 4. Run `npm run validate`, the full [validation suite](#validation).
 5. Update docs, runbook notes, or the changelog when behavior, commands, Node requirements, or deployment assumptions change.
+
+### Vendored braces security patch
+
+The braces override retains the custom 3.0.4 archive with the nesting-depth guard for
+GHSA-vfj7-8cjw-p6xm. Its source stays in `vendor/braces-3.0.4.tgz`. The override uses the archive URL
+at its full introducing commit, rather than `file:vendor/...`: npm's Dependabot lockfile updater
+resolved that relative override beneath `node_modules/micromatch/` and failed with `ENOENT`.
+The lockfile keeps the same SHA-512 integrity; no package bytes or versions change.
+
+`npm run check:vendored-braces` checks that the manifest and lockfile use that immutable URL,
+verifies the retained archive's SHA-256 and SHA-512, and exercises the installed package's normal
+expansion and brace/parenthesis nesting limits. It fails if an option can disable the depth guard.
+The URL adds a GitHub download dependency during installation; the retained archive remains
+available for inspection. A future patch update must deliberately update these pins and tests.
