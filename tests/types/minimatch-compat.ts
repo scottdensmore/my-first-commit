@@ -1,4 +1,4 @@
-import matcher, { defaults, makeRe, minimatch, Minimatch } from "minimatch";
+import matcher, { defaults, makeRe, minimatch, Minimatch } from "@scottdensmore/minimatch-compat";
 
 // Compiled by the existing application type/build gate; no runtime caller imports this fixture.
 const results: boolean[] = [

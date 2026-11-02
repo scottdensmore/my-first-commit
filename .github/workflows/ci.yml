@@ -64,14 +64,14 @@ jobs:
 
       - name: Repair lint diagnostics
         if: failure() && steps.gate.outcome == 'failure'
-        run: node node_modules/eslint/bin/eslint.js scripts/check-vendored-braces*.mjs scripts/minimatch-compat* vendor/minimatch-compat
+        run: node node_modules/eslint/bin/eslint.js scripts/check-vendored-braces*.mjs scripts/minimatch-compat* tests/types/minimatch-compat.ts vendor/minimatch-compat
 
       - name: Repair formatting diagnostics
         if: failure() && steps.gate.outcome == 'failure'
         run: |
           node node_modules/prettier/bin/prettier.cjs --check \
             package.json package-lock.json scripts/check-vendored-braces*.mjs \
-            scripts/minimatch-compat* vendor/minimatch-compat .github/workflows/ci.yml
+            scripts/minimatch-compat* tests/types/minimatch-compat.ts vendor/minimatch-compat .github/workflows/ci.yml
 
       - name: Gate documentation diagnostics
         if: failure() && steps.gate.outcome == 'failure'

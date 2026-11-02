@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const matcher = require("minimatch");
-const adapterRequire = createRequire(require.resolve("minimatch"));
+const matcher = require("@scottdensmore/minimatch-compat");
+const adapterRequire = createRequire(require.resolve("@scottdensmore/minimatch-compat"));
 
 describe("fixed minimatch compatibility", () => {
   it("keeps the actual fixed upstream package visible without modifying its version", () => {
-    expect(require("minimatch/package.json").name).toBe("@scottdensmore/minimatch-compat");
+    expect(require("@scottdensmore/minimatch-compat/package.json").name).toBe("@scottdensmore/minimatch-compat");
     const upstream = adapterRequire("upstream-minimatch/package.json");
     expect(upstream.name).toBe("minimatch");
     expect(upstream.version).toBe("11.0.1");
@@ -38,7 +38,7 @@ describe("fixed minimatch compatibility", () => {
   });
 
   it("supports ESM default and named imports", async () => {
-    const esm = await import("minimatch");
+    const esm = await import("@scottdensmore/minimatch-compat");
     expect(esm.default("file.js", "*.js")).toBe(true);
     expect(esm.minimatch("file.js", "*.js")).toBe(true);
     expect(new esm.Minimatch("*.js").match("file.js")).toBe(true);
